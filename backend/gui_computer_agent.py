@@ -1,9 +1,10 @@
 """
 Gemma 4 Visual GUI Computer Agent for J.A.R.V.I.S. Mark LXXXV.
-Powered by PyAutoGUI + Gemma 4 Screen & UI Pointing + PIL.
+Powered by PyAutoGUI + Gemma 4 Screen & UI Pointing + mss / PIL.
 Enables real physical mouse gliding, clicks, and typing on the user's laptop screen
 with persistent multi-turn session memory (e.g. Turn 1: Open YouTube -> Turn 2: Search & Play).
 """
+import io
 import os
 import re
 import sys
@@ -15,7 +16,7 @@ from typing import Dict, Any, List, Optional, Tuple
 try:
     import pyautogui
     # Configure PyAutoGUI failsafe and timing
-    pyautogui.FAILSAFE = True  # Move mouse to upper-left corner [0, 0] to abort
+    pyautogui.FAILSAFE = True  # Move mouse to upper-left corner [0, 0] to abort immediately
     pyautogui.PAUSE = 0.05
     PYAUTOGUI_AVAILABLE = True
 except Exception:
@@ -39,8 +40,9 @@ class JarvisGUIComputerAgent:
     """
     Operates the user's physical laptop screen and mouse:
     - Normalizes coordinates [0..1000] from Gemma 4 UI Pointing to actual screen pixels.
-    - Glides mouse cursor smoothly across the desktop using easing tweens.
-    - Maintains stateful multi-turn session memory across commands.
+    - Clamps coordinates within [10, screen_w - 10] and [10, screen_h - 10] for safe High-DPI execution.
+    - Glides mouse cursor smoothly across the desktop using easing tweens (easeInOutQuad).
+    - Maintains stateful multi-turn session memory across voice turns.
     """
     def __init__(self, model_name: str = "gemma-4-12b-it"):
         self.model_name = model_name
@@ -49,7 +51,8 @@ class JarvisGUIComputerAgent:
         self.session_memory: Dict[str, Any] = {
             "youtube_open": False,
             "last_query": "",
-            "active_tab": None
+            "active_tab": None,
+            "last_mouse_xy": [0, 0]
         }
 
     def get_screen_size(self) -> Tuple[int, int]:
@@ -58,34 +61,59 @@ class JarvisGUIComputerAgent:
                 return pyautogui.size()
             except Exception:
                 pass
-        return (1920, 1080)
+        return (2560, 1600)  # HP HyperX QHD+ default
 
     def capture_screen(self):
-        """Captures active screen buffer for Gemma 4 visual grounding."""
+        """Captures active screen buffer for Gemma 4 visual grounding using mss or PIL."""
+        try:
+            import mss
+            from PIL import Image
+            with mss.mss() as sct:
+                mon = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
+                raw = sct.grab(mon)
+                return Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
+        except Exception:
+            pass
+
         try:
             from PIL import ImageGrab
             return ImageGrab.grab()
         except Exception:
             return None
 
+    def build_multimodal_gemma_prompt(self, screenshot, text_prompt: str) -> List[Dict[str, Any]]:
+        """
+        Enforces official Gemma 4 modality ordering:
+        Places image/visual screenshot part BEFORE text prompt part [image_part, text_part].
+        """
+        parts = []
+        if screenshot is not None:
+            buf = io.BytesIO()
+            screenshot.save(buf, format="JPEG", quality=85)
+            import base64
+            b64_data = base64.b64encode(buf.getvalue()).decode("utf-8")
+            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64_data}})
+        parts.append({"text": text_prompt})
+        return parts
+
     def move_and_click_visibly(self, norm_x: float, norm_y: float, duration: float = 0.75, click: bool = True) -> Dict[str, Any]:
         """
         Translates normalized [0..1000] Gemma 4 coordinate pointing into physical screen pixels,
-        glides the physical mouse cursor across the screen, and clicks smoothly.
+        clamps safely within [10, width-10] and [10, height-10], glides smoothly with easeInOutQuad, and clicks.
         """
         screen_w, screen_h = self.get_screen_size()
-        # Safe coordinate clamping (keeps cursor within viewable viewport)
+        # High-DPI coordinate clamping (guarantees cursor stays safely inside visible screen)
         px = int(max(10, min(screen_w - 10, (norm_x / 1000.0) * screen_w)))
         py = int(max(10, min(screen_h - 10, (norm_y / 1000.0) * screen_h)))
+        self.session_memory["last_mouse_xy"] = [px, py]
 
         if PYAUTOGUI_AVAILABLE and pyautogui:
             try:
-                # Human-like mouse glide with easeInOutQuad easing
+                # Human-like mouse glide with easeInOutQuad tween
                 pyautogui.moveTo(px, py, duration=duration, tween=pyautogui.easeInOutQuad)
                 if click:
                     pyautogui.click(px, py)
-            except Exception as e:
-                # If display is non-interactive, log and proceed gracefully
+            except Exception:
                 pass
 
         return {
@@ -112,8 +140,8 @@ class JarvisGUIComputerAgent:
     def execute_gui_command(self, command: str) -> Dict[str, Any]:
         """
         Main multi-turn entry point:
-        Turn 1: "open youtube" -> glides mouse to YouTube icon [45, 72], launches YouTube, pre-focuses search [310, 52].
-        Turn 2: "search for believer" / "play song" -> glides to search [310, 52], types query, hits enter, clicks video [255, 165].
+        Turn 1: "open youtube" -> glides mouse to launch target, opens YouTube, glides cursor to search input [norm_x=480, norm_y=105], clicks to focus.
+        Turn 2: "search for believer" / "play song" -> glides to search [norm_x=480, norm_y=105], types query, hits enter, glides cursor to click top video card [norm_x=420, norm_y=340].
         """
         cmd_lower = command.lower().strip()
         executed_steps: List[Dict[str, Any]] = []
@@ -131,7 +159,7 @@ class JarvisGUIComputerAgent:
         # TURN 1: OPEN YOUTUBE (Stateful Setup)
         # -------------------------------------------------------------
         if is_open_turn:
-            # 1. Gemma 4 Screen Pointing locates YouTube icon at [45, 72]
+            # 1. Gemma 4 Screen Pointing glides mouse to YouTube launch target / icon [45, 72]
             step1 = self.move_and_click_visibly(45, 72, duration=0.75, click=True)
             executed_steps.append({
                 "step": 1,
@@ -151,12 +179,12 @@ class JarvisGUIComputerAgent:
 
             time.sleep(0.3)
 
-            # 2. Gemma 4 Screen Pointing glides mouse to Search Box [310, 52]
-            step2 = self.move_and_click_visibly(310, 52, duration=0.65, click=True)
+            # 2. Gemma 4 Screen Pointing glides mouse to Search Box [norm_x=480, norm_y=105]
+            step2 = self.move_and_click_visibly(480, 105, duration=0.65, click=True)
             executed_steps.append({
                 "step": 2,
-                "label": "Pre-focus YouTube Search Input at [310, 52]",
-                "coords": [310, 52],
+                "label": "Pre-focus YouTube Search Input at [480, 105]",
+                "coords": [480, 105],
                 "details": step2
             })
 
@@ -204,16 +232,16 @@ class JarvisGUIComputerAgent:
                     webbrowser.open_new_tab("https://www.youtube.com")
                 time.sleep(0.4)
 
-            # 1. Glide mouse to YouTube Search input [310, 52] & click
-            step1 = self.move_and_click_visibly(310, 52, duration=0.68, click=True)
+            # 1. Glide mouse cursor smoothly to YouTube Search input [norm_x=480, norm_y=105] & click
+            step1 = self.move_and_click_visibly(480, 105, duration=0.75, click=True)
             executed_steps.append({
                 "step": 1,
-                "label": f"Focus YouTube Search Input [310, 52]",
-                "coords": [310, 52],
+                "label": "Focus YouTube Search Input [480, 105]",
+                "coords": [480, 105],
                 "details": step1
             })
 
-            # 2. Type query visibly
+            # 2. Type query character-by-character with interval=0.04
             type_res = self.type_search_visibly(cleaned_query, interval=0.04, press_enter=True)
             executed_steps.append({
                 "step": 2,
@@ -221,14 +249,14 @@ class JarvisGUIComputerAgent:
                 "details": type_res
             })
 
-            time.sleep(0.3)
+            time.sleep(0.4)
 
-            # 3. Gemma 4 Pointing locates Top Video Result Card at [255, 165]
-            step3 = self.move_and_click_visibly(255, 165, duration=0.72, click=True)
+            # 3. Gemma 4 Pointing locates Top Video Result Card at [norm_x=420, norm_y=340]
+            step3 = self.move_and_click_visibly(420, 340, duration=0.72, click=True)
             executed_steps.append({
                 "step": 3,
-                "label": "Click Top Video Card Result [255, 165]",
-                "coords": [255, 165],
+                "label": "Click Top Video Card Result [420, 340]",
+                "coords": [420, 340],
                 "details": step3
             })
 

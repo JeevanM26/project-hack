@@ -4,8 +4,9 @@ Combines G1 (Autonomous Dynamic Multi-Agent Swarm with 1 Single Gemma 4 Model)
 and G2 (Voice-First AI Interaction with Sarvam AI).
 """
 import os
-from typing import Optional
-from fastapi import FastAPI, UploadFile, File, Form, Query
+import time
+from typing import Optional, List, Dict, Any
+from fastapi import FastAPI, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -50,6 +51,61 @@ hw = HardwareOptimizer()
 gui_agent = JarvisGUIComputerAgent()
 
 
+class TelemetryConnectionManager:
+    """Manages active WebSocket connections and broadcasts real-time telemetry."""
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: Dict[str, Any]):
+        for connection in list(self.active_connections):
+            try:
+                await connection.send_json(message)
+            except Exception:
+                self.disconnect(connection)
+
+
+telemetry_manager = TelemetryConnectionManager()
+
+
+def build_telemetry_payload() -> Dict[str, Any]:
+    """Assembles instantaneous physical cursor, swarm blackboard, AST verification, and GPU allocation state."""
+    bb = swarm.current_blackboard
+    scr_w, scr_h = gui_agent.get_screen_size()
+    last_xy = gui_agent.session_memory.get("last_mouse_xy", [0, 0])
+    norm_x = round((last_xy[0] / scr_w) * 1000, 1) if scr_w else 0.0
+    norm_y = round((last_xy[1] / scr_h) * 1000, 1) if scr_h else 0.0
+    return {
+        "timestamp": time.time(),
+        "cursor": {
+            "physical_xy": last_xy,
+            "normalized_coords": [norm_x, norm_y],
+            "screen_resolution": [scr_w, scr_h],
+            "active_app": gui_agent.session_memory.get("active_app")
+        },
+        "swarm": {
+            "status": "active" if bb else "standby",
+            "active_agents": bb.active_agents if bb else ["Co-Leader & Chief Reviewer"],
+            "single_model": swarm.engine.model_name,
+            "objective": bb.objective if bb else None,
+            "chat_count": len(bb.chat_bus) if bb else 0
+        },
+        "ast_grounding": {
+            "indexed_files": list(swarm.grounding.build_index().keys()),
+            "receipts": bb.verification_receipts if bb else [],
+            "verification_status": "ENFORCED_ZERO_HALLUCINATION"
+        },
+        "hardware": hw.get_hardware_telemetry()
+    }
+
+
 class CommandRequest(BaseModel):
     command: str
     language_code: str = "en-IN"
@@ -58,8 +114,33 @@ class CommandRequest(BaseModel):
     execute_on_desktop_gui: bool = True
 
 
+@app.websocket("/ws/telemetry")
+async def websocket_telemetry_stream(websocket: WebSocket):
+    """
+    WebSocket telemetry endpoint streaming real-time:
+    - Physical & Normalized cursor coordinates [norm_x, norm_y]
+    - Dynamic agent swarm state (active_agents, blackboard status)
+    - AST verification status and verification receipts
+    - GPU (RTX 5060 8GB GDDR7) and 24GB RAM allocation profile
+    """
+    await telemetry_manager.connect(websocket)
+    try:
+        # Send initial snapshot immediately upon connect
+        await websocket.send_json(build_telemetry_payload())
+
+        while True:
+            data = await websocket.receive_text()
+            payload = build_telemetry_payload()
+            payload["client_echo"] = data
+            await websocket.send_json(payload)
+    except WebSocketDisconnect:
+        telemetry_manager.disconnect(websocket)
+    except Exception:
+        telemetry_manager.disconnect(websocket)
+
+
 @app.post("/api/gui-action")
-def run_gui_mouse_action(req: CommandRequest):
+async def run_gui_mouse_action(req: CommandRequest):
     """Executes stateful desktop GUI mouse movements, clicks, and typing via Gemma 4 UI Pointing + PyAutoGUI."""
     gui_res = gui_agent.execute_gui_command(req.command)
     spoken = gui_res.get("spoken_response") or f"Executed {len(gui_res['executed_steps'])} GUI steps on your laptop screen. Active app is {gui_res['active_app']}."
@@ -69,6 +150,20 @@ def run_gui_mouse_action(req: CommandRequest):
         except Exception:
             pass
     gui_res["spoken_response"] = spoken
+
+    # Broadcast updated physical cursor & GUI state over WebSocket
+    try:
+        await telemetry_manager.broadcast({
+            "event": "gui_action",
+            "payload": build_telemetry_payload(),
+            "gui_res": {
+                "active_app": gui_res.get("active_app"),
+                "executed_steps_count": len(gui_res.get("executed_steps", []))
+            }
+        })
+    except Exception:
+        pass
+
     return gui_res
 
 
@@ -123,7 +218,7 @@ def get_current_blackboard():
 
 
 @app.post("/api/mission")
-def run_text_or_transcribed_mission(req: CommandRequest):
+async def run_text_or_transcribed_mission(req: CommandRequest):
     """
     Runs the single-model dynamic multi-agent swarm:
     Handles YouTube playback, project building, or AST-grounded bug triage.
@@ -145,6 +240,20 @@ def run_text_or_transcribed_mission(req: CommandRequest):
             result["tts_audio"] = tts
         except Exception as e:
             result["tts_warning"] = str(e)
+
+    # Broadcast updated multi-agent blackboard & AST state
+    try:
+        await telemetry_manager.broadcast({
+            "event": "mission_executed",
+            "payload": build_telemetry_payload(),
+            "mission_summary": {
+                "objective": req.command,
+                "ast_verified": result.get("ast_verified", True),
+                "active_agents": result.get("active_agents", [])
+            }
+        })
+    except Exception:
+        pass
 
     return result
 

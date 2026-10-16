@@ -6,17 +6,28 @@ and G2 (Voice-First AI Interaction with Sarvam AI).
 import os
 from typing import Optional
 from fastapi import FastAPI, UploadFile, File, Form, Query
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agents import JarvisMultiAgentSwarm
 from sarvam_voice import SarvamVoicePipeline
-
 from hardware_profile import HardwareOptimizer
 
 app = FastAPI(
     title="J.A.R.V.I.S. Gemma 4 + Sarvam AI Multi-Agent OS",
     description="Single-Model Dynamic Agent Swarm & Voice Command Center for Open-Source Maintainers"
 )
+
+INDEX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "index.html"))
+if not os.path.exists(INDEX_PATH):
+    INDEX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
+
+@app.get("/")
+@app.head("/")
+def serve_jarvis_frontend():
+    """Serves the 3D J.A.R.V.I.S. Command Center UI."""
+    return FileResponse(INDEX_PATH)
+
 
 app.add_middleware(
     CORSMiddleware,

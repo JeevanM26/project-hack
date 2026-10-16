@@ -11,6 +11,8 @@ from pydantic import BaseModel
 from agents import JarvisMultiAgentSwarm
 from sarvam_voice import SarvamVoicePipeline
 
+from hardware_profile import HardwareOptimizer
+
 app = FastAPI(
     title="J.A.R.V.I.S. Gemma 4 + Sarvam AI Multi-Agent OS",
     description="Single-Model Dynamic Agent Swarm & Voice Command Center for Open-Source Maintainers"
@@ -26,6 +28,7 @@ app.add_middleware(
 REPO_DIR = os.getenv("JARVIS_REPO_DIR", os.path.join(os.path.dirname(__file__), "sample_repo"))
 swarm = JarvisMultiAgentSwarm(repo_dir=REPO_DIR)
 voice = SarvamVoicePipeline()
+hw = HardwareOptimizer()
 
 
 class CommandRequest(BaseModel):
@@ -33,6 +36,12 @@ class CommandRequest(BaseModel):
     language_code: str = "en-IN"
     synthesize_voice: bool = True
     simulate_hallucination: bool = False
+
+
+@app.get("/api/telemetry")
+def get_hardware_telemetry():
+    """Returns real-time GPU (RTX 5060 8GB) and 24GB RAM allocation profile."""
+    return hw.get_hardware_telemetry()
 
 
 @app.get("/api/status")
@@ -45,6 +54,7 @@ def get_system_status():
         "indexed_modules": list(swarm.grounding.build_index().keys()),
         "sarvam_configured": bool(voice.api_key),
         "gemini_api_configured": bool(swarm.engine.gemini_api_key),
+        "hardware": hw.get_hardware_telemetry(),
     }
 
 

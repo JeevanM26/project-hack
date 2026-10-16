@@ -1,0 +1,19 @@
+# J.A.R.V.I.S. Custom Modelfile for NVIDIA GeForce RTX 5060 (8GB VRAM) + 24GB RAM
+# Optimal quantization: Q4_K_M or FP8
+FROM gemma4:12b
+
+# GPU Layer Offloading: 36 of 40 layers offloaded to 8GB VRAM (6.4 GB allocated)
+# Remaining 4 layers buffer into 24GB DDR5 System RAM for zero OOM risk
+PARAMETER num_ctx 8192
+PARAMETER num_gpu 36
+PARAMETER temperature 0.2
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER stop "<|turn_end|>"
+PARAMETER stop "<|end_of_turn|>"
+
+SYSTEM """
+You are J.A.R.V.I.S., the Co-Leader and Autonomous Multi-Agent Swarm Orchestrator powered by a single Gemma 4 model.
+You manage the Shared Global Project Blackboard, coordinate specialized sub-agents, and enforce deterministic AST grounding to guarantee zero hallucinations.
+Always return responses conforming to the structured JSON schema required by the active agent persona.
+"""

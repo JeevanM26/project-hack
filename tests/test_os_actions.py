@@ -23,10 +23,28 @@ def test_detect_open_website_human_like():
     assert res1["action"] == "open_website"
     assert res1["url"] == "https://www.youtube.com"
 
+    # With question mark and capital letters
+    res1_q = os_engine.detect_and_handle_os_action("can you open YouTube?")
+    assert res1_q is not None
+    assert res1_q["action"] == "open_website"
+    assert res1_q["url"] == "https://www.youtube.com"
+
     res2 = os_engine.detect_and_handle_os_action("open drive")
     assert res2 is not None
     assert res2["action"] == "open_website"
     assert res2["url"] == "https://drive.google.com"
+
+    res3 = os_engine.detect_and_handle_os_action("open github please")
+    assert res3 is not None
+    assert res3["action"] == "open_website"
+    assert res3["url"] == "https://github.com"
+
+def test_detect_stop_audio():
+    os_engine = VoiceOSActions()
+    res = os_engine.detect_and_handle_os_action("silence stop playing")
+    assert res is not None
+    assert res["action"] == "stop_audio"
+    assert res["status"] == "stopped"
 
 def test_detect_non_os_command():
     os_engine = VoiceOSActions()

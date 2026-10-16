@@ -1223,20 +1223,35 @@ class TaskManagerService:
         if (action === 'open_website') {
           const site = data.os_action.site_name || 'Website';
           const url = data.os_action.url;
+          if (url) {
+            try {
+              window.open(url, '_blank');
+            } catch (err) {
+              console.warn('Popup blocked, use link:', err);
+            }
+          }
           appendTraceLog(
             'Voice OS Action Engine',
-            `Human-Like Navigation: Opened <strong>${site}</strong> (<a href="${url}" target="_blank" class="text-cyan-400 hover:underline">${url}</a>) in your browser.`,
+            `Human-Like Navigation: Opened <strong>${site}</strong> in a new tab. <a href="${url}" target="_blank" class="text-cyan-400 font-bold underline ml-1">Click to view &nearr;</a>`,
             'text-emerald-400'
           );
         } else if (action === 'web_search') {
           const q = data.os_action.query;
+          const url = data.os_action.url;
+          if (url) {
+            try { window.open(url, '_blank'); } catch (err) {}
+          }
           appendTraceLog(
             'Voice OS Action Engine',
-            `Google Web Search: Opened search results for <strong>${q}</strong>.`,
+            `Google Web Search: Opened search results for <strong>${q}</strong>. <a href="${url}" target="_blank" class="text-cyan-400 font-bold underline ml-1">View Results &nearr;</a>`,
             'text-cyan-400'
           );
         } else if (action === 'play_youtube') {
           const query = data.os_action.query || 'Kesariya';
+          const watchUrl = data.os_action.watch_url;
+          if (watchUrl) {
+            try { window.open(watchUrl, '_blank'); } catch (err) {}
+          }
           triggerVoiceOSYouTube(query, true);
         } else if (action === 'stop_audio') {
           stopAllAudio();

@@ -7,6 +7,7 @@ Provides seamless desktop OS controls:
 4. Stopping/pausing playback without killing the user's browser.
 """
 import os
+import sys
 import re
 import urllib.parse
 import webbrowser
@@ -92,24 +93,26 @@ class VoiceOSActions:
             return None
 
         target = match.group(1).strip()
-        # Remove trailing words like "website", "tab", "page", "app"
-        target_clean = re.sub(r'\s+(?:website|site|tab|page|app|in\s+browser)$', '', target, flags=re.I).strip()
+        # Remove trailing punctuation and helper words
+        target_clean = re.sub(r'[?!.,;]+$', '', target).strip()
+        target_clean = re.sub(r'\s+(?:website|site|tab|page|app|in\s+browser|please|now)$', '', target_clean, flags=re.I).strip()
+        key_clean = target_clean.lower()
 
         # Check in common sites
-        if target_clean in COMMON_SITES:
-            url = COMMON_SITES[target_clean]
-            webbrowser.open_new_tab(url)
+        if key_clean in COMMON_SITES:
+            url = COMMON_SITES[key_clean]
+            self._open_url_os(url)
             return {
                 "action": "open_website",
-                "site_name": target_clean.title(),
+                "site_name": key_clean.title(),
                 "url": url,
-                "spoken_summary": f"Opening {target_clean.title()} in your browser now, sir."
+                "spoken_summary": f"Opening {key_clean.title()} in your browser now, sir."
             }
 
         # Check if user mentioned a dot-com domain like "notion.so" or "example.com"
         if "." in target_clean and not target_clean.endswith(".py"):
             url = target_clean if target_clean.startswith("http") else f"https://{target_clean}"
-            webbrowser.open_new_tab(url)
+            self._open_url_os(url)
             return {
                 "action": "open_website",
                 "site_name": target_clean,
@@ -119,8 +122,8 @@ class VoiceOSActions:
 
         # Check partial match in common sites
         for key, url in COMMON_SITES.items():
-            if key in target_clean:
-                webbrowser.open_new_tab(url)
+            if key in key_clean:
+                self._open_url_os(url)
                 return {
                     "action": "open_website",
                     "site_name": key.title(),
@@ -130,13 +133,33 @@ class VoiceOSActions:
 
         return None
 
+    def _open_url_os(self, url: str):
+        """Opens URL in user's default browser smoothly without closing or killing any windows."""
+        # 1. Native Windows ShellExecute via os.startfile (instant, zero popup blocks, clean tab)
+        if sys.platform == "win32":
+            try:
+                os.startfile(url)
+                return
+            except Exception:
+                pass
+            try:
+                os.system(f'start "" "{url}"')
+                return
+            except Exception:
+                pass
+        # 2. Cross-platform fallback
+        try:
+            webbrowser.open_new_tab(url)
+        except Exception:
+            pass
+
     def _detect_web_search(self, text: str) -> Optional[Dict[str, Any]]:
         clean = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+(?:you|u)\s+)', '', text, flags=re.I).strip()
         match = re.search(r'(?:search\s+(?:for\s+)?(.+?)\s+(?:on\s+google|in\s+google)|google\s+(.+)|search\s+google\s+for\s+(.+))', clean, flags=re.I)
         if match:
             q = next(g for g in match.groups() if g)
             url = f"https://www.google.com/search?q={urllib.parse.quote_plus(q)}"
-            webbrowser.open_new_tab(url)
+            self._open_url_os(url)
             return {
                 "action": "web_search",
                 "query": q,
@@ -191,11 +214,7 @@ class VoiceOSActions:
         embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1" if video_id else f"https://www.youtube-nocookie.com/embed?listType=search&list={encoded_query}&autoplay=1"
 
         if auto_open_browser:
-            try:
-                # Open in user's browser in a new tab smoothly (never kills browser!)
-                webbrowser.open_new_tab(watch_url)
-            except Exception:
-                pass
+            self._open_url_os(watch_url)
 
         return {
             "action": "play_youtube",

@@ -44,40 +44,124 @@ COMMON_SITES = {
 class VoiceOSActions:
     def __init__(self, workspace_root: Optional[str] = None):
         self.workspace_root = workspace_root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        try:
+            from browser_automation import DesktopBrowserAutomation
+            headless_mode = os.getenv("JARVIS_HEADLESS", "0") == "1"
+            self.browser_auto = DesktopBrowserAutomation.get_instance(headless=headless_mode)
+        except Exception:
+            self.browser_auto = None
 
     def detect_and_handle_os_action(self, spoken_command: str) -> Optional[Dict[str, Any]]:
         """
         Detects if the spoken command is a desktop OS action:
         - Opening websites (YouTube, Google Drive, GitHub, Gmail, etc.)
+        - Chained tasks in standby: search, play, pause/resume, close
         - Playing specific songs on YouTube
         - Web search
         - Stopping audio
         """
         cmd_raw = spoken_command.strip()
         cmd_lower = cmd_raw.lower()
+        clean = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+(?:you|u)\s+)', '', cmd_lower, flags=re.I).strip()
+        clean = re.sub(r'[?!.,;]+$', '', clean).strip()
 
-        # 1. Stop / Silence command
-        if any(w in cmd_lower for w in ["stop playing", "stop audio", "stop music", "silence", "be quiet", "pause audio", "stop all", "stop song"]):
+        # 1. Close command: "close it", "close this", "close tab", "close window", "close browser", "close youtube"
+        close_phrases = [
+            "close it", "close this", "close tab", "close window", "close browser",
+            "close the tab", "close the browser", "close the window", "close youtube",
+            "close edge", "shut it", "close page", "exit browser"
+        ]
+        if any(clean == k or clean.startswith(k) for k in close_phrases):
+            if self.browser_auto:
+                res = self.browser_auto.close_active()
+                spoken = res.get("spoken_summary", "Closed it for you, sir. Standing by for your next mission.")
+            else:
+                spoken = "Closed browser tab, sir. Standing by for your next mission."
+            return {
+                "action": "close_browser",
+                "standby": False,
+                "spoken_summary": spoken
+            }
+
+        # 2. Stop / Silence command
+        if any(w in clean for w in ["stop playing", "stop audio", "stop music", "silence", "be quiet", "stop all", "stop song"]):
             return self.stop_all_media()
 
-        # 2. Check for explicit YouTube Song PLAYBACK intent (must have "play" and a song name)
-        # e.g. "open youtube and play kesariya", "play believer on youtube", "play faded"
-        is_play_intent = "play" in cmd_lower and not cmd_lower.endswith("play")
-        if is_play_intent:
-            song_query = self._extract_song_query(cmd_lower)
-            # Ensure the extracted query is not just "youtube" or empty
-            if song_query and song_query.lower() not in ["youtube", "video", "song", "music"]:
-                return self.play_youtube_song(song_query, auto_open_browser=True)
+        # 3. Pause / Resume command
+        if clean in ["pause", "resume", "pause it", "resume it", "pause song", "pause video", "unpause", "play/pause"]:
+            if self.browser_auto:
+                res = self.browser_auto.pause_resume()
+                spoken = res.get("spoken_summary", "Playback toggled, sir. Standing by.")
+            else:
+                spoken = "Playback toggled, sir. Standing by."
+            return {
+                "action": "pause_resume",
+                "standby": True,
+                "spoken_summary": spoken
+            }
 
-        # 3. Check for Human-Like Website Opening
-        # e.g. "open youtube", "can u open youtube", "open drive", "can you open google drive", "open github"
-        website_action = self._detect_website_open(cmd_lower)
+        # 4. Contextual Play command (e.g. "play", "play it", "play the first video", "play first one")
+        if clean in ["play", "play it", "play the video", "play first", "play first one", "play the first one", "start playing", "play song", "play video"]:
+            if self.browser_auto:
+                res = self.browser_auto.play_video()
+                spoken = res.get("spoken_summary", "Playing the video for you now, sir. Standing by.")
+            else:
+                spoken = "Playing the video now, sir. Standing by."
+            return {
+                "action": "play_youtube",
+                "standby": True,
+                "spoken_summary": spoken
+            }
+
+        # 5. Search command in active browser or YouTube (e.g. "search kesariya", "now search interstellar", "search for lofi"):
+        search_match = re.search(r'^(?:now\s+)?search\s+(?:for\s+)?(.+)', clean, flags=re.I)
+        if search_match and not any(w in clean for w in ["google", "in google", "on google"]):
+            query = search_match.group(1).strip()
+            if self.browser_auto:
+                res = self.browser_auto.search(query)
+                spoken = res.get("spoken_summary", f"Searched for {query}, sir. Standing by—say 'play' to start.")
+            else:
+                spoken = f"Searched for {query}, sir. Standing by."
+            return {
+                "action": "search",
+                "query": query,
+                "standby": True,
+                "spoken_summary": spoken
+            }
+
+        # 6. Explicit YouTube Song PLAYBACK intent (must have "play" and a song name)
+        # e.g. "open youtube and play kesariya", "play believer on youtube", "play faded"
+        is_play_intent = "play" in clean and not clean.endswith("play")
+        if is_play_intent:
+            song_query = self._extract_song_query(clean)
+            if song_query and song_query.lower() not in ["youtube", "video", "song", "music", "it", "this", "first"]:
+                video_id = self._resolve_top_youtube_video(song_query)
+                watch_url = f"https://www.youtube.com/watch?v={video_id}&autoplay=1" if video_id else f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(song_query)}"
+                embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1" if video_id else ""
+                if self.browser_auto:
+                    self.browser_auto.open_website("https://www.youtube.com", "youtube")
+                    self.browser_auto.play_video(song_query)
+                else:
+                    self._open_url_os(watch_url)
+                return {
+                    "action": "play_youtube",
+                    "query": song_query,
+                    "video_id": video_id,
+                    "watch_url": watch_url,
+                    "embed_url": embed_url,
+                    "standby": True,
+                    "spoken_summary": f"Playing {song_query} on YouTube in your browser now, sir. Standing by—say 'pause' to pause or 'close it' when done."
+                }
+
+        # 7. Check for Human-Like Website Opening
+        # e.g. "open youtube", "can u open youtube", "open drive", "open github"
+        website_action = self._detect_website_open(clean)
         if website_action:
             return website_action
 
-        # 4. Check for Google Search intent
+        # 8. Check for Google Web Search intent
         # e.g. "search for gemma 4 on google", "google quantum computing"
-        search_action = self._detect_web_search(cmd_lower)
+        search_action = self._detect_web_search(clean)
         if search_action:
             return search_action
 
@@ -85,9 +169,7 @@ class VoiceOSActions:
 
     def _detect_website_open(self, text: str) -> Optional[Dict[str, Any]]:
         """Detects requests to open any website or service."""
-        # Match "open <site>", "can u open <site>", "launch <site>", "go to <site>"
         clean = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+(?:you|u)\s+)', '', text, flags=re.I).strip()
-        
         match = re.search(r'(?:open|launch|go\s+to|visit)\s+([a-zA-Z0-9_\-\.\s]+)', clean, flags=re.I)
         if not match:
             return None
@@ -101,34 +183,52 @@ class VoiceOSActions:
         # Check in common sites
         if key_clean in COMMON_SITES:
             url = COMMON_SITES[key_clean]
-            self._open_url_os(url)
+            if self.browser_auto:
+                res = self.browser_auto.open_website(url, key_clean)
+                spoken = res.get("spoken_summary", f"{key_clean.title()} is open on your screen and I am standing by, sir. What would you like to search or play?")
+            else:
+                self._open_url_os(url)
+                spoken = f"Opening {key_clean.title()} in your browser now, sir. Standing by."
             return {
                 "action": "open_website",
                 "site_name": key_clean.title(),
                 "url": url,
-                "spoken_summary": f"Opening {key_clean.title()} in your browser now, sir."
+                "standby": True,
+                "spoken_summary": spoken
             }
 
         # Check if user mentioned a dot-com domain like "notion.so" or "example.com"
         if "." in target_clean and not target_clean.endswith(".py"):
             url = target_clean if target_clean.startswith("http") else f"https://{target_clean}"
-            self._open_url_os(url)
+            if self.browser_auto:
+                res = self.browser_auto.open_website(url, target_clean)
+                spoken = res.get("spoken_summary", f"Opened {target_clean} on your screen. Standing by for your instructions, sir.")
+            else:
+                self._open_url_os(url)
+                spoken = f"Opening {target_clean} in your browser now, sir. Standing by."
             return {
                 "action": "open_website",
                 "site_name": target_clean,
                 "url": url,
-                "spoken_summary": f"Opening {target_clean} in your browser now, sir."
+                "standby": True,
+                "spoken_summary": spoken
             }
 
         # Check partial match in common sites
         for key, url in COMMON_SITES.items():
             if key in key_clean:
-                self._open_url_os(url)
+                if self.browser_auto:
+                    res = self.browser_auto.open_website(url, key)
+                    spoken = res.get("spoken_summary", f"{key.title()} is open on your screen and I am standing by, sir. What would you like to search or play?")
+                else:
+                    self._open_url_os(url)
+                    spoken = f"Opening {key.title()} in your browser now, sir. Standing by."
                 return {
                     "action": "open_website",
                     "site_name": key.title(),
                     "url": url,
-                    "spoken_summary": f"Opening {key.title()} in your browser now, sir."
+                    "standby": True,
+                    "spoken_summary": spoken
                 }
 
         return None

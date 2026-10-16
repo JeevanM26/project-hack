@@ -46,6 +46,33 @@ def test_detect_stop_audio():
     assert res["action"] == "stop_audio"
     assert res["status"] == "stopped"
 
+def test_detect_standby_chained_actions():
+    os_engine = VoiceOSActions()
+    # Search command
+    res_search = os_engine.detect_and_handle_os_action("search kesariya")
+    assert res_search is not None
+    assert res_search["action"] == "search"
+    assert res_search["query"] == "kesariya"
+    assert res_search["standby"] is True
+
+    # Play command
+    res_play = os_engine.detect_and_handle_os_action("play it")
+    assert res_play is not None
+    assert res_play["action"] == "play_youtube"
+    assert res_play["standby"] is True
+
+    # Pause command
+    res_pause = os_engine.detect_and_handle_os_action("pause")
+    assert res_pause is not None
+    assert res_pause["action"] == "pause_resume"
+    assert res_pause["standby"] is True
+
+    # Close command
+    res_close = os_engine.detect_and_handle_os_action("close it")
+    assert res_close is not None
+    assert res_close["action"] == "close_browser"
+    assert res_close["standby"] is False
+
 def test_detect_non_os_command():
     os_engine = VoiceOSActions()
     res = os_engine.detect_and_handle_os_action("Jarvis, scan payment_service.py AST for security bugs")

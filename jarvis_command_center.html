@@ -379,8 +379,36 @@
             <!-- Spoken Response Box -->
             <div class="space-y-1">
               <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">J.A.R.V.I.S. Spoken Output:</span>
-              <div id="spokenResponseBox" class="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/20 text-xs text-cyan-200 leading-relaxed min-h-[90px] flex items-center">
+              <div id="spokenResponseBox" class="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/20 text-xs text-cyan-200 leading-relaxed min-h-[75px] flex items-center">
                 "Awaiting your voice instruction, sir. All Gemma 4 agents are indexed and standing by."
+              </div>
+            </div>
+
+            <!-- Active Standby Session & Chained Task Control Dock -->
+            <div id="standbySessionDock" class="hidden p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 space-y-2">
+              <div class="flex items-center justify-between text-[11px] font-bold text-cyan-300">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                  STANDBY LOOP: <span id="standbyActiveAppName" class="text-white">YouTube Active</span>
+                </span>
+                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-cyan-900/80 text-cyan-200 border border-cyan-700">HANDS-FREE LISTENING</span>
+              </div>
+              <p class="text-[10px] text-slate-300">
+                J.A.R.V.I.S. is standing by. Say your next task (search, play, pause, or close) or click below:
+              </p>
+              <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+                <button id="btnStandbySearch" type="button" class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-500/30 text-cyan-300 font-semibold flex items-center justify-center gap-1">
+                  🔍 Search Song
+                </button>
+                <button id="btnStandbyPlay" type="button" class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 font-semibold flex items-center justify-center gap-1">
+                  ▶ Play First Video
+                </button>
+                <button id="btnStandbyPause" type="button" class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/30 text-amber-300 font-semibold flex items-center justify-center gap-1">
+                  ⏸ Pause / Resume
+                </button>
+                <button id="btnStandbyClose" type="button" class="px-2 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 font-semibold flex items-center justify-center gap-1">
+                  ❌ Close It
+                </button>
               </div>
             </div>
 
@@ -710,7 +738,10 @@
       currentTab: 'hud',
       swarmNodes: [], // 3D nodes
       swarmLines: [], // 3D laser links
-      spawnCount: 0
+      spawnCount: 0,
+      isStandby: false,
+      activeContext: null,
+      recognitionInstance: null
     };
 
     // Repository Virtual File System
@@ -1026,7 +1057,10 @@ class TaskManagerService:
         .then(data => {
           if (data.audios && data.audios[0]) {
             const audio = new Audio("data:audio/wav;base64," + data.audios[0]);
-            audio.onended = () => animateWaveform(false);
+            audio.onended = () => {
+              animateWaveform(false);
+              if (APP_STATE.isStandby) rearmVoiceListener();
+            };
             audio.play();
           } else {
             fallbackWebSpeech(text);
@@ -1035,6 +1069,24 @@ class TaskManagerService:
         .catch(() => fallbackWebSpeech(text));
       } else {
         fallbackWebSpeech(text);
+      }
+    }
+
+    function rearmVoiceListener() {
+      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
+      if (!APP_STATE.isRecording && APP_STATE.recognitionInstance) {
+        try {
+          const lang = document.getElementById('selectVoiceLanguage').value;
+          APP_STATE.recognitionInstance.lang = lang;
+          APP_STATE.recognitionInstance.start();
+          APP_STATE.isRecording = true;
+          const wave = document.getElementById('micPulseWave');
+          if (wave) wave.classList.remove('hidden');
+          const label = document.getElementById('micLabel');
+          if (label) label.textContent = 'Standby: Listening for follow-up...';
+        } catch (e) {
+          console.log('Voice listener status:', e);
+        }
       }
     }
 
@@ -1047,8 +1099,14 @@ class TaskManagerService:
       const utter = new SpeechSynthesisUtterance(text);
       utter.rate = 1.05;
       utter.pitch = 0.98;
-      utter.onend = () => animateWaveform(false);
-      utter.onerror = () => animateWaveform(false);
+      utter.onend = () => {
+        animateWaveform(false);
+        if (APP_STATE.isStandby) rearmVoiceListener();
+      };
+      utter.onerror = () => {
+        animateWaveform(false);
+        if (APP_STATE.isStandby) rearmVoiceListener();
+      };
       window.speechSynthesis.speak(utter);
     }
 
@@ -1220,39 +1278,63 @@ class TaskManagerService:
         document.getElementById('spokenResponseBox').textContent = `"${summary}"`;
         speakSpokenResponse(summary);
 
+        const isStandby = data.os_action && data.os_action.standby;
+        APP_STATE.isStandby = !!isStandby;
+
+        const dock = document.getElementById('standbySessionDock');
+        const badge = document.getElementById('missionGlobalBadge');
+
+        if (isStandby) {
+          if (dock) dock.classList.remove('hidden');
+          const appName = data.os_action.site_name || data.os_action.app || 'YouTube';
+          const appElem = document.getElementById('standbyActiveAppName');
+          if (appElem) appElem.textContent = `${appName} Active (Edge GUI)`;
+          if (badge) {
+            badge.textContent = 'STANDBY - LISTENING';
+            badge.className = 'px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mono text-[10px] animate-pulse';
+          }
+        } else {
+          if (dock) dock.classList.add('hidden');
+          if (badge) {
+            badge.textContent = 'ONLINE & READY';
+            badge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mono text-[10px]';
+          }
+        }
+
         if (action === 'open_website') {
           const site = data.os_action.site_name || 'Website';
           const url = data.os_action.url;
-          if (url) {
-            try {
-              window.open(url, '_blank');
-            } catch (err) {
-              console.warn('Popup blocked, use link:', err);
-            }
-          }
           appendTraceLog(
-            'Voice OS Action Engine',
-            `Human-Like Navigation: Opened <strong>${site}</strong> in a new tab. <a href="${url}" target="_blank" class="text-cyan-400 font-bold underline ml-1">Click to view &nearr;</a>`,
+            'Desktop Browser Automation (Playwright)',
+            `Opened <strong>${site}</strong> on desktop & entered active standby loop. <a href="${url}" target="_blank" class="text-cyan-400 font-bold underline ml-1">Open Tab &nearr;</a>`,
             'text-emerald-400'
           );
-        } else if (action === 'web_search') {
+        } else if (action === 'search') {
           const q = data.os_action.query;
-          const url = data.os_action.url;
-          if (url) {
-            try { window.open(url, '_blank'); } catch (err) {}
-          }
           appendTraceLog(
-            'Voice OS Action Engine',
-            `Google Web Search: Opened search results for <strong>${q}</strong>. <a href="${url}" target="_blank" class="text-cyan-400 font-bold underline ml-1">View Results &nearr;</a>`,
-            'text-cyan-400'
+            'Desktop Browser Automation (Playwright)',
+            `Searched YouTube/Browser for: <strong>${q}</strong>. Standing by—say 'play' or click 'Play First Video'.`,
+            'text-cyan-300'
           );
         } else if (action === 'play_youtube') {
-          const query = data.os_action.query || 'Kesariya';
-          const watchUrl = data.os_action.watch_url;
-          if (watchUrl) {
-            try { window.open(watchUrl, '_blank'); } catch (err) {}
-          }
-          triggerVoiceOSYouTube(query, true);
+          const query = data.os_action.query || 'Video';
+          appendTraceLog(
+            'Desktop Browser Automation (Playwright)',
+            `Started playback for: <strong>${query}</strong> on desktop player. Standing by—say 'pause' to pause or 'close it' when done.`,
+            'text-red-400'
+          );
+        } else if (action === 'pause_resume') {
+          appendTraceLog(
+            'Desktop Browser Automation (Playwright)',
+            `Toggled playback pause/resume on desktop player.`,
+            'text-amber-300'
+          );
+        } else if (action === 'close_browser' || action === 'close') {
+          appendTraceLog(
+            'Desktop Browser Automation (Playwright)',
+            `Closed active desktop browser session. Standing by for your next mission.`,
+            'text-slate-400'
+          );
         } else if (action === 'stop_audio') {
           stopAllAudio();
         }
@@ -1652,11 +1734,48 @@ tests/test_${filename}::test_idempotency_and_security PASSED            [100%]
         document.getElementById('hardwareModal').classList.add('hidden');
       });
 
+      // Standby follow-up action buttons
+      const btnStandbySearch = document.getElementById('btnStandbySearch');
+      if (btnStandbySearch) {
+        btnStandbySearch.addEventListener('click', () => {
+          const q = prompt('What would you like to search on YouTube?', 'Kesariya');
+          if (q) {
+            document.getElementById('voiceCommandInput').value = `search ${q}`;
+            executeMission();
+          }
+        });
+      }
+
+      const btnStandbyPlay = document.getElementById('btnStandbyPlay');
+      if (btnStandbyPlay) {
+        btnStandbyPlay.addEventListener('click', () => {
+          document.getElementById('voiceCommandInput').value = 'play it';
+          executeMission();
+        });
+      }
+
+      const btnStandbyPause = document.getElementById('btnStandbyPause');
+      if (btnStandbyPause) {
+        btnStandbyPause.addEventListener('click', () => {
+          document.getElementById('voiceCommandInput').value = 'pause';
+          executeMission();
+        });
+      }
+
+      const btnStandbyClose = document.getElementById('btnStandbyClose');
+      if (btnStandbyClose) {
+        btnStandbyClose.addEventListener('click', () => {
+          document.getElementById('voiceCommandInput').value = 'close it';
+          executeMission();
+        });
+      }
+
       // Voice Record button (Web Speech recognition)
       const micBtn = document.getElementById('btnVoiceRecord');
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRec();
+        APP_STATE.recognitionInstance = recognition;
         recognition.continuous = false;
         recognition.interimResults = false;
 
@@ -1688,6 +1807,14 @@ tests/test_${filename}::test_idempotency_and_security PASSED            [100%]
           APP_STATE.isRecording = false;
           document.getElementById('micPulseWave').classList.add('hidden');
           document.getElementById('micLabel').textContent = 'Hold & Speak Command';
+        };
+
+        recognition.onend = () => {
+          if (!APP_STATE.isStandby) {
+            APP_STATE.isRecording = false;
+            document.getElementById('micPulseWave').classList.add('hidden');
+            document.getElementById('micLabel').textContent = 'Hold & Speak Command';
+          }
         };
       }
     });

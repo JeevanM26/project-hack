@@ -165,3 +165,39 @@ async def run_audio_mission(
 def trigger_youtube_action(query: str = Query("Kesariya Brahmastra")):
     """Direct testing endpoint for YouTube song playback action."""
     return swarm.os_actions.play_youtube_song(query, auto_open_browser=False)
+
+
+@app.get("/api/browser-status")
+def get_browser_automation_status():
+    """Returns active Playwright desktop browser session state."""
+    if swarm.os_actions.browser_auto:
+        return swarm.os_actions.browser_auto.get_status()
+    return {"standby": False, "active_app": None, "worker_status": {"is_alive": False}}
+
+
+class BrowserActionRequest(BaseModel):
+    action: str  # open, search, play, pause, close
+    query: Optional[str] = None
+    url: Optional[str] = None
+    app_name: Optional[str] = "browser"
+
+
+@app.post("/api/browser-action")
+def trigger_browser_action(req: BrowserActionRequest):
+    """Direct GUI control endpoint for Playwright browser automation."""
+    auto = swarm.os_actions.browser_auto
+    if not auto:
+        return {"success": False, "error": "Browser automation not initialized"}
+
+    if req.action == "open" and req.url:
+        return auto.open_website(req.url, req.app_name or "browser")
+    elif req.action == "search" and req.query:
+        return auto.search(req.query)
+    elif req.action in ["play", "play_video"]:
+        return auto.play_video(req.query)
+    elif req.action in ["pause", "pause_resume"]:
+        return auto.pause_resume()
+    elif req.action == "close":
+        return auto.close_active()
+    else:
+        return {"success": False, "error": f"Unsupported browser action: {req.action}"}

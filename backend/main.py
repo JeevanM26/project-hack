@@ -102,6 +102,31 @@ def build_telemetry_payload() -> Dict[str, Any]:
             "receipts": bb.verification_receipts if bb else [],
             "verification_status": "ENFORCED_ZERO_HALLUCINATION"
         },
+        "inference": {
+            "source": swarm.engine.last_inference_source,
+            "model": swarm.engine.model_name,
+            "is_live_gpu": swarm.engine.is_live_gpu,
+            "using_mock_fallback": swarm.engine.using_mock_fallback,
+            "installed_models": swarm.engine.installed_models
+        },
+        "hardware": hw.get_hardware_telemetry()
+    }
+
+
+@app.get("/api/health")
+def get_system_health():
+    """Truthfully reports Ollama connection, installed models, and whether live GPU inference is active."""
+    engine = swarm.engine
+    engine._probe_ollama()
+    return {
+        "status": "healthy",
+        "ollama_connected": engine.ollama_connected,
+        "ollama_base_url": engine.ollama_base_url,
+        "active_model": engine.model_name,
+        "installed_models": engine.installed_models,
+        "last_inference_source": engine.last_inference_source,
+        "is_live_gpu": engine.is_live_gpu,
+        "using_mock_fallback": engine.using_mock_fallback,
         "hardware": hw.get_hardware_telemetry()
     }
 

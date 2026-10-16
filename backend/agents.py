@@ -23,17 +23,53 @@ class SingleGemma4Engine:
     """
     Unified client using 1 single Gemma 4 model instance to dynamically power
     all agents (Co-Leader, Architect, Builders, and on-demand Child Sub-Agents).
+    Tracks live Ollama GPU inference vs fallback truthfully.
     """
     def __init__(self, model_name: Optional[str] = None):
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
         self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
-        # Default single model: jarvis-gemma (optimized for RTX 5060 8GB)
-        self.model_name = model_name or os.getenv("JARVIS_GEMMA_MODEL", "jarvis-gemma")
+        self.installed_models: List[str] = []
+        self.ollama_connected: bool = False
+        self._probe_ollama()
+
+        if model_name:
+            self.model_name = model_name
+        elif "jarvis-gemma:latest" in self.installed_models:
+            self.model_name = "jarvis-gemma:latest"
+        elif "jarvis-gemma" in self.installed_models:
+            self.model_name = "jarvis-gemma"
+        elif "gemma:2b" in self.installed_models:
+            self.model_name = "gemma:2b"
+        elif self.installed_models:
+            self.model_name = self.installed_models[0]
+        else:
+            self.model_name = os.getenv("JARVIS_GEMMA_MODEL", "jarvis-gemma:latest")
+
+        self.last_inference_source = "OLLAMA_GPU" if self.ollama_connected else "MOCK_FALLBACK"
+        self.is_live_gpu = self.ollama_connected
+        self.using_mock_fallback = not self.ollama_connected
+
+    def _probe_ollama(self) -> bool:
+        """Probes local Ollama daemon at 11434 to inspect installed model tags."""
+        try:
+            # Query native tags endpoint
+            tags_url = self.ollama_base_url.replace("/v1", "") + "/api/tags"
+            resp = requests.get(tags_url, timeout=3)
+            if resp.status_code == 200:
+                data = resp.json()
+                self.installed_models = [m["name"] for m in data.get("models", [])]
+                self.ollama_connected = True
+                return True
+        except Exception:
+            pass
+        self.ollama_connected = False
+        return False
 
     def call_agent(self, role_name: str, system_prompt: str, user_prompt: str, blackboard_context: str = "") -> Dict[str, Any]:
         """
         Executes a prompt for any agent persona using the single underlying Gemma 4 model.
         Includes Thinking Mode (<|think|>) and forces structured JSON.
+        Truthfully records inference source.
         """
         full_system = (
             f"<|think|>\n"
@@ -59,11 +95,14 @@ class SingleGemma4Engine:
                 if resp.status_code == 200:
                     data = resp.json()
                     text = data["candidates"][0]["content"]["parts"][0]["text"]
+                    self.last_inference_source = "GEMINI_API"
+                    self.is_live_gpu = False
+                    self.using_mock_fallback = False
                     return json.loads(text)
             except Exception as e:
-                print(f"[SingleGemma4Engine API Warning] {e}. Falling back to deterministic engine.")
+                print(f"[SingleGemma4Engine API Warning] {e}. Falling back.")
 
-        # 2. Try Local Ollama if available (using RTX 5060 GPU acceleration)
+        # 2. Try Local Ollama (using RTX 5060 GPU acceleration)
         try:
             resp = requests.post(
                 f"{self.ollama_base_url}/chat/completions",
@@ -87,11 +126,17 @@ class SingleGemma4Engine:
                 brace_end = raw_text.rfind("}")
                 if brace_start != -1 and brace_end != -1 and brace_end > brace_start:
                     raw_text = raw_text[brace_start:brace_end+1]
+                self.last_inference_source = "OLLAMA_GPU"
+                self.is_live_gpu = True
+                self.using_mock_fallback = False
                 return json.loads(raw_text)
         except Exception:
             pass
 
-        # 3. Deterministic Intelligent Fallback (guarantees offline zero-latency demo)
+        # 3. Deterministic Fallback if network or GPU is busy
+        self.last_inference_source = "MOCK_FALLBACK"
+        self.is_live_gpu = False
+        self.using_mock_fallback = True
         return self._fallback_deterministic_agent(role_name, user_prompt)
 
     def _fallback_deterministic_agent(self, role: str, user_prompt: str) -> Dict[str, Any]:
@@ -194,7 +239,7 @@ class JarvisMultiAgentSwarm:
         # 1. Check for Voice OS Actions (e.g. YouTube playback)
         os_action_res = self.os_actions.detect_and_handle_os_action(cmd_clean)
         if os_action_res:
-            return {
+            res = {
                 "type": "os_action",
                 "spoken_command": cmd_clean,
                 "os_action": os_action_res,
@@ -210,18 +255,26 @@ class JarvisMultiAgentSwarm:
                     }
                 ]
             }
-
-        # Check if user wants to build a new project
-        lower_cmd = cmd_clean.lower()
-        is_build_project = (
-            any(k in lower_cmd for k in ["build", "make", "create", "scaffold", "generate"]) and
-            any(k in lower_cmd for k in ["project", "app", "application", "task manager", "service", "system"])
-        ) or any(k in lower_cmd for k in ["build a project", "make a project", "create project", "scaffold", "new project"])
-        
-        if is_build_project:
-            return self._execute_build_project_swarm(cmd_clean)
         else:
-            return self._execute_repo_triage_swarm(cmd_clean, simulate_hallucination)
+            # Check if user wants to build a new project
+            lower_cmd = cmd_clean.lower()
+            is_build_project = (
+                any(k in lower_cmd for k in ["build", "make", "create", "scaffold", "generate"]) and
+                any(k in lower_cmd for k in ["project", "app", "application", "task manager", "service", "system"])
+            ) or any(k in lower_cmd for k in ["build a project", "make a project", "create project", "scaffold", "new project"])
+            
+            if is_build_project:
+                res = self._execute_build_project_swarm(cmd_clean)
+            else:
+                res = self._execute_repo_triage_swarm(cmd_clean, simulate_hallucination)
+
+        res["inference_meta"] = {
+            "source": self.engine.last_inference_source,
+            "model": self.engine.model_name,
+            "is_live_gpu": self.engine.is_live_gpu,
+            "using_mock_fallback": self.engine.using_mock_fallback
+        }
+        return res
 
     def _execute_build_project_swarm(self, spoken_command: str) -> Dict[str, Any]:
         """

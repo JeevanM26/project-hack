@@ -8,7 +8,7 @@ from agents import SingleGemma4Engine, JarvisMultiAgentSwarm
 
 def test_single_gemma_engine_initialization():
     engine = SingleGemma4Engine()
-    assert engine.model_name in ["jarvis-gemma", "gemma:2b", "gemma-4-12b-it"]
+    assert engine.model_name in ["jarvis-gemma:latest", "jarvis-gemma", "gemma:2b", "gemma-4-12b-it"]
     assert engine.ollama_base_url == "http://localhost:11434/v1"
 
 def test_single_gemma_engine_role_execution():

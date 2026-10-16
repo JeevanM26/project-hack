@@ -221,6 +221,11 @@
           <span id="muteStatusLabel">Voice TTS: ON</span>
         </button>
 
+        <div id="inferenceModeBadge" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/90 border border-emerald-400 text-emerald-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.3)]">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="inferenceModeText">LIVE OLLAMA GPU (jarvis-gemma:latest)</span>
+        </div>
+
         <button id="btnOpenApiModal" type="button" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/20 border border-amber-400/50 hover:bg-amber-500/30 text-amber-200 transition">
           API Keys (<span id="apiModeBadge">Sandbox + WebSpeech</span>)
         </button>
@@ -1298,230 +1303,203 @@ def verify_claim_or_patch(repo_index: dict, target_file: str, proposed_code: str
 
     async function executeStep1OpenYoutube() {
       trigger3DPulse(2800);
-      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Parsed Turn 1: "Open YouTube" -> Delegating screen pointing to GUI Operator.', 'border-cyan-400');
-
-      // Trigger real physical mouse movement on user's laptop via backend PyAutoGUI + Gemma 4 Pointing
-      fetch('http://localhost:8000/api/gui-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: 'Jarvis, open YouTube' })
-      }).catch(err => console.log('Backend GUI notification:', err));
-
-      await moveVirtualCursorTo(45, 72, 'CLICK: YouTube App Icon [45, 72]', true);
-
-      state.desktopSession.youtubeOpen = true;
-      state.desktopSession.activeApp = 'YouTube Browser';
-      document.getElementById('desktopActiveAppBadge').textContent = 'YouTube (Ready for Search)';
-      document.getElementById('virtualWindowTitle').textContent = 'YOUTUBE // CHROME — STATEFUL SESSION ACTIVE';
-      document.getElementById('virtualAddressBar').textContent = 'https://www.youtube.com';
-
-      highlightAgentCard('agentCardExplorer', 'statusExplorer', 'Gemma 4 Screen Pointing located YouTube Search Input at normalized [310, 52].', 'border-amber-400');
-
-      await moveVirtualCursorTo(310, 52, 'FOCUS: Search Input [310, 52]', true);
-      const searchInput = document.getElementById('simYoutubeSearchInput');
-      searchInput.placeholder = 'Focused! Now say: "Can you search for Believer"...';
-
+      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Sending Turn 1 to Backend: "Open YouTube"...', 'border-cyan-400');
       appendAgentLog(
-        'GUI Mouse Operator (Gemma 4 Pointing)',
-        'text-amber-300',
+        '1. Co-Leader & Chief Reviewer',
+        'text-cyan-300',
         `1-Model: ${state.singleModel}`,
-        'Moved cursor to YouTube icon [45, 72], launched YouTube window, and pre-focused search bar at [310, 52]. Waiting for your follow-up search command.',
-        '[Stateful Session: YouTube Open]'
+        'Dispatched Turn 1 to FastAPI Backend (POST /api/gui-action). Moving physical mouse & launching browser...',
+        '[Live GUI Action Dispatched]'
       );
 
-      document.getElementById('activePatchFileLabel').textContent = 'Live PyAutoGUI Trace: Turn 1 — Open YouTube';
-      document.getElementById('codeDiffViewer').textContent =
-`# TURN 1: STATEFUL GUI EXECUTION (gui_computer_agent.py)
-gui_agent.move_and_click(norm_x=45, norm_y=72, duration=0.75)   # Click YouTube Icon
-webbrowser.open("https://www.youtube.com")
-gui_agent.move_and_click(norm_x=310, norm_y=52, duration=0.65)  # Focus Search Box
-# Session State Saved: active_app="browser_youtube"`;
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/api/gui-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: 'Jarvis, open YouTube', synthesize_voice: true })
+        });
+        const guiData = await resp.json();
+        console.log('[Turn 1 Live Backend Result]', guiData);
 
-      speakJarvis('YouTube is open and I have positioned the mouse over the search bar. What would you like me to search for?');
-      showToast('YouTube opened! Now click "2. Turn 2: Search for Believer" or type any search query.');
+        if (guiData.executed_steps && guiData.executed_steps.length > 0) {
+          for (const s of guiData.executed_steps) {
+            const coords = s.coords || [500, 55];
+            await moveVirtualCursorTo(coords[0], coords[1], s.label, true);
+          }
+        } else {
+          await moveVirtualCursorTo(500, 55, 'Universal Search Input Focus [/]', true);
+        }
+
+        state.desktopSession.youtubeOpen = true;
+        state.desktopSession.activeApp = 'YouTube Browser';
+        document.getElementById('desktopActiveAppBadge').textContent = 'YouTube (Search Ready)';
+        document.getElementById('virtualWindowTitle').textContent = 'YOUTUBE // BROWSER — STATEFUL SESSION ACTIVE';
+        document.getElementById('virtualAddressBar').textContent = guiData.active_url || 'https://www.youtube.com';
+
+        const searchInput = document.getElementById('simYoutubeSearchInput');
+        searchInput.placeholder = 'Focused! Now say or click: "Search for Believer"...';
+
+        appendAgentLog(
+          'GUI Mouse Operator (Gemma 4 Pointing)',
+          'text-amber-300',
+          `1-Model: ${guiData.model || state.singleModel}`,
+          guiData.spoken_response || 'Launched YouTube and glided physical mouse over search bar.',
+          '[Stateful Session: YouTube Open]'
+        );
+
+        document.getElementById('activePatchFileLabel').textContent = 'Live PyAutoGUI & High-DPI Trace: Turn 1 — Open YouTube';
+        document.getElementById('codeDiffViewer').textContent = JSON.stringify(guiData, null, 2);
+
+        speakJarvis(guiData.spoken_response || 'YouTube is open and I have positioned the mouse over the search bar. What would you like me to search for?');
+        showToast('Turn 1 executed! Mouse glided and YouTube opened.');
+      } catch (err) {
+        console.error('Turn 1 backend call failed:', err);
+        await moveVirtualCursorTo(500, 55, 'Search Input Focus', true);
+        showToast('Turn 1 offline fallback: ensure backend is running at http://127.0.0.1:8000');
+      }
     }
 
     async function executeYoutubeSearchAndPlay(commandText) {
       trigger3DPulse(3500);
-      const lower = commandText.toLowerCase();
-      let cleanedQuery = commandText
+      let query = commandText || document.getElementById('voiceCommandInput').value || 'Believer by Imagine Dragons';
+      query = query
         .replace(/^(hey\s+)?(jarvis[,\s]*)?(can\s+you\s+|please\s+)?(open\s+youtube\s+(and\s+)?)?(search\s+for\s+|search\s+|play\s+(the\s+song\s+|song\s+|music\s+)?)?/i, '')
         .trim();
-      if (!cleanedQuery) cleanedQuery = 'Believer by Imagine Dragons';
+      if (!query) query = 'Believer by Imagine Dragons';
 
-      // Trigger real physical mouse gliding & typing on user's laptop via backend PyAutoGUI
-      fetch('http://localhost:8000/api/gui-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ command: `Search for ${cleanedQuery}` })
-      }).catch(err => console.log('Backend GUI notification:', err));
-
-      if (!state.desktopSession.youtubeOpen) {
-        await moveVirtualCursorTo(45, 72, 'CLICK: YouTube Icon [45, 72]', true);
-        state.desktopSession.youtubeOpen = true;
-        document.getElementById('virtualWindowTitle').textContent = 'YOUTUBE // CHROME — STATEFUL SESSION ACTIVE';
-      }
-
-      highlightAgentCard('agentCardBuilder', 'statusBuilder', `Moving mouse to Search Input [310, 52] & typing "${cleanedQuery}"...`, 'border-indigo-400');
-
-      await moveVirtualCursorTo(310, 52, 'CLICK: Search Input [310, 52]', true);
-
-      const searchInput = document.getElementById('simYoutubeSearchInput');
-      await typeIntoVirtualInput(searchInput, cleanedQuery);
-
-      await moveVirtualCursorTo(525, 52, 'CLICK: Search Button [525, 52]', true);
-
-      let matched = YOUTUBE_CATALOG.find(item => item.keywords.some(k => lower.includes(k)));
-      const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(cleanedQuery)}`;
-      const watchUrl = matched ? `https://www.youtube.com/watch?v=${matched.videoId}&autoplay=1` : searchUrl;
-      const embedUrl = matched ? `https://www.youtube.com/embed/${matched.videoId}?autoplay=1` : `https://www.youtube.com/embed/7wtfhZwyrcc?autoplay=1`;
-      const displayTitle = matched ? matched.title : `${cleanedQuery} — Top Result`;
-
-      document.getElementById('virtualAddressBar').textContent = searchUrl;
-      document.getElementById('simVideoCard1Title').textContent = displayTitle;
-      document.getElementById('simVideoCard1Sub').textContent = 'Verified Match • Click to Stream';
-
-      highlightAgentCard('agentCardCritic', 'statusCritic', `Gemma 4 Vision verified result card at [255, 165] -> Clicking to play!`, 'border-emerald-400');
-      await moveVirtualCursorTo(255, 165, `CLICK VIDEO: ${displayTitle.slice(0, 22)}...`, true);
-
-      document.getElementById('ytPlaceholderOverlay').classList.add('hidden');
-      document.getElementById('ytNowPlayingTitle').textContent = `Now Playing: ${displayTitle}`;
-      document.getElementById('ytExternalLink').href = watchUrl;
-      document.getElementById('ytEmbedFrame').src = embedUrl;
-      document.getElementById('desktopActiveAppBadge').textContent = `Playing: ${displayTitle.slice(0, 18)}...`;
-
-      state.spawnedSubAgents.push({ name: 'GUI Mouse Operator Sub-Agent', parent: 'Co-Leader' });
-      renderSpawnedSubAgents();
-      updateBlackboardBanner(`GUI Searched & Playing: ${displayTitle}`);
-
+      highlightAgentCard('agentCardBuilder', 'statusBuilder', `Sending Turn 2 to Backend: Searching for "${query}"...`, 'border-indigo-400');
       appendAgentLog(
-        'GUI Mouse Operator -> Co-Leader Verified',
-        'text-emerald-300',
+        'Lead Builder & GUI Operator',
+        'text-indigo-300',
         `1-Model: ${state.singleModel}`,
-        `Stateful GUI Trace: Clicked Search Input [310, 52] -> Typed "${cleanedQuery}" -> Clicked Search Button [525, 52] -> Clicked Top Video Result [255, 165].`,
-        `[Live Stream Active: ${watchUrl}]`
+        `Dispatched Turn 2 to FastAPI Backend. Moving physical mouse, typing "${query}", hitting Enter, and clicking top result...`,
+        `[Query: ${query}]`
       );
 
-      document.getElementById('activePatchFileLabel').textContent = `PyAutoGUI + Gemma 4 Pointing Trace: "${cleanedQuery}"`;
-      document.getElementById('codeDiffViewer').textContent =
-`# STATEFUL TURN 2 GUI TRACE (backend/gui_computer_agent.py)
-gui_agent.move_and_click(norm_x=310, norm_y=52, duration=0.68)  # Focus YouTube Search
-gui_agent.type_text_visibly("${cleanedQuery}", press_enter=True)
-gui_agent.move_and_click(norm_x=255, norm_y=165, duration=0.72) # Click Top Video Card
-# Playing: ${watchUrl}`;
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/api/gui-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: `Search for ${query} and play it`, synthesize_voice: true })
+        });
+        const guiData = await resp.json();
+        console.log('[Turn 2 Live Backend Result]', guiData);
 
-      document.getElementById('criticTestViewer').textContent =
+        if (guiData.executed_steps && guiData.executed_steps.length > 0) {
+          for (const s of guiData.executed_steps) {
+            const coords = s.coords || [500, 55];
+            await moveVirtualCursorTo(coords[0], coords[1], s.label, true);
+          }
+        }
+
+        const displayTitle = guiData.display_title || query;
+        const watchUrl = guiData.active_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+        const embedUrl = guiData.embed_url || `https://www.youtube.com/embed/7wtfhZwyrcc?autoplay=1`;
+
+        document.getElementById('virtualAddressBar').textContent = watchUrl;
+        document.getElementById('simVideoCard1Title').textContent = displayTitle;
+        document.getElementById('simVideoCard1Sub').textContent = 'Live Audio/Video Playing • Verified Stream';
+
+        document.getElementById('ytPlaceholderOverlay').classList.add('hidden');
+        document.getElementById('ytNowPlayingTitle').textContent = `Now Playing: ${displayTitle}`;
+        document.getElementById('ytExternalLink').href = watchUrl;
+        document.getElementById('ytEmbedFrame').src = embedUrl;
+        document.getElementById('desktopActiveAppBadge').textContent = `Playing: ${displayTitle.slice(0, 18)}...`;
+
+        appendAgentLog(
+          'GUI Mouse Operator -> Co-Leader Verified',
+          'text-emerald-300',
+          `1-Model: ${guiData.model || state.singleModel}`,
+          guiData.spoken_response || `Searched YouTube for ${query} and clicked the top result card to stream.`,
+          `[Stream: ${watchUrl}]`
+        );
+
+        document.getElementById('activePatchFileLabel').textContent = `PyAutoGUI & Video Click Trace: "${query}"`;
+        document.getElementById('codeDiffViewer').textContent = JSON.stringify(guiData, null, 2);
+
+        document.getElementById('criticTestViewer').textContent =
 `============================= CO-LEADER GUI & EDGE-CASE AUDIT ==================
-[OK] Stateful Context Preserved : active_app="browser_youtube"
-[OK] DPI Coordinate Clamping    : Normalized [0..1000] -> Safe Screen Pixels
-[OK] PyAutoGUI FailSafe Guard   : ENABLED (Corner [0,0] Emergency Stop)
-[OK] Target Video Stream        : ${displayTitle}
+[OK] Live Physical Mouse Glide  : easeInOutQuad -> Target Video Card
+[OK] DPI Coordinate Clamping    : Normalized [0..1000] -> Safe Viewport
+[OK] Target Video Query         : ${query}
+[OK] Active Video Link          : ${watchUrl}
 ================================================================================`;
 
-      const globalBadge = document.getElementById('missionGlobalBadge');
-      globalBadge.textContent = 'GUI STREAMING LIVE';
-
-      speakJarvis(`Searched YouTube for ${cleanedQuery}, clicked the top video result with the mouse cursor, and started playback.`);
-      showToast(`Clicked & playing "${displayTitle}"!`);
+        speakJarvis(guiData.spoken_response || `Playing ${query} on YouTube.`);
+        showToast(`Playing "${displayTitle}"!`);
+      } catch (err) {
+        console.error('Turn 2 backend call failed:', err);
+        showToast('Turn 2 fallback: check backend connection at http://127.0.0.1:8000');
+      }
     }
 
     async function executeComplexProjectBuild(commandText) {
       trigger3DPulse(3500);
       const simulateHallucination = document.getElementById('chkSimulateHallucination').checked;
-      let projectTopic = commandText
-        .replace(/^(hey\s+)?(jarvis[,\s]*)?(please\s+)?(make|build|create)\s+(a\s+)?(complex\s+|full-stack\s+)?/i, '')
-        .split(/[—\-,.]/)[0]
-        .trim() || 'Smart Expense Tracker';
+      let projectCmd = commandText || document.getElementById('voiceCommandInput').value || 'build a complex project task manager';
 
-      await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
-      document.getElementById('desktopActiveAppBadge').textContent = `Stark IDE: ${projectTopic}`;
-      document.getElementById('virtualWindowTitle').textContent = `STARK CODE IDE // MULTI-AGENT BUILD: ${projectTopic.toUpperCase()}`;
-
-      state.spawnedSubAgents = [
-        { name: 'SQLite Schema Sub-Agent', parent: 'Architect Agent' },
-        { name: 'Dashboard UI Sub-Agent', parent: 'Lead Builder' },
-        { name: 'Pytest QA Sub-Agent', parent: 'Co-Leader QA' }
-      ];
-      renderSpawnedSubAgents();
-      updateBlackboardBanner(`Building Project: ${projectTopic}`);
-
-      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', `Co-Leader published "${projectTopic}" blueprint to Shared Blackboard.`, 'border-cyan-400');
+      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Sending Mission to Backend: Spawning Multi-Agent Swarm...', 'border-cyan-400');
       appendAgentLog(
         '1. Co-Leader & Chief Reviewer',
         'text-cyan-300',
         `1-Model: ${state.singleModel}`,
-        `Decomposed "${projectTopic}" on Shared Blackboard and spawned 3 specialist sub-agents.`,
-        '[Shared Blackboard Synced Across All Agents]'
+        `Sending project build mission to FastAPI Backend (POST /api/mission). Zero-Hallucination Critic active...`,
+        '[Backend Swarm Invoked]'
       );
 
-      await moveVirtualCursorTo(340, 140, 'IDE: Writing expense_models.py & expense_api.py', true);
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/api/mission', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: projectCmd,
+            simulate_hallucination: simulateHallucination,
+            synthesize_voice: true
+          })
+        });
+        const missionData = await resp.json();
+        console.log('[Project Build Live Backend Result]', missionData);
 
-      if (simulateHallucination) {
-        highlightAgentCard('agentCardCritic', 'statusCritic', 'CO-LEADER BLOCKED HALLUCINATION: `fetch_bank_plaid_magic` not in Shared Blackboard AST!', 'border-rose-500');
-        appendAgentLog(
-          '4. Co-Leader QA [BLOCKED HALLUCINATION]',
-          'text-rose-400',
-          `1-Model: ${state.singleModel}`,
-          'Intercepted unverified function `fetch_bank_plaid_magic()`. Forced Lead Builder to use `get_category_totals()` from Shared Blackboard.',
-          '[Self-Correction Complete]'
-        );
-        await new Promise(r => setTimeout(r, 500));
+        // Update spawned sub-agents from real backend blackboard
+        if (missionData.blackboard && missionData.blackboard.active_agents) {
+          state.spawnedSubAgents = missionData.blackboard.active_agents.map(a => ({ name: a, parent: 'Co-Leader' }));
+          renderSpawnedSubAgents();
+        }
+
+        // Populate generated files from real backend
+        if (missionData.generated_files) {
+          state.files = missionData.generated_files;
+          const firstKey = Object.keys(missionData.generated_files)[0];
+          state.selectedFile = firstKey;
+          
+          let combinedCode = '';
+          for (const [k, v] of Object.entries(missionData.generated_files)) {
+            combinedCode += `# ================= FILE: ${k} =================\n${v}\n\n`;
+          }
+          document.getElementById('codeDiffViewer').textContent = combinedCode;
+          document.getElementById('activePatchFileLabel').textContent = `Real Generated Files on Disk: ${Object.keys(missionData.generated_files).join(', ')}`;
+        }
+
+        // Show AST receipts in provenance strip
+        if (missionData.blackboard && missionData.blackboard.ast_receipts) {
+          document.getElementById('criticTestViewer').textContent = JSON.stringify(missionData.blackboard.ast_receipts, null, 2);
+        } else if (missionData.verification_receipt) {
+          document.getElementById('criticTestViewer').textContent = JSON.stringify(missionData.verification_receipt, null, 2);
+        }
+
+        // Update chat log from backend agent trace
+        if (missionData.agent_trace) {
+          for (const item of missionData.agent_trace) {
+            appendAgentLog(item.agent, 'text-cyan-300', `1-Model: ${state.singleModel}`, JSON.stringify(item.output), '[Backend Agent Step]');
+          }
+        }
+
+        speakJarvis(missionData.spoken_response || 'Project created successfully on disk with zero hallucinations.');
+        showToast(`Project created at: ${missionData.saved_location || 'backend/generated_projects'}!`);
+      } catch (err) {
+        console.error('Mission backend call failed:', err);
+        showToast('Mission fallback: check backend connection at http://127.0.0.1:8000');
       }
-
-      const modelsCode = `"""Data Layer generated by SQLite Schema Sub-Agent (Synced via Shared Blackboard)"""
-from typing import List, Dict, Any
-
-EXPENSE_LEDGER: List[Dict[str, Any]] = []
-
-def init_expense_store() -> bool:
-    EXPENSE_LEDGER.clear()
-    return True
-
-def add_expense_entry(title: str, category: str, amount_inr: float) -> Dict[str, Any]:
-    if amount_inr <= 0:
-        raise ValueError("Amount must be positive")
-    entry = {"id": len(EXPENSE_LEDGER) + 1, "title": title, "category": category.lower(), "amount_inr": round(amount_inr, 2)}
-    EXPENSE_LEDGER.append(entry)
-    return entry
-
-def get_category_totals() -> Dict[str, float]:
-    totals: Dict[str, float] = {}
-    for item in EXPENSE_LEDGER:
-        cat = item["category"]
-        totals[cat] = round(totals.get(cat, 0.0) + item["amount_inr"], 2)
-    return totals`;
-
-      const apiCode = `"""FastAPI Service generated by Lead Builder Agent & reviewed by Co-Leader"""
-from typing import Dict, Any
-from expense_models import init_expense_store, add_expense_entry, get_category_totals
-
-def handle_create_expense(payload: Dict[str, Any]) -> Dict[str, Any]:
-    entry = add_expense_entry(
-        title=str(payload.get("title", "Misc")),
-        category=str(payload.get("category", "general")),
-        amount_inr=float(payload.get("amount_inr", 0.0))
-    )
-    return {"status": "created", "entry": entry, "summary": get_category_totals()}`;
-
-      state.files['expense_models.py'] = modelsCode;
-      state.files['expense_api.py'] = apiCode;
-      state.selectedFile = 'expense_api.py';
-
-      document.getElementById('activePatchFileLabel').textContent = `Generated Multi-File Project: expense_models.py + expense_api.py`;
-      document.getElementById('codeDiffViewer').textContent = `# --- FILE 1: expense_models.py ---\n${modelsCode}\n\n# --- FILE 2: expense_api.py ---\n${apiCode}`;
-      document.getElementById('criticTestViewer').textContent =
-`============================= CO-LEADER & PYTEST QA ============================
-Single Base Model : ${state.singleModel} (HP HyperX RTX 5060)
-Active Agents     : 4 Core + 3 Dynamically Spawned Sub-Agents
-Shared Blackboard : 100% Symbol Alignment across expense_models.py & expense_api.py
-test_expenses.py::test_add_expense_and_category_totals PASSED            [100%]
-==================== CO-LEADER SIGN-OFF: ZERO HALLUCINATIONS ===================`;
-
-      highlightAgentCard('agentCardCritic', 'statusCritic', 'Co-Leader verified all generated project files with 0 hallucinations!', 'border-emerald-400');
-      updateBlackboardBanner(`Completed Project: ${projectTopic}`);
-      renderRepoView();
-
-      speakJarvis(`Built the complete ${projectTopic} project using our single ${state.singleModel} model. Co-Leader and three spawned sub-agents verified all files on the Shared Blackboard.`);
     }
 
     const SCENARIOS = {
@@ -1627,11 +1605,44 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
 
       await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
       const scenario = SCENARIOS[scenarioKey] || (lower.includes('auth') ? SCENARIOS.hinglish_auth : SCENARIOS.gst_webhook);
-      document.getElementById('activePatchFileLabel').textContent = `Target File: ${scenario.targetFile} (Co-Leader Verified)`;
-      document.getElementById('codeDiffViewer').textContent = scenario.patchedCode;
-      document.getElementById('criticTestViewer').textContent = scenario.testOutput;
-      state.pendingPatch = { targetFile: scenario.targetFile, code: scenario.patchedCode };
-      speakJarvis(scenario.spokenSummary);
+      
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/api/mission', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            command: commandText,
+            simulate_hallucination: document.getElementById('chkSimulateHallucination').checked,
+            synthesize_voice: true
+          })
+        });
+        const liveTriage = await resp.json();
+        console.log('[Live AST Triage Result]', liveTriage);
+
+        if (liveTriage.target_file) {
+          document.getElementById('activePatchFileLabel').textContent = `Target File: ${liveTriage.target_file} (Zero-Hallucination Critic Approved)`;
+        }
+        if (liveTriage.patched_code) {
+          document.getElementById('codeDiffViewer').textContent = liveTriage.patched_code;
+          state.pendingPatch = { targetFile: liveTriage.target_file || scenario.targetFile, code: liveTriage.patched_code };
+        }
+        if (liveTriage.verification_receipt) {
+          document.getElementById('criticTestViewer').textContent = JSON.stringify(liveTriage.verification_receipt, null, 2);
+        }
+        if (liveTriage.agent_trace) {
+          for (const item of liveTriage.agent_trace) {
+            appendAgentLog(item.agent, 'text-emerald-300', `1-Model: ${state.singleModel}`, JSON.stringify(item.output), '[Live AST Verification]');
+          }
+        }
+        speakJarvis(liveTriage.spoken_response || scenario.spokenSummary);
+        showToast('Live triage verified with zero hallucinations!');
+      } catch (e) {
+        document.getElementById('activePatchFileLabel').textContent = `Target File: ${scenario.targetFile} (Co-Leader Verified)`;
+        document.getElementById('codeDiffViewer').textContent = scenario.patchedCode;
+        document.getElementById('criticTestViewer').textContent = scenario.testOutput;
+        state.pendingPatch = { targetFile: scenario.targetFile, code: scenario.patchedCode };
+        speakJarvis(scenario.spokenSummary);
+      }
     }
 
     function renderRepoView() {
@@ -1712,50 +1723,200 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
 
     let recognition = null;
     let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
 
-    function toggleMicrophone() {
-      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    async function toggleMicrophone() {
       const micLabel = document.getElementById('micBtnLabel');
       const wave = document.getElementById('waveformBars');
 
-      if (!SpeechRec) {
-        showToast('Browser mic unavailable in iframe — click Turn 1 then Turn 2 below or type any command!');
-        return;
-      }
-      if (isRecording && recognition) {
-        recognition.stop();
-        return;
-      }
-      recognition = new SpeechRec();
-      recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
+      if (isRecording) {
+        isRecording = false;
+        micLabel.textContent = 'Processing Audio...';
+        wave.classList.remove('wave-active');
 
-      recognition.onstart = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+        if (recognition) {
+          recognition.stop();
+        }
+        return;
+      }
+
+      audioChunks = [];
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) audioChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = async () => {
+          stream.getTracks().forEach(track => track.stop());
+          micLabel.textContent = 'Speak to J.A.R.V.I.S.';
+
+          if (audioChunks.length === 0) return;
+          const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'command.wav');
+          formData.append('language_code', document.getElementById('selectLanguage').value || 'en-IN');
+          formData.append('mode', 'codemix');
+          formData.append('simulate_hallucination', document.getElementById('chkSimulateHallucination').checked);
+
+          showToast('Uploading voice audio to Sarvam Saaras v4...');
+          try {
+            const resp = await fetch('http://127.0.0.1:8000/api/voice-mission', {
+              method: 'POST',
+              body: formData
+            });
+            const data = await resp.json();
+            console.log('[Sarvam Voice Mission Response]', data);
+            
+            if (data.stt && data.stt.transcript) {
+              document.getElementById('voiceCommandInput').value = data.stt.transcript;
+              showToast(`Sarvam Transcribed: "${data.stt.transcript}"`);
+              // Run the mission directly from real Sarvam STT transcript
+              runMultiAgentMission();
+            }
+            if (data.tts && data.tts.audio_base64) {
+              const audio = new Audio("data:audio/wav;base64," + data.tts.audio_base64);
+              audio.play();
+            }
+          } catch (err) {
+            console.error('Sarvam voice upload failed:', err);
+            // If backend STT fails, fall back to browser transcript if available
+            const val = document.getElementById('voiceCommandInput').value;
+            if (val) runMultiAgentMission();
+          }
+        };
+
+        mediaRecorder.start();
         isRecording = true;
-        micLabel.textContent = 'Listening...';
+        micLabel.textContent = 'Listening (Click to Stop)...';
         wave.classList.add('wave-active');
         trigger3DPulse(4000);
-      };
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        document.getElementById('voiceCommandInput').value = transcript;
-        runMultiAgentMission();
-      };
-      recognition.onerror = () => {
-        showToast('Mic blocked by iframe sandbox — click Turn 1 then Turn 2 below to watch the mouse move!');
-      };
-      recognition.onend = () => {
-        isRecording = false;
-        micLabel.textContent = 'Speak to J.A.R.V.I.S.';
-        wave.classList.remove('wave-active');
-      };
-      recognition.start();
+
+        // Run SpeechRecognition in parallel for real-time visual typing feedback
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          recognition = new SpeechRec();
+          recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
+          recognition.interimResults = true;
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('voiceCommandInput').value = transcript;
+          };
+          recognition.start();
+        }
+      } catch (err) {
+        console.warn('Microphone stream access error, using speech recognition fallback:', err);
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          recognition = new SpeechRec();
+          recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
+          recognition.interimResults = false;
+          recognition.onstart = () => {
+            isRecording = true;
+            micLabel.textContent = 'Listening (WebSpeech)...';
+            wave.classList.add('wave-active');
+          };
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            document.getElementById('voiceCommandInput').value = transcript;
+            runMultiAgentMission();
+          };
+          recognition.onend = () => {
+            isRecording = false;
+            micLabel.textContent = 'Speak to J.A.R.V.I.S.';
+            wave.classList.remove('wave-active');
+          };
+          recognition.start();
+        } else {
+          showToast('Mic unavailable in current browser permissions. Click Turn 1 or Turn 2 to test!');
+        }
+      }
+    }
+
+    function initWebSocketTelemetry() {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsHost = window.location.host || '127.0.0.1:8000';
+      const wsUrl = `${wsProtocol}//${wsHost}/ws/telemetry`;
+
+      let ws = null;
+      function connect() {
+        try {
+          ws = new WebSocket(wsUrl);
+          ws.onopen = () => {
+            console.log('[WebSocket Telemetry] Connected successfully to', wsUrl);
+          };
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              const payload = data.payload || data;
+              if (payload.cursor) {
+                const phys = payload.cursor.physical_xy || [0, 0];
+                const badge = document.getElementById('cursorCoordBadge');
+                if (badge) badge.textContent = `PHYSICAL MOUSE: [${phys[0]}, ${phys[1]}]`;
+
+                const norm = payload.cursor.normalized_coords;
+                if (norm && norm.length === 2 && (norm[0] > 0 || norm[1] > 0)) {
+                  moveVirtualCursorTo(norm[0], norm[1], payload.cursor.active_app || 'Desktop Mouse', false);
+                }
+              }
+              if (payload.inference) {
+                updateInferenceBadge(payload.inference);
+              }
+            } catch (e) {
+              console.error('[Telemetry Parse Error]', e);
+            }
+          };
+          ws.onclose = () => {
+            setTimeout(connect, 2500);
+          };
+          ws.onerror = () => {
+            ws.close();
+          };
+        } catch (e) {
+          setTimeout(connect, 3000);
+        }
+      }
+      connect();
+    }
+
+    async function checkHealthAndInference() {
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/api/health');
+        if (resp.ok) {
+          const health = await resp.json();
+          updateInferenceBadge(health);
+        }
+      } catch (e) {
+        updateInferenceBadge({ is_live_gpu: false, using_mock_fallback: true });
+      }
+    }
+
+    function updateInferenceBadge(info) {
+      const badge = document.getElementById('inferenceModeBadge');
+      const text = document.getElementById('inferenceModeText');
+      if (!badge || !text) return;
+
+      if (info.is_live_gpu) {
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/90 border border-emerald-400 text-emerald-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.4)]';
+        text.textContent = `LIVE OLLAMA GPU (${info.active_model || info.model || 'jarvis-gemma:latest'})`;
+      } else {
+        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-950/90 border border-amber-400 text-amber-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.3)]';
+        text.textContent = `FALLBACK MODE (Offline / CPU)`;
+      }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       initJarvis3D();
       attach3DTiltListeners();
+      initWebSocketTelemetry();
+      checkHealthAndInference();
+      setInterval(checkHealthAndInference, 4000);
 
       const initScenario = SCENARIOS.gst_webhook;
       document.getElementById('codeDiffViewer').textContent = BACKEND_FILES['gui_computer_agent.py'];

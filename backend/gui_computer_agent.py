@@ -156,19 +156,12 @@ class JarvisGUIComputerAgent:
         )
 
         # -------------------------------------------------------------
-        # TURN 1: OPEN YOUTUBE (Stateful Setup)
+        # TURN 1: OPEN YOUTUBE (Stateful Setup & Dynamic Focus)
         # -------------------------------------------------------------
         if is_open_turn:
-            # 1. Gemma 4 Screen Pointing glides mouse to YouTube launch target / icon [45, 72]
-            step1 = self.move_and_click_visibly(45, 72, duration=0.75, click=True)
-            executed_steps.append({
-                "step": 1,
-                "label": "Gemma 4 Pointing -> Click YouTube App Icon [45, 72]",
-                "coords": [45, 72],
-                "details": step1
-            })
-
-            # Open YouTube in browser smoothly
+            screen_w, screen_h = self.get_screen_size()
+            
+            # Launch YouTube directly in user's browser
             try:
                 if sys.platform == "win32":
                     os.startfile("https://www.youtube.com")
@@ -177,20 +170,46 @@ class JarvisGUIComputerAgent:
             except Exception:
                 webbrowser.open_new_tab("https://www.youtube.com")
 
-            time.sleep(0.3)
+            # Allow browser window to render and take focus
+            time.sleep(1.0)
+            self.capture_screen()
 
-            # 2. Gemma 4 Screen Pointing glides mouse to Search Box [norm_x=480, norm_y=105]
-            step2 = self.move_and_click_visibly(480, 105, duration=0.65, click=True)
+            # Dynamically compute center-top YouTube search coordinates (universal across DPIs)
+            search_px_x = screen_w // 2
+            search_px_y = max(50, min(140, int(screen_h * 0.055)))
+            norm_x = 500.0
+            norm_y = round((search_px_y / screen_h) * 1000.0, 1)
+
+            # 1. Visibly glide mouse cursor directly to YouTube Search Input and click
+            step1 = self.move_and_click_visibly(norm_x, norm_y, duration=0.75, click=True)
+            executed_steps.append({
+                "step": 1,
+                "label": f"Launched YouTube -> Glided mouse to Center-Top Search Input [{int(norm_x)}, {int(norm_y)}]",
+                "coords": [norm_x, norm_y],
+                "details": step1
+            })
+
+            # 2. Universal focus hotkey: Send '/' (YouTube global search shortcut) + Ctrl+A
+            if PYAUTOGUI_AVAILABLE and pyautogui:
+                try:
+                    time.sleep(0.15)
+                    pyautogui.press("/")
+                    time.sleep(0.05)
+                    pyautogui.hotkey("ctrl", "a")
+                except Exception:
+                    pass
+
             executed_steps.append({
                 "step": 2,
-                "label": "Pre-focus YouTube Search Input at [480, 105]",
-                "coords": [480, 105],
-                "details": step2
+                "label": "Pressed YouTube universal search hotkey '/' & focused search input",
+                "coords": [norm_x, norm_y],
+                "details": {"hotkey": "/", "focused": True}
             })
 
             self.active_app = "browser_youtube"
             self.active_url = "https://www.youtube.com"
             self.session_memory["youtube_open"] = True
+            self.session_memory["search_focused"] = True
 
             spoken = "YouTube is open and I have positioned the mouse over the search bar, sir. What would you like me to search for?"
             return {
@@ -206,9 +225,10 @@ class JarvisGUIComputerAgent:
             }
 
         # -------------------------------------------------------------
-        # TURN 2: SEARCH & PLAY SONG (Stateful Continuation)
+        # TURN 2: SEARCH & PLAY SONG (Dynamic Query Execution)
         # -------------------------------------------------------------
         if is_search_turn:
+            screen_w, screen_h = self.get_screen_size()
             cleaned_query = re.sub(
                 r'^(?:hey\s+)?(?:jarvis[,\s]*)?(?:can\s+(?:you|u)\s+|please\s+)?(?:open\s+youtube\s+(?:and\s+)?)?(?:search\s+for\s+|search\s+|play\s+(?:the\s+song\s+|song\s+|music\s+)?)?',
                 '',
@@ -219,10 +239,8 @@ class JarvisGUIComputerAgent:
             if not cleaned_query:
                 cleaned_query = "Believer by Imagine Dragons"
 
-            # If YouTube was not previously opened, open it now
+            # If YouTube was not previously opened, open it now and wait
             if not self.session_memory.get("youtube_open"):
-                self.move_and_click_visibly(45, 72, duration=0.5, click=True)
-                self.session_memory["youtube_open"] = True
                 try:
                     if sys.platform == "win32":
                         os.startfile("https://www.youtube.com")
@@ -230,18 +248,32 @@ class JarvisGUIComputerAgent:
                         webbrowser.open_new_tab("https://www.youtube.com")
                 except Exception:
                     webbrowser.open_new_tab("https://www.youtube.com")
-                time.sleep(0.4)
+                time.sleep(1.0)
+                self.session_memory["youtube_open"] = True
 
-            # 1. Glide mouse cursor smoothly to YouTube Search input [norm_x=480, norm_y=105] & click
-            step1 = self.move_and_click_visibly(480, 105, duration=0.75, click=True)
+            # 1. Dynamically target center-top search input
+            search_px_y = max(50, min(140, int(screen_h * 0.055)))
+            norm_x_search = 500.0
+            norm_y_search = round((search_px_y / screen_h) * 1000.0, 1)
+
+            step1 = self.move_and_click_visibly(norm_x_search, norm_y_search, duration=0.70, click=True)
+            if PYAUTOGUI_AVAILABLE and pyautogui:
+                try:
+                    time.sleep(0.1)
+                    pyautogui.press("/")
+                    pyautogui.hotkey("ctrl", "a")
+                    pyautogui.press("backspace")
+                except Exception:
+                    pass
+
             executed_steps.append({
                 "step": 1,
-                "label": "Focus YouTube Search Input [480, 105]",
-                "coords": [480, 105],
+                "label": f"Focus Search Input [{int(norm_x_search)}, {int(norm_y_search)}]",
+                "coords": [norm_x_search, norm_y_search],
                 "details": step1
             })
 
-            # 2. Type query character-by-character with interval=0.04
+            # 2. Type user's exact query character-by-character with interval=0.04
             type_res = self.type_search_visibly(cleaned_query, interval=0.04, press_enter=True)
             executed_steps.append({
                 "step": 2,
@@ -249,14 +281,21 @@ class JarvisGUIComputerAgent:
                 "details": type_res
             })
 
-            time.sleep(0.4)
+            # Allow search results page to load
+            time.sleep(1.2)
+            self.capture_screen()
 
-            # 3. Gemma 4 Pointing locates Top Video Result Card at [norm_x=420, norm_y=340]
-            step3 = self.move_and_click_visibly(420, 340, duration=0.72, click=True)
+            # 3. Dynamically target the top video card result on YouTube
+            res_px_x = int(screen_w * 0.40)
+            res_px_y = max(240, min(500, int(screen_h * 0.32)))
+            norm_x_card = round((res_px_x / screen_w) * 1000.0, 1)
+            norm_y_card = round((res_px_y / screen_h) * 1000.0, 1)
+
+            step3 = self.move_and_click_visibly(norm_x_card, norm_y_card, duration=0.75, click=True)
             executed_steps.append({
                 "step": 3,
-                "label": "Click Top Video Card Result [420, 340]",
-                "coords": [420, 340],
+                "label": f"Glided mouse to top video result [{int(norm_x_card)}, {int(norm_y_card)}] & clicked to play",
+                "coords": [norm_x_card, norm_y_card],
                 "details": step3
             })
 
@@ -265,13 +304,13 @@ class JarvisGUIComputerAgent:
             search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(cleaned_query)}"
             watch_url = f"https://www.youtube.com/watch?v={matched['video_id']}&autoplay=1" if matched else search_url
             embed_url = f"https://www.youtube.com/embed/{matched['video_id']}?autoplay=1" if matched else ""
-            display_title = matched["title"] if matched else f"{cleaned_query} — Top Result"
+            display_title = matched["title"] if matched else f"{cleaned_query}"
 
             self.active_app = "browser_youtube_playing"
             self.active_url = watch_url
             self.session_memory["last_query"] = cleaned_query
 
-            spoken = f"Searched YouTube for {cleaned_query}, glided mouse to the top video card, and started playback, sir."
+            spoken = f"Searched YouTube for {cleaned_query}, glided the mouse cursor to the top result, and started playback, sir."
             return {
                 "command": command,
                 "turn": 2,

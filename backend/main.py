@@ -12,20 +12,27 @@ from pydantic import BaseModel
 from agents import JarvisMultiAgentSwarm
 from sarvam_voice import SarvamVoicePipeline
 from hardware_profile import HardwareOptimizer
+from gui_computer_agent import JarvisGUIComputerAgent
 
 app = FastAPI(
-    title="J.A.R.V.I.S. Gemma 4 + Sarvam AI Multi-Agent OS",
-    description="Single-Model Dynamic Agent Swarm & Voice Command Center for Open-Source Maintainers"
+    title="J.A.R.V.I.S. Mark LXXXV — Gemma 4 GUI + Multi-Agent + Sarvam Voice OS",
+    description="Single-Model Dynamic Agent Swarm & Physical Mouse GUI Operator for Open-Source Maintainers"
 )
 
-INDEX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "index.html"))
+INDEX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "jarvis_command_center.html"))
+if not os.path.exists(INDEX_PATH):
+    INDEX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "index.html"))
 if not os.path.exists(INDEX_PATH):
     INDEX_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "index.html"))
 
 @app.get("/")
 @app.head("/")
 def serve_jarvis_frontend():
-    """Serves the 3D J.A.R.V.I.S. Command Center UI."""
+    """Serves the 3D J.A.R.V.I.S. Mark LXXXV Holographic Command Center UI."""
+    return FileResponse(INDEX_PATH)
+
+@app.get("/jarvis_command_center.html")
+def serve_command_center():
     return FileResponse(INDEX_PATH)
 
 
@@ -40,6 +47,7 @@ REPO_DIR = os.getenv("JARVIS_REPO_DIR", os.path.join(os.path.dirname(__file__), 
 swarm = JarvisMultiAgentSwarm(repo_dir=REPO_DIR)
 voice = SarvamVoicePipeline()
 hw = HardwareOptimizer()
+gui_agent = JarvisGUIComputerAgent()
 
 
 class CommandRequest(BaseModel):
@@ -47,6 +55,21 @@ class CommandRequest(BaseModel):
     language_code: str = "en-IN"
     synthesize_voice: bool = True
     simulate_hallucination: bool = False
+    execute_on_desktop_gui: bool = True
+
+
+@app.post("/api/gui-action")
+def run_gui_mouse_action(req: CommandRequest):
+    """Executes stateful desktop GUI mouse movements, clicks, and typing via Gemma 4 UI Pointing + PyAutoGUI."""
+    gui_res = gui_agent.execute_gui_command(req.command)
+    spoken = gui_res.get("spoken_response") or f"Executed {len(gui_res['executed_steps'])} GUI steps on your laptop screen. Active app is {gui_res['active_app']}."
+    if req.synthesize_voice and voice.api_key:
+        try:
+            gui_res["tts_audio"] = voice.synthesize_speech(spoken, language_code=req.language_code)
+        except Exception:
+            pass
+    gui_res["spoken_response"] = spoken
+    return gui_res
 
 
 @app.post("/api/stop")
@@ -109,6 +132,12 @@ def run_text_or_transcribed_mission(req: CommandRequest):
         req.command,
         simulate_hallucination=req.simulate_hallucination
     )
+
+    if req.execute_on_desktop_gui:
+        try:
+            result["gui_trace"] = gui_agent.execute_gui_command(req.command)
+        except Exception as e:
+            result["gui_trace_warning"] = str(e)
     
     if req.synthesize_voice and voice.api_key:
         try:

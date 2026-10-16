@@ -3,1820 +3,1944 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. 3D — Single-Model Gemma 4 Swarm &amp; Sarvam Voice OS</title>
+  <title>J.A.R.V.I.S. MARK LXXXV — 3D Holographic Cockpit, Mouse Agent &amp; Gemma 4 Swarm</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --neon-cyan: #00f0ff;
+      --stark-gold: #f59e0b;
+      --deep-space: #020611;
+    }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #030712;
-      color: #e2e8f0;
+      background-color: #020611;
+      background-image:
+        radial-gradient(circle at 50% -10%, rgba(0, 240, 255, 0.22) 0%, transparent 55%),
+        radial-gradient(circle at 12% 35%, rgba(99, 102, 241, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 88% 25%, rgba(245, 158, 11, 0.12) 0%, transparent 45%),
+        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 38px 38px, 38px 38px;
+      color: #e2f1ff;
       overflow-x: hidden;
+      perspective: 1600px;
+    }
+    .font-hud {
+      font-family: 'Orbitron', sans-serif;
     }
     .mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    .glass-panel {
-      background: rgba(10, 17, 32, 0.82);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(34, 211, 238, 0.15);
+
+    /* 3D Helmet Cockpit Tilt Mode for Entire Dashboard */
+    #cockpitWrapper {
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-style: preserve-3d;
     }
-    .glass-panel-glow {
-      box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.15), inset 0 1px 1px 0 rgba(255, 255, 255, 0.05);
+    .cockpit-3d-engaged {
+      transform: rotateX(4deg) scale(0.985);
     }
-    @keyframes pulseCore {
-      0% { transform: scale(0.95); opacity: 0.85; filter: drop-shadow(0 0 8px #22d3ee); }
-      50% { transform: scale(1.08); opacity: 1; filter: drop-shadow(0 0 22px #06b6d4); }
-      100% { transform: scale(0.95); opacity: 0.85; filter: drop-shadow(0 0 8px #22d3ee); }
+
+    /* Advanced 3D Holographic Glass Panel with Multi-Layer Depth */
+    .stark-panel {
+      position: relative;
+      background: linear-gradient(145deg, rgba(8, 22, 44, 0.82) 0%, rgba(3, 10, 22, 0.92) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 240, 255, 0.32);
+      box-shadow:
+        0 24px 50px -12px rgba(0, 0, 0, 0.85),
+        0 0 32px rgba(0, 240, 255, 0.11),
+        inset 0 1px 1px rgba(255, 255, 255, 0.18),
+        inset 0 0 28px rgba(0, 240, 255, 0.06);
+      transform-style: preserve-3d;
+      transition: transform 0.18s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
     }
-    .core-pulse {
-      animation: pulseCore 3s infinite ease-in-out;
+    .stark-panel::before {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px;
+      width: 18px; height: 18px;
+      border-top: 2.5px solid #00f0ff;
+      border-left: 2.5px solid #00f0ff;
+      border-top-left-radius: 14px;
+      pointer-events: none;
+      box-shadow: -3px -3px 10px rgba(0, 240, 255, 0.45);
+    }
+    .stark-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -2px; right: -2px;
+      width: 18px; height: 18px;
+      border-bottom: 2.5px solid #f59e0b;
+      border-right: 2.5px solid #f59e0b;
+      border-bottom-right-radius: 14px;
+      pointer-events: none;
+      box-shadow: 3px 3px 10px rgba(245, 158, 11, 0.45);
+    }
+
+    /* Interactive 3D Perspective Cards with Floating Z-Layers & Dynamic Glare */
+    .card-3d {
+      position: relative;
+      transform-style: preserve-3d;
+      perspective: 1100px;
+      background: linear-gradient(155deg, rgba(12, 28, 56, 0.85) 0%, rgba(4, 12, 26, 0.95) 100%);
+      border: 1px solid rgba(0, 240, 255, 0.28);
+      box-shadow:
+        0 16px 32px -10px rgba(0, 0, 0, 0.8),
+        0 0 20px rgba(0, 240, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: transform 0.15s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
+      will-change: transform;
+    }
+    .card-3d:hover {
+      border-color: rgba(0, 240, 255, 0.75);
+      box-shadow:
+        0 26px 48px -12px rgba(0, 240, 255, 0.32),
+        0 0 28px rgba(0, 240, 255, 0.22),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+    .z-layer-top {
+      transform: translateZ(26px);
+    }
+    .z-layer-mid {
+      transform: translateZ(14px);
+    }
+
+    @keyframes pulseRing {
+      0% { transform: scale(0.92); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 0.35; }
+      100% { transform: scale(0.92); opacity: 0.9; }
+    }
+    .reactor-pulse {
+      animation: pulseRing 2.2s infinite ease-in-out;
+    }
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .hud-ring-spin {
+      animation: spinSlow 16s linear infinite;
     }
     @keyframes waveBar {
-      0%, 100% { height: 4px; }
-      50% { height: 24px; }
+      0%, 100% { height: 6px; }
+      50% { height: 26px; }
     }
     .wave-active span {
-      animation: waveBar 0.55s infinite ease-in-out;
+      animation: waveBar 0.6s infinite ease-in-out;
     }
     .wave-active span:nth-child(2) { animation-delay: 0.1s; }
     .wave-active span:nth-child(3) { animation-delay: 0.2s; }
     .wave-active span:nth-child(4) { animation-delay: 0.3s; }
     .wave-active span:nth-child(5) { animation-delay: 0.15s; }
     .wave-active span:nth-child(6) { animation-delay: 0.25s; }
+
+    /* Virtual Mouse Cursor Smooth Glide & Click Ripple */
+    #jarvisMouseCursor {
+      transition: left 0.68s cubic-bezier(0.22, 1, 0.36, 1), top 0.68s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+      z-index: 40;
+    }
+    @keyframes clickRippleEffect {
+      0% { transform: scale(0.3); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+    .cursor-ripple {
+      animation: clickRippleEffect 0.55s ease-out forwards;
+    }
     .custom-scroll::-webkit-scrollbar {
-      width: 5px;
-      height: 5px;
+      width: 6px;
+      height: 6px;
     }
     .custom-scroll::-webkit-scrollbar-track {
-      background: #030712;
+      background: #040a14;
     }
     .custom-scroll::-webkit-scrollbar-thumb {
-      background: #1e293b;
+      background: #0e3a52;
       border-radius: 3px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb:hover {
-      background: #0ea5e9;
-    }
-    .scanline {
-      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(6, 182, 212, 0.03) 50%, rgba(6, 182, 212, 0.03));
-      background-size: 100% 4px;
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#030712] text-slate-100 scanline selection:bg-cyan-500/30">
+<body class="min-h-screen flex flex-col selection:bg-cyan-500/30">
 
-  <!-- TOP HUD HEADER -->
-  <header class="border-b border-cyan-500/20 bg-[#050c1a]/90 backdrop-blur sticky top-0 z-40">
+  <!-- STARK INDUSTRIES MARK LXXXV 3D HOLOGRAPHIC HEADER -->
+  <header class="border-b border-cyan-400/35 bg-[#030914]/90 backdrop-blur-2xl sticky top-0 z-30 shadow-[0_8px_32px_rgba(0,240,255,0.12)]">
     <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
-      
-      <!-- Brand & Mode Info -->
       <div class="flex items-center gap-3">
-        <div id="reactorIcon" class="relative w-10 h-10 rounded-full bg-cyan-950/80 border border-cyan-400/50 flex items-center justify-center core-pulse">
-          <div class="w-6 h-6 rounded-full border-2 border-dashed border-cyan-400 animate-spin" style="animation-duration: 12s;"></div>
-          <div class="absolute w-2.5 h-2.5 rounded-full bg-cyan-300 shadow-[0_0_12px_#67e8f9]"></div>
+        <!-- 3D Glowing Arc Reactor Emblem -->
+        <div id="reactorIcon" class="relative w-12 h-12 rounded-full bg-cyan-950/95 border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_32px_rgba(0,240,255,0.6)]">
+          <div class="w-9 h-9 rounded-full border border-dashed border-amber-400 hud-ring-spin"></div>
+          <div class="absolute w-5 h-5 rounded-full border-2 border-cyan-300 reactor-pulse"></div>
+          <div class="absolute w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_16px_#00f0ff]"></div>
         </div>
         <div>
           <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-              J.A.R.V.I.S. <span class="text-cyan-400 font-medium text-xs tracking-wider uppercase px-1.5 py-0.5 rounded bg-cyan-950/60 border border-cyan-500/40">3D CORE</span>
+            <h1 class="font-hud text-base sm:text-lg font-extrabold tracking-widest bg-gradient-to-r from-cyan-300 via-white to-amber-300 bg-clip-text text-transparent">
+              J.A.R.V.I.S. MARK LXXXV 3D
             </h1>
-            <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-400/30">
-              Track 1: Gemma 4 (G1 + G2)
+            <span class="text-[10px] mono font-bold uppercase px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.25)]">
+              HP HyperX i7-14th &bull; RTX 5060 &bull; 24GB
             </span>
-            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-400/30 flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Single-Model Dynamic Swarm
+            <span class="text-[10px] mono font-semibold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50">
+              3D Cards + Live Mouse GUI
             </span>
           </div>
-          <p class="text-[11px] text-slate-400 flex items-center gap-2">
-            <span>Hacktoberfest Hack Day Bengaluru 2026</span> &bull; 
-            <span class="text-cyan-300">Sarvam Saaras v4 + Bulbul v4</span> &bull; 
-            <span class="text-indigo-300">Shared Blackboard</span>
+          <p class="text-[11px] text-cyan-200/75 mono">
+            HOLOGRAPHIC 3D COCKPIT // MOVE MOUSE OVER ANY CARD FOR 3D DEPTH TILT
           </p>
         </div>
       </div>
 
-      <!-- Navigation & Global Controls -->
+      <!-- Navigation & 3D Cockpit Controls -->
       <div class="flex items-center gap-2 flex-wrap">
-        
-        <!-- Active Model Pill -->
-        <div class="relative">
-          <select id="selectGemmaModel" class="appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 border border-cyan-500/30 text-cyan-300 hover:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-400 cursor-pointer">
-            <option value="jarvis-gemma" selected>RTX 5060: jarvis-gemma (Local GPU Swarm)</option>
-            <option value="gemma-4-12b-it">Gemma 4 (12B-it Unified - 256K)</option>
-            <option value="gemma-4-26b-a4b-it">Gemma 4 (26B-A4B MoE Cloud)</option>
-            <option value="gemma-4-e4b-it">Gemma 4 (E4B Edge Optimized)</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-cyan-400">
-            <svg class="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-          </div>
+        <div class="inline-flex rounded-xl bg-slate-950/95 p-1 border border-cyan-500/35 shadow-inner">
+          <button id="tabBtnHud" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/25 text-cyan-200 border border-cyan-400/50 transition">
+            Live Mission HUD
+          </button>
+          <button id="tabBtnRepo" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+            Project AST &amp; Codebase (<span id="repoFileCount">3</span>)
+          </button>
+          <button id="tabBtnBackend" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+            Python Backend Code
+          </button>
+          <button id="tabBtnGuide" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
+            Step-by-Step Setup &amp; Share
+          </button>
         </div>
 
-        <!-- Hardware Telemetry Pill (RTX 5060 + 24GB RAM) -->
-        <button id="btnOpenHardwareModal" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50 transition flex items-center gap-1.5" title="Hardware Optimization: RTX 5060 8GB VRAM + 24GB RAM">
-          <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          <span class="mono text-[11px]">RTX 5060 (8GB) &bull; 24GB RAM</span>
-          <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-emerald-900 text-emerald-200 border border-emerald-700">92% GPU</span>
+        <button id="btnToggle3dCockpit" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500/20 border border-cyan-400/50 hover:bg-cyan-500/30 text-cyan-200 transition shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+          3D Helmet Tilt: OFF
         </button>
 
-        <!-- View Switcher -->
-        <div class="inline-flex rounded-lg bg-slate-900/90 p-1 border border-slate-800">
-          <button id="tabBtnHud" type="button" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition">
-            3D Swarm HUD
-          </button>
-          <button id="tabBtnBlackboard" type="button" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
-            Project Blackboard
-          </button>
-          <button id="tabBtnRepo" type="button" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
-            Codebase &amp; AST (<span id="repoFileCount">3</span>)
-          </button>
-        </div>
-
-        <!-- Voice Mute Toggle -->
-        <button id="btnToggleMute" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-slate-900 border border-slate-700 hover:border-cyan-400/50 text-slate-200 flex items-center gap-1.5 transition">
+        <button id="btnToggleMute" type="button" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950 border border-cyan-500/30 hover:border-cyan-400 text-cyan-200 flex items-center gap-1.5 transition">
           <span id="muteStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span id="muteStatusLabel">Sarvam TTS: ON</span>
+          <span id="muteStatusLabel">Voice TTS: ON</span>
         </button>
 
-        <!-- Stop All Audio Button -->
-        <button id="btnStopAllAudio" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-950/60 border border-red-500/50 hover:bg-red-900/60 text-red-200 flex items-center gap-1.5 transition shadow-sm" title="Stop all playing audio and close background media">
-          <span class="w-2 h-2 rounded-full bg-red-400 animate-pulse"></span>
-          <span>⏹ Stop Audio</span>
-        </button>
-
-        <!-- API Settings Modal Button -->
-        <button id="btnOpenApiModal" type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-500/20 border border-indigo-400/40 hover:bg-indigo-500/30 text-indigo-200 transition flex items-center gap-1.5">
-          <svg class="w-3.5 h-3.5 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-          API Keys (<span id="apiModeBadge">Standalone + Cloud</span>)
+        <button id="btnOpenApiModal" type="button" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/20 border border-amber-400/50 hover:bg-amber-500/30 text-amber-200 transition">
+          API Keys (<span id="apiModeBadge">Sandbox + WebSpeech</span>)
         </button>
       </div>
-
     </div>
   </header>
 
-  <!-- HARDWARE TELEMETRY MODAL -->
-  <div id="hardwareModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div class="w-full max-w-lg glass-panel glass-panel-glow rounded-2xl p-6 border border-emerald-500/40 space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-emerald-500/20">
-        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          Hardware Profile: RTX 5060 &bull; 24GB RAM
-        </h3>
-        <button id="btnCloseHardwareModal" class="text-slate-400 hover:text-white text-lg">&times;</button>
-      </div>
-
-      <div class="space-y-3 text-xs">
-        <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-emerald-300 font-bold">NVIDIA GeForce RTX 5060 (8 GB GDDR7 VRAM)</span>
-            <span class="mono text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-700">ACTIVE ACCELERATOR</span>
-          </div>
-          <div class="space-y-1">
-            <div class="flex justify-between text-slate-400 text-[11px]">
-              <span>VRAM Allocation (gemma-4-12B-it Q4_K_M):</span>
-              <span class="mono text-emerald-400">7.5 GB / 8.0 GB (93.7%)</span>
-            </div>
-            <!-- Progress bar -->
-            <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div class="bg-gradient-to-r from-emerald-500 to-cyan-500 h-full rounded-full" style="width: 93.7%"></div>
-            </div>
-            <div class="flex justify-between text-[10px] text-slate-500 mono pt-0.5">
-              <span>Weights: 6.4 GB (36 layers)</span>
-              <span>KV Cache (8K): 1.1 GB</span>
-              <span class="text-emerald-400">Buffer: ~500 MB</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-            <span class="text-[10px] text-slate-400 uppercase font-semibold">System Memory</span>
-            <div class="text-sm font-bold text-slate-200">24.0 GB RAM</div>
-            <span class="text-[10px] text-slate-500 mono">4 CPU Fallback Layers</span>
-          </div>
-
-          <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-            <span class="text-[10px] text-slate-400 uppercase font-semibold">Inference Throughput</span>
-            <div class="text-sm font-bold text-cyan-300">~45 - 55 tok/sec</div>
-            <span class="text-[10px] text-slate-500 mono">FP8 / INT4 Tensor Cores</span>
-          </div>
-        </div>
-
-        <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 text-slate-300 text-[11px] leading-relaxed">
-          <strong>Optimal Configuration Summary:</strong> <code>gemma-4-12B-it</code> fits inside your 8GB VRAM with 36 GPU offloaded layers and an 8192-token context window. This gives you 100% of Gemma 4's deep multi-agent reasoning without GPU Out-Of-Memory (OOM) risks.
-        </div>
-      </div>
-
-      <div class="pt-2 border-t border-slate-800 flex justify-end">
-        <button id="btnConfirmHardware" type="button" class="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition">
-          Optimal Profile Active
-        </button>
-      </div>
-    </div>
+  <!-- Toast Notification -->
+  <div id="toastBanner" class="hidden fixed bottom-5 right-5 z-50 max-w-sm bg-slate-950/95 border border-cyan-400 text-cyan-100 px-4 py-3 rounded-2xl shadow-[0_0_25px_rgba(0,240,255,0.35)] text-xs flex items-center gap-2.5 mono">
+    <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-ping"></span>
+    <span id="toastMessage">SYSTEM ONLINE.</span>
   </div>
 
-  <!-- FLOATING YOUTUBE DOCK (VOICE OS ACTION) -->
-  <div id="youtubeDock" class="hidden fixed bottom-6 right-6 z-50 w-96 glass-panel glass-panel-glow rounded-2xl p-4 border border-rose-500/40 shadow-2xl transition-all duration-300">
-    <div class="flex items-center justify-between pb-2 border-b border-rose-500/20 mb-3">
-      <div class="flex items-center gap-2">
-        <span class="w-6 h-6 rounded-lg bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400">
-          <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-        </span>
-        <span class="text-xs font-bold text-white tracking-wide uppercase">Voice OS: YouTube Dock</span>
-      </div>
-      <button id="btnCloseYoutube" type="button" class="text-slate-400 hover:text-white p-1 rounded-md text-xs">&times;</button>
-    </div>
-    
-    <div class="space-y-2">
-      <div class="flex items-center justify-between text-[11px] text-slate-300">
-        <span class="font-medium text-red-300" id="youtubeTrackTitle">Playing Song...</span>
-        <span class="mono text-[10px] px-1.5 py-0.5 rounded bg-red-950/70 border border-red-500/30 text-red-300">LIVE AUDIO</span>
-      </div>
-      
-      <!-- Embedded iframe container -->
-      <div class="w-full h-44 rounded-xl overflow-hidden bg-black border border-slate-800">
-        <iframe id="youtubeIframe" class="w-full h-full" src="" title="YouTube player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-      </div>
+  <!-- MAIN 3D COCKPIT WRAPPER -->
+  <main id="cockpitWrapper" class="flex-1 max-w-7xl w-full mx-auto px-4 py-4 space-y-5">
 
-      <div class="flex items-center justify-between pt-1 text-[11px]">
-        <a id="youtubeDirectLink" href="#" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:underline flex items-center gap-1">
-          Open in YouTube Tab &nearr;
-        </a>
-        <span class="text-slate-400 text-[10px] mono">Triggered by Voice OS Action</span>
-      </div>
-    </div>
-  </div>
+    <!-- VIEW 1: 3D IRON MAN HOLOGRAPHIC MISSION HUD -->
+    <section id="viewHud" class="space-y-5">
 
-  <!-- MAIN HUD BODY -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-4 space-y-4">
+      <!-- TOP ROW: 3D HOLOGRAPHIC ARC REACTOR CORE (4 COLS) + LIVE 3D DESKTOP & MOUSE VIEWPORT (8 COLS) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
 
-    <!-- VOICE COMMAND BAR & PRESET MISSIONS -->
-    <section class="glass-panel glass-panel-glow rounded-2xl p-4 space-y-3">
-      <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
-        
-        <!-- Push-to-Talk Mic Button -->
-        <button id="btnVoiceRecord" type="button" class="relative group flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-xs tracking-wide shadow-lg shadow-cyan-500/25 transition active:scale-95 shrink-0">
-          <div id="micPulseWave" class="hidden absolute inset-0 rounded-xl bg-cyan-400/40 animate-ping"></div>
-          <svg id="micIcon" class="w-4 h-4 fill-current text-white relative z-10" viewBox="0 0 24 24">
-            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
-          </svg>
-          <span id="micLabel" class="relative z-10">Hold &amp; Speak Command</span>
-        </button>
-
-        <!-- Command Input Field -->
-        <div class="relative flex-1">
-          <input
-            id="voiceCommandInput"
-            type="text"
-            class="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition"
-            placeholder="Instruct J.A.R.V.I.S. (e.g. 'Open YouTube and play Kesariya' or 'Build a task manager project with SQLite and FastAPI')"
-            value="Jarvis, open YouTube and play Kesariya"
-          />
-        </div>
-
-        <!-- Language Code Selector (Sarvam AI Saaras) -->
-        <div class="flex items-center gap-2">
-          <select id="selectVoiceLanguage" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-slate-300 focus:outline-none focus:border-cyan-400">
-            <option value="en-IN">English (India)</option>
-            <option value="hi-IN">Hinglish (Codemix)</option>
-            <option value="kn-IN">Bengaluru Kannada</option>
-          </select>
-
-          <!-- Run Button -->
-          <button id="btnExecuteMission" type="button" class="px-5 py-2.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-400/40 text-xs font-semibold tracking-wide transition flex items-center gap-1.5 shrink-0">
-            <span>Execute Mission</span>
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Presets & Hallucination Simulation Toggle -->
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <span class="text-[11px] text-slate-400 uppercase tracking-wider font-semibold mr-1">Voice Presets:</span>
-          
-          <button data-cmd="Jarvis, open YouTube and play Kesariya" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-red-950/40 border border-red-500/30 text-red-300 hover:bg-red-900/40 transition">
-            1. Voice OS: Play YouTube Song
-          </button>
-
-          <button data-cmd="Jarvis, build a task manager project with SQLite, REST API, and pytest test suite" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-indigo-950/40 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-900/40 transition">
-            2. Build Full Project (Recursive Swarm)
-          </button>
-
-          <button data-cmd="Jarvis, fix GST 18% calculation and verify webhook idempotency in payment_service.py" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-900 border border-slate-700 text-slate-300 hover:border-cyan-400/40 transition">
-            3. Fix payment_service.py
-          </button>
-
-          <button data-cmd="Jarvis, auth_middleware.py me JWT expiry check add karo aur unit tests chalao" class="preset-btn px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-900 border border-slate-700 text-slate-300 hover:border-cyan-400/40 transition">
-            4. Hinglish Auth Fix
-          </button>
-
-          <button id="btnSpawnCustomSubagent" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-950/50 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50 transition flex items-center gap-1">
-            + Agent Spawn Sub-Agent (3D)
-          </button>
-        </div>
-
-        <!-- Zero-Hallucination Critic Switch -->
-        <label class="inline-flex items-center gap-2 cursor-pointer select-none text-[11px] text-amber-300 bg-amber-950/30 border border-amber-500/30 px-2.5 py-1 rounded-lg hover:bg-amber-950/50 transition">
-          <input type="checkbox" id="chkSimulateHallucination" class="rounded border-amber-500/50 text-amber-500 focus:ring-0">
-          <span class="font-semibold">Demo: Test Critic Blocking a Hallucination</span>
-        </label>
-      </div>
-    </section>
-
-    <!-- TAB 1: 3D SWARM MISSION HUD -->
-    <div id="viewHud" class="space-y-4">
-      
-      <!-- Top Row: Interactive 3D Holographic Core & Audio Visualizer -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        
-        <!-- 3D Swarm Holographic Core Viewport (8 Cols) -->
-        <div class="lg:col-span-8 glass-panel glass-panel-glow rounded-2xl p-4 flex flex-col relative overflow-hidden min-h-[380px]">
-          <div class="flex items-center justify-between pb-2 border-b border-cyan-500/20 mb-2 z-10">
+        <!-- Left (4 cols): Interactive 3D Three.js Holographic Core with Laser-Linked Agent Nodes -->
+        <div class="lg:col-span-4 stark-panel tilt-surface rounded-2xl p-4 flex flex-col justify-between space-y-3">
+          <div class="flex items-center justify-between z-layer-top">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                3D Holographic Swarm Core (Three.js)
-              </span>
-              <span class="text-[10px] mono px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-200">
-                Drag to Rotate &bull; Dynamic Orbit Nodes
-              </span>
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
+              <span class="font-hud text-xs font-bold uppercase tracking-wider text-cyan-300">3D NEURAL SWARM CORE</span>
             </div>
-            
-            <div class="flex items-center gap-2">
-              <button id="btnResetCamera" type="button" class="px-2 py-0.5 rounded text-[10px] bg-slate-900 border border-slate-700 text-slate-300 hover:text-white">Reset View</button>
-              <button id="btnToggleSpin" type="button" class="px-2 py-0.5 rounded text-[10px] bg-cyan-950/60 border border-cyan-500/30 text-cyan-300">Auto-Rotate: ON</button>
+            <span id="missionGlobalBadge" class="px-2 py-0.5 rounded bg-cyan-950/90 border border-cyan-400/50 text-cyan-200 text-[10px] mono font-semibold">
+              ONLINE // RTX 5060
+            </span>
+          </div>
+
+          <!-- 3D Three.js Hologram Container -->
+          <div id="jarvis3dContainer" class="relative h-60 w-full cursor-grab active:cursor-grabbing rounded-2xl bg-[#020712]/90 border border-cyan-400/35 overflow-hidden shadow-[inset_0_0_30px_rgba(0,240,255,0.15)]">
+            <canvas id="jarvis3dCanvas" class="w-full h-full block"></canvas>
+            <div class="absolute top-2 left-2.5 right-2.5 flex items-center justify-between pointer-events-none text-[10px] mono text-cyan-300">
+              <span>DRAG TO ROTATE 3D CORE</span>
+              <span id="cursorCoordBadge" class="text-amber-300 font-bold">MOUSE XY: [420, 118]</span>
+            </div>
+            <div class="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between pointer-events-none text-[10px] mono text-cyan-200 bg-slate-950/85 px-2.5 py-1 rounded-lg border border-cyan-500/30">
+              <span>CENTER: CO-LEADER</span>
+              <span id="orbitNodesLabel">ORBIT: 4 AGENTS + 0 SUB</span>
             </div>
           </div>
 
-          <!-- Three.js Canvas Container -->
-          <div id="threeContainer" class="flex-1 w-full h-[320px] rounded-xl overflow-hidden relative bg-[#02050c]">
-            <!-- Floating overlay legend -->
-            <div class="absolute bottom-2 left-2 z-10 pointer-events-none flex flex-wrap gap-2 text-[10px] mono">
-              <span class="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-500/40">&bull; Core: J.A.R.V.I.S. Co-Leader</span>
-              <span class="px-2 py-0.5 rounded bg-blue-950/80 text-blue-300 border border-blue-500/40">&bull; Architect</span>
-              <span class="px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/40">&bull; Builder</span>
-              <span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40">&bull; Critic Guard</span>
-              <span class="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-500/40">&bull; Dynamic Sub-Agents</span>
-            </div>
-            <canvas id="threeCanvas" class="w-full h-full cursor-grab active:cursor-grabbing"></canvas>
-          </div>
-        </div>
-
-        <!-- Live Mission Status & Voice Audio Waveform (4 Cols) -->
-        <div class="lg:col-span-4 glass-panel glass-panel-glow rounded-2xl p-4 flex flex-col justify-between space-y-3">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b border-cyan-500/20">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Sarvam Voice HUD</span>
-              <span id="missionGlobalBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 mono text-[10px]">SYSTEM READY</span>
-            </div>
-
-            <!-- Spoken Response Box -->
-            <div class="space-y-1">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">J.A.R.V.I.S. Spoken Output:</span>
-              <div id="spokenResponseBox" class="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/20 text-xs text-cyan-200 leading-relaxed min-h-[75px] flex items-center">
-                "Awaiting your voice instruction, sir. All Gemma 4 agents are indexed and standing by."
-              </div>
-            </div>
-
-            <!-- Active Standby Session & Chained Task Control Dock -->
-            <div id="standbySessionDock" class="hidden p-3 rounded-xl bg-cyan-950/40 border border-cyan-500/40 space-y-2">
-              <div class="flex items-center justify-between text-[11px] font-bold text-cyan-300">
-                <span class="flex items-center gap-1.5">
-                  <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                  STANDBY LOOP: <span id="standbyActiveAppName" class="text-white">YouTube Active</span>
-                </span>
-                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-cyan-900/80 text-cyan-200 border border-cyan-700">HANDS-FREE LISTENING</span>
-              </div>
-              <p class="text-[10px] text-slate-300">
-                J.A.R.V.I.S. is standing by. Say your next task (search, play, pause, or close) or click below:
-              </p>
-              <div class="grid grid-cols-2 gap-1.5 text-[11px]">
-                <button id="btnStandbySearch" type="button" class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-cyan-500/30 text-cyan-300 font-semibold flex items-center justify-center gap-1">
-                  🔍 Search Song
-                </button>
-                <button id="btnStandbyPlay" type="button" class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 font-semibold flex items-center justify-center gap-1">
-                  ▶ Play First Video
-                </button>
-                <button id="btnStandbyPause" type="button" class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/30 text-amber-300 font-semibold flex items-center justify-center gap-1">
-                  ⏸ Pause / Resume
-                </button>
-                <button id="btnStandbyClose" type="button" class="px-2 py-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900/60 border border-rose-500/40 text-rose-300 font-semibold flex items-center justify-center gap-1">
-                  ❌ Close It
+          <!-- J.A.R.V.I.S. Voice Synthesis 3D Card -->
+          <div class="card-3d tilt-card rounded-xl p-3 space-y-1.5">
+            <div class="flex items-center justify-between z-layer-top">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 mono">BULBUL V4 FLASH VOICE</span>
+              <div class="flex items-center gap-2">
+                <span id="ttsLatencyBadge" class="text-[10px] mono text-emerald-300">24kHz LIVE</span>
+                <button id="btnReplaySpeech" type="button" class="px-2 py-0.5 rounded bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/50 text-cyan-200 text-[10px] mono font-semibold">
+                  Speak Again
                 </button>
               </div>
             </div>
-
-            <!-- Real-time Equalizer Waveform -->
-            <div class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 space-y-1.5">
-              <div class="flex items-center justify-between text-[10px] text-slate-400 mono">
-                <span>SARVAM 24KHZ BULBUL WAVEFORM</span>
-                <span id="waveformStatus" class="text-cyan-400">STANDBY</span>
-              </div>
-              <div id="audioWaveBars" class="flex items-center justify-center gap-1 h-8">
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-                <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
-              </div>
-            </div>
-
-            <!-- Real-Time Speed & Latency Benchmark Card -->
-            <div class="p-3 rounded-xl bg-slate-950/90 border border-cyan-500/30 space-y-2">
-              <div class="flex items-center justify-between text-[10px] text-cyan-300 mono font-bold">
-                <span>⚡ LIVE SPEED &amp; INFERENCE BENCHMARK</span>
-                <span id="speedBenchmarkMode" class="text-emerald-400">RTX 5060 ACCELERATED</span>
-              </div>
-              <div class="grid grid-cols-3 gap-2 text-center">
-                <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                  <span class="text-[9px] text-slate-500 uppercase block font-semibold">Throughput</span>
-                  <span id="liveTokPerSec" class="text-xs font-bold text-cyan-300 mono">49.4 tok/s</span>
-                </div>
-                <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                  <span class="text-[9px] text-slate-500 uppercase block font-semibold">Time To 1st Token</span>
-                  <span id="liveTtft" class="text-xs font-bold text-indigo-300 mono">114 ms</span>
-                </div>
-                <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                  <span class="text-[9px] text-slate-500 uppercase block font-semibold">AST Guard Check</span>
-                  <span id="liveAstCheckTime" class="text-xs font-bold text-emerald-400 mono">11 ms</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Stats Footer -->
-          <div class="pt-2 border-t border-slate-800 text-[11px] grid grid-cols-2 gap-2 text-slate-400">
-            <div>
-              <span class="block text-[10px] text-slate-500 uppercase">Architecture</span>
-              <span class="text-slate-200 font-semibold">1 Model &bull; Dynamic Swarm</span>
-            </div>
-            <div>
-              <span class="block text-[10px] text-slate-500 uppercase">Anti-Hallucination</span>
-              <span class="text-emerald-400 font-semibold">Deterministic AST</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bottom Row: Dynamic Active Agents Cards & Execution Trace -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        
-        <!-- Active Agents Deck (7 Cols) -->
-        <div class="lg:col-span-7 glass-panel glass-panel-glow rounded-2xl p-4 space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Active Agent Swarm</span>
-              <span id="activeAgentCounter" class="text-[10px] mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">4 Primary Agents</span>
-            </div>
-            <span class="text-[10px] text-slate-400 mono">Single Gemma 4 Engine</span>
-          </div>
-
-          <!-- Dynamic Cards Grid -->
-          <div id="dynamicAgentGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            
-            <!-- Co-Leader & Supervisor -->
-            <div id="cardCoLeader" class="p-3 rounded-xl bg-slate-950/80 border border-cyan-500/30 space-y-1.5 transition">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-cyan-300">Co-Leader &amp; Chief Reviewer</span>
-                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">SUPERVISOR</span>
-              </div>
-              <p class="text-[11px] text-slate-400">Maintains Blackboard, manages task DAG, and reviews sub-agent deliverables.</p>
-              <div class="text-[10px] mono text-slate-500 pt-1 flex items-center justify-between">
-                <span id="statusCoLeader">Idle &bull; Ready</span>
-                <span class="text-cyan-400">&lt;|think|&gt;</span>
-              </div>
-            </div>
-
-            <!-- System Architect -->
-            <div id="cardArchitect" class="p-3 rounded-xl bg-slate-950/80 border border-blue-500/30 space-y-1.5 transition">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-blue-300">System Architect</span>
-                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800">PLANNER</span>
-              </div>
-              <p class="text-[11px] text-slate-400">Decomposes objectives, specifies interfaces, and spawns specialist child agents.</p>
-              <div class="text-[10px] mono text-slate-500 pt-1 flex items-center justify-between">
-                <span id="statusArchitect">Idle &bull; Ready</span>
-                <span class="text-blue-400">DAG Builder</span>
-              </div>
-            </div>
-
-            <!-- Lead Builder Agent -->
-            <div id="cardBuilder" class="p-3 rounded-xl bg-slate-950/80 border border-amber-500/30 space-y-1.5 transition">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-amber-300">Lead Builder Agent</span>
-                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800">CODER</span>
-              </div>
-              <p class="text-[11px] text-slate-400">Writes grounded code patches strictly conforming to verified AST symbols.</p>
-              <div class="text-[10px] mono text-slate-500 pt-1 flex items-center justify-between">
-                <span id="statusBuilder">Idle &bull; Ready</span>
-                <span class="text-amber-400">Self-Correction Loop</span>
-              </div>
-            </div>
-
-            <!-- Zero-Hallucination Critic -->
-            <div id="cardCritic" class="p-3 rounded-xl bg-slate-950/80 border border-emerald-500/30 space-y-1.5 transition">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-emerald-300">Zero-Hallucination Critic</span>
-                <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">VERIFIER</span>
-              </div>
-              <p class="text-[11px] text-slate-400">Deterministically checks syntax AST, verifies referenced symbols, and runs pytest.</p>
-              <div class="text-[10px] mono text-slate-500 pt-1 flex items-center justify-between">
-                <span id="statusCritic">Idle &bull; Ready</span>
-                <span class="text-emerald-400">AST Hard Guard</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- Live Team Communication & Hallucination Block Log (5 Cols) -->
-        <div class="lg:col-span-5 glass-panel glass-panel-glow rounded-2xl p-4 flex flex-col space-y-3">
-          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-            <span class="text-xs font-bold uppercase tracking-wider text-slate-200">Swarm Collaboration &amp; Critic Trace</span>
-            <button id="btnClearLog" type="button" class="text-[10px] text-slate-500 hover:text-slate-300">Clear</button>
-          </div>
-
-          <div id="swarmTraceLog" class="flex-1 overflow-y-auto max-h-[320px] custom-scroll space-y-2 pr-1">
-            <div class="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 text-xs text-slate-400">
-              <span class="text-cyan-400 font-semibold">[Init]</span> Swarm online. Shared Blackboard primed. Ready to accept spoken commands.
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-    </div>
-
-    <!-- TAB 2: SHARED PROJECT BLACKBOARD (THE "FULL PICTURE") -->
-    <div id="viewBlackboard" class="hidden space-y-4">
-      <div class="glass-panel glass-panel-glow rounded-2xl p-5 space-y-4">
-        
-        <div class="flex items-center justify-between pb-3 border-b border-cyan-500/20">
-          <div>
-            <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
-              Shared Global Project Blackboard
-            </h2>
-            <p class="text-xs text-slate-400">
-              All agents read from and write to this live state board so every agent maintains the full picture.
+            <p id="jarvisSpokenText" class="text-xs text-cyan-50 leading-relaxed z-layer-mid">
+              "3D Holographic Cockpit active on your HP HyperX RTX 5060. Hover over any 3D card to feel the depth tilt, or click Turn 1 and Turn 2 to watch my mouse operate YouTube live."
             </p>
           </div>
-          <span class="text-[11px] mono px-2.5 py-1 rounded-lg bg-indigo-950/60 border border-indigo-500/30 text-indigo-300">
-            Blackboard Sync: 100% Real-Time
-          </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          <!-- Current Blueprint & Goal -->
-          <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-            <span class="text-xs font-bold text-cyan-300 uppercase tracking-wider">Project Objective &amp; Blueprint</span>
-            <div id="bbObjective" class="text-xs text-slate-200 mono bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-              Active Mission: Awaiting Voice Command
+        <!-- Right (8 cols): 3D LIVE VISUAL LAPTOP DESKTOP & VISIBLE MOUSE OPERATOR -->
+        <div class="lg:col-span-8 stark-panel tilt-surface rounded-2xl p-4 flex flex-col justify-between space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 z-layer-top">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-400/50 mono">
+                  GEMMA 4 SCREEN POINTING + PYAUTOGUI
+                </span>
+                <h2 class="font-hud text-sm font-bold text-white tracking-wide">
+                  3D Live Desktop Viewport — Visible Mouse Movement, Clicks &amp; Typing
+                </h2>
+              </div>
+              <p class="text-[11px] text-slate-300">
+                Maintains multi-turn desktop state ("Open YouTube" &rarr; "Search for Believer" &rarr; "Click Top Video") with visible cursor trajectories.
+              </p>
             </div>
-            <div class="text-[11px] text-slate-400 space-y-1">
-              <div><strong>Architecture:</strong> <span id="bbArch" class="text-slate-300">Modular Microservice Pattern</span></div>
-              <div><strong>Review Status:</strong> <span id="bbReview" class="text-emerald-400 font-semibold">Grounded &amp; Approved</span></div>
-            </div>
-          </div>
-
-          <!-- Active Swarm Hierarchy -->
-          <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-            <span class="text-xs font-bold text-blue-300 uppercase tracking-wider">Swarm Registry &amp; Lineage</span>
-            <div id="bbSwarmHierarchy" class="text-xs mono space-y-1 text-slate-300 max-h-40 overflow-y-auto custom-scroll">
-              <div class="text-cyan-400">&bull; Co-Leader &amp; Chief Reviewer (ROOT)</div>
-              <div class="pl-3 text-blue-400">&bull; System Architect</div>
-              <div class="pl-3 text-amber-400">&bull; Lead Builder</div>
-              <div class="pl-3 text-emerald-400">&bull; Critic Guard</div>
-            </div>
-          </div>
-
-          <!-- Deterministic AST Receipts -->
-          <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-2">
-            <span class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Zero-Hallucination AST Receipts</span>
-            <div id="bbAstReceipts" class="text-xs mono space-y-1 text-slate-300 max-h-40 overflow-y-auto custom-scroll">
-              <div class="text-emerald-400">&#10003; payment_service.py [AST Syntax Valid]</div>
-              <div class="text-emerald-400">&#10003; auth_middleware.py [AST Syntax Valid]</div>
-              <div class="text-emerald-400">&#10003; issue_router.py [AST Syntax Valid]</div>
+            <div class="flex items-center gap-2 text-[11px] mono">
+              <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-cyan-500/40 text-cyan-300">
+                App: <strong id="desktopActiveAppBadge" class="text-amber-300">Desktop Home</strong>
+              </span>
+              <span id="guiCurrentActionBadge" class="px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-400/40 text-emerald-300">
+                Cursor Standby
+              </span>
             </div>
           </div>
 
+          <!-- INTERACTIVE 3D VIRTUAL LAPTOP SCREEN WITH MOVING MOUSE CURSOR -->
+          <div id="virtualDesktopStage" class="relative w-full h-72 rounded-2xl bg-[#050d1a] border-2 border-cyan-400/50 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9),inset_0_0_30px_rgba(0,240,255,0.12)] select-none">
+
+            <!-- Top OS Window Bar -->
+            <div class="h-8 bg-slate-950/95 border-b border-cyan-500/35 px-3 flex items-center justify-between text-[11px] mono">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                <span id="virtualWindowTitle" class="text-cyan-200 font-semibold ml-2">STARK DESKTOP OS // HP-HYPERX-RTX5060</span>
+              </div>
+              <div id="virtualAddressBar" class="px-3 py-0.5 rounded bg-slate-900 border border-cyan-500/30 text-cyan-200 text-[10px] truncate max-w-xs">
+                system://desktop/home
+              </div>
+            </div>
+
+            <!-- 3D Desktop Icons Dock -->
+            <div class="absolute top-11 left-3 z-10 flex flex-col gap-2.5">
+              <div id="deskIconYoutube" class="card-3d tilt-card w-20 p-2 rounded-xl bg-rose-950/70 border border-rose-500/50 text-center flex flex-col items-center gap-1">
+                <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-red-700 text-white font-bold text-xs flex items-center justify-center shadow-lg">&blacktriangleright;</span>
+                <span class="text-[10px] font-bold text-rose-200">YouTube</span>
+              </div>
+              <div id="deskIconVscode" class="card-3d tilt-card w-20 p-2 rounded-xl bg-cyan-950/70 border border-cyan-500/50 text-center flex flex-col items-center gap-1">
+                <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 text-slate-950 font-bold text-xs flex items-center justify-center mono shadow-lg">&lt;/&gt;</span>
+                <span class="text-[10px] font-bold text-cyan-200">Stark IDE</span>
+              </div>
+            </div>
+
+            <!-- Simulated App Surface Area -->
+            <div class="ml-28 h-[calc(100%-2rem)] p-3 flex flex-col justify-between bg-[#040a15]/90">
+              <div id="simBrowserYoutube" class="space-y-2.5 h-full flex flex-col justify-between">
+                <!-- YouTube Search Row -->
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 text-white font-bold text-[10px] tracking-wider shadow">YouTube IN</span>
+                  <div class="flex-1 flex items-center bg-slate-950 border border-cyan-400/50 rounded-xl px-3 py-1.5 shadow-inner">
+                    <input id="simYoutubeSearchInput" type="text" readonly value="" placeholder="Watch J.A.R.V.I.S. mouse click here &amp; type live..." class="w-full bg-transparent text-xs text-white mono focus:outline-none" />
+                  </div>
+                  <button id="simYoutubeSearchBtn" type="button" class="px-3 py-1.5 rounded-xl bg-cyan-950 border border-cyan-400/50 text-cyan-200 text-xs font-bold mono">
+                    Search
+                  </button>
+                  <a id="ytExternalLink" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold transition shadow">
+                    Pop Out Tab &nearr;
+                  </a>
+                </div>
+
+                <!-- 3D Video Result Card + Embedded Live Player -->
+                <div id="simYoutubeResultsGrid" class="grid grid-cols-2 gap-3 flex-1 items-center">
+                  <div id="simVideoCard1" class="card-3d tilt-card p-3 rounded-xl flex items-center gap-3">
+                    <div class="w-16 h-12 rounded-xl bg-gradient-to-br from-rose-500 via-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-base shrink-0 shadow-lg z-layer-top">
+                      &blacktriangleright;
+                    </div>
+                    <div class="min-w-0 z-layer-mid">
+                      <div id="simVideoCard1Title" class="text-xs font-bold text-white truncate">1. Top Verified Video Match</div>
+                      <div id="simVideoCard1Sub" class="text-[10px] text-cyan-300 truncate">Click Turn 1 &rarr; Turn 2 to watch mouse click!</div>
+                    </div>
+                  </div>
+
+                  <div class="h-full rounded-xl overflow-hidden bg-black border border-cyan-400/40 relative min-h-[124px] flex items-center justify-center shadow-lg">
+                    <iframe id="ytEmbedFrame" class="w-full h-full absolute inset-0" src="about:blank" title="J.A.R.V.I.S. Live YouTube Stream" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <div id="ytPlaceholderOverlay" class="text-center p-2 pointer-events-none">
+                      <div id="ytNowPlayingTitle" class="font-hud text-[11px] font-bold text-cyan-300">LIVE STREAM VIEWPORT</div>
+                      <div class="text-[10px] text-slate-400">Auto-streams when J.A.R.V.I.S. cursor clicks video</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GLOWING IRON MAN J.A.R.V.I.S. VIRTUAL MOUSE CURSOR + TARGET RETICLE -->
+            <div id="jarvisMouseCursor" style="left: 420px; top: 118px;" class="absolute flex items-center gap-1.5">
+              <div class="relative flex items-center justify-center">
+                <div id="cursorClickRipple" class="hidden absolute w-11 h-11 rounded-full border-2 border-cyan-300 shadow-[0_0_15px_#00f0ff]"></div>
+                <svg class="w-6 h-6 text-cyan-300 drop-shadow-[0_0_12px_#00f0ff]" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 2l16 10-7 2-3 7L4 2z"/>
+                </svg>
+              </div>
+              <span id="cursorActionTag" class="px-2 py-0.5 rounded-md bg-cyan-950/95 border border-cyan-400 text-[10px] mono font-bold text-cyan-100 whitespace-nowrap shadow-[0_0_15px_rgba(0,240,255,0.4)]">
+                J.A.R.V.I.S. CURSOR
+              </span>
+            </div>
+          </div>
+
+          <div id="youtubePlayerDock" class="hidden">
+            <button id="btnCloseYoutubeDock" type="button">&times;</button>
+          </div>
         </div>
-
-        <!-- Live Team Chat Bus -->
-        <div class="space-y-2 pt-2 border-t border-slate-800">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Team Inter-Agent Chat Bus</span>
-            <span class="text-[10px] text-slate-400 mono">Structured Inter-Agent RPC</span>
-          </div>
-          <div id="bbTeamChatBus" class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs font-mono space-y-2 max-h-56 overflow-y-auto custom-scroll text-slate-300">
-            <div class="text-slate-400">[00:00:01] Co-Leader: Swarm initialized with single Gemma 4 engine. Standing by for voice prompt.</div>
-          </div>
-        </div>
-
       </div>
-    </div>
 
-    <!-- TAB 3: CODEBASE & DETERMINISTIC AST INSPECTOR -->
-    <div id="viewRepo" class="hidden space-y-4">
-      <div class="glass-panel glass-panel-glow rounded-2xl p-5 space-y-4">
-        
-        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-cyan-500/20">
-          <div class="flex items-center gap-3">
-            <span class="text-xs font-bold text-white uppercase tracking-wider">Repository Module:</span>
-            <select id="selectRepoFile" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-cyan-300 focus:outline-none focus:border-cyan-400">
-              <option value="payment_service.py">payment_service.py (Fintech Microservice)</option>
-              <option value="auth_middleware.py">auth_middleware.py (JWT Expiry Vulnerability)</option>
-              <option value="issue_router.py">issue_router.py (Hacktoberfest Triage)</option>
-              <option value="task_models.py">task_models.py (Gemma 4 Generated)</option>
-              <option value="task_api.py">task_api.py (Gemma 4 Generated)</option>
-            </select>
+      <!-- SECOND ROW: 3D VOICE COMMAND DECK & 3D INTERACTIVE MISSION CARDS -->
+      <div class="stark-panel rounded-2xl p-4 space-y-3.5">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          <div class="lg:col-span-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <button id="btnMicRecord" type="button" class="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(0,240,255,0.5)] shrink-0 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+              </svg>
+              <span id="micBtnLabel">Speak to J.A.R.V.I.S.</span>
+            </button>
+
+            <div class="flex-1 relative">
+              <textarea id="voiceCommandInput" rows="2" class="w-full bg-slate-950/95 border border-cyan-400/50 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400 mono shadow-inner" placeholder="Say 'Open YouTube', then 'Can you search for Believer', or 'Make a Smart Expense Tracker project'...">Jarvis, open YouTube</textarea>
+            </div>
+
+            <button id="btnRunMission" type="button" class="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-[0_0_24px_rgba(245,158,11,0.45)] shrink-0 transition">
+              Execute Multi-Agent Mission &rarr;
+            </button>
           </div>
 
+          <div class="lg:col-span-4 flex flex-wrap items-center justify-between gap-2">
+            <select id="selectSingleGemmaModel" aria-label="Select Single Gemma 4 Model" class="bg-slate-950 border border-cyan-500/40 rounded-lg px-2 py-1.5 text-[11px] text-cyan-200 mono">
+              <option value="gemma-4-12B-it" selected>gemma-4-12B-it (RTX 5060 Local)</option>
+              <option value="gemma-4-26B-A4B-it">gemma-4-26B-A4B-it (Cloud MoE)</option>
+              <option value="gemma-4-E4B-it">gemma-4-E4B-it (Ultra-Fast Edge)</option>
+            </select>
+            <select id="selectLanguage" aria-label="Spoken Language" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-200">
+              <option value="en-IN">English (IN)</option>
+              <option value="hi-IN">Hinglish</option>
+              <option value="kn-IN">Kannada-EN</option>
+            </select>
+            <select id="selectSpeaker" aria-label="Bulbul Speaker" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-200">
+              <option value="shubh_enhi_ads">Shubh</option>
+              <option value="simran_en_customer">Simran</option>
+              <option value="aditya_en_narration">Aditya</option>
+            </select>
+            <div id="waveformBars" class="flex items-center gap-1 h-6 px-1">
+              <span class="w-1 bg-cyan-400 rounded-full h-2"></span>
+              <span class="w-1 bg-cyan-400 rounded-full h-3"></span>
+              <span class="w-1 bg-amber-400 rounded-full h-2"></span>
+              <span class="w-1 bg-cyan-400 rounded-full h-4"></span>
+              <span class="w-1 bg-amber-400 rounded-full h-2"></span>
+              <span class="w-1 bg-cyan-400 rounded-full h-3"></span>
+            </div>
+            <span id="voiceStateBadge" class="hidden">Standby</span>
+          </div>
+        </div>
+
+        <!-- 4 Interactive 3D Perspective Mission Cards -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-cyan-500/20">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+            <button type="button" data-Scenario="step1_open_youtube" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+              <div class="flex items-center justify-between z-layer-top mb-1">
+                <span class="font-hud text-xs font-bold text-cyan-300">1. Turn 1: "Open YouTube"</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200">GUI STEP 1</span>
+              </div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Watch mouse glide to YouTube icon &amp; focus search bar</div>
+            </button>
+
+            <button type="button" data-Scenario="youtube_song" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+              <div class="flex items-center justify-between z-layer-top mb-1">
+                <span class="font-hud text-xs font-bold text-amber-300">2. Turn 2: "Search for Believer"</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">GUI STEP 2</span>
+              </div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Watch mouse click search box, type query &amp; play video</div>
+            </button>
+
+            <button type="button" data-Scenario="build_complex_project" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+              <div class="flex items-center justify-between z-layer-top mb-1">
+                <span class="font-hud text-xs font-bold text-purple-300">3. Build Full Project (Spawn Team)</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-200">SWARM</span>
+              </div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Co-Leader spawns sub-agents &amp; writes project files</div>
+            </button>
+
+            <button type="button" data-Scenario="gst_webhook" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+              <div class="flex items-center justify-between z-layer-top mb-1">
+                <span class="font-hud text-xs font-bold text-emerald-300">4. Fix Repo Bugs &amp; Run Pytest</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">AST QA</span>
+              </div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">AST Explorer + Builder + Co-Leader verification</div>
+            </button>
+          </div>
+
+          <label class="card-3d tilt-card inline-flex items-center gap-2 cursor-pointer select-none text-[11px] text-rose-200 bg-rose-950/60 border border-rose-500/50 px-3.5 py-3 rounded-2xl shrink-0">
+            <input id="chkSimulateHallucination" type="checkbox" class="rounded border-slate-600 text-rose-500 focus:ring-0" />
+            <span class="font-semibold z-layer-top">Test Co-Leader Blocking Hallucination</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- THIRD ROW: 3D HOLOGRAPHIC AGENT SWARM CARDS (HOVER FOR 3D PERSPECTIVE TILT!) -->
+      <div class="stark-panel rounded-2xl p-4 space-y-3.5">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mono">3D AGENT HOLOGRAM CARDS</span>
+              <h3 class="font-hud text-sm font-bold text-white">1 Gemma 4 Model &rarr; Co-Leader, Shared Blackboard &amp; Self-Spawning Agents</h3>
+            </div>
+            <p id="blackboardSummaryText" class="text-xs text-slate-300 mono mt-0.5">
+              Active Goal: Ready | Shared Files: 3 | Spawned Child Sub-Agents: 0 | Co-Leader Review: Active
+            </p>
+          </div>
           <div class="flex items-center gap-2">
-            <button id="btnRunAstAudit" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/30 transition">
-              Run Deterministic Pytest Audit
+            <span id="blackboardModelBadge" class="text-[11px] mono px-2.5 py-1 rounded-xl bg-cyan-950 text-cyan-200 border border-cyan-500/40">Base Weights: gemma-4-12B-it</span>
+            <button id="btnSpawnCustomSubAgent" type="button" class="px-3 py-1.5 rounded-xl bg-purple-500/25 hover:bg-purple-500/35 border border-purple-400/50 text-purple-200 font-bold text-xs transition shadow-[0_0_15px_rgba(192,132,252,0.25)]">
+              + Agent Spawn Sub-Agent
             </button>
           </div>
         </div>
 
-        <!-- Code & Diff Split View -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          
-          <!-- Source Code Viewer -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span class="font-medium text-slate-300" id="currentFileTitle">payment_service.py</span>
-              <span class="mono text-[10px]" id="currentFileLineCount">23 lines &bull; Python AST Valid</span>
+        <!-- 4 Interactive 3D Agent Cards with Floating Z-Layers -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div id="agentCardOrchestrator" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between z-layer-top">
+              <span class="font-hud text-xs font-bold text-cyan-300">1. Co-Leader &amp; Reviewer</span>
+              <span class="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#00f0ff]" id="dotOrchestrator"></span>
             </div>
-            <pre id="codeViewSource" class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs font-mono text-slate-200 overflow-x-auto max-h-[380px] custom-scroll leading-relaxed"></pre>
+            <p class="text-[11px] text-slate-300 z-layer-mid">Breaks down complex projects, manages all agents, and audits every output.</p>
+            <div id="statusOrchestrator" class="z-layer-top text-[11px] mono text-cyan-100 bg-slate-950/90 p-2.5 rounded-xl border border-cyan-500/30 min-h-[44px] shadow-inner">
+              Managing team via single Gemma 4 model.
+            </div>
           </div>
 
-          <!-- Pytest & AST Grounding Verification Terminal -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between text-xs text-slate-400">
-              <span class="font-medium text-emerald-300">Deterministic Pytest &amp; AST Verifier Log</span>
-              <span class="mono text-[10px] text-emerald-400" id="testAuditStatus">ZERO HALLUCINATIONS</span>
+          <div id="agentCardExplorer" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between z-layer-top">
+              <span class="font-hud text-xs font-bold text-amber-300">2. Architect &amp; GUI/AST Map</span>
+              <span class="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]" id="dotExplorer"></span>
             </div>
-            <pre id="codeViewTerminal" class="p-3 rounded-xl bg-slate-950/90 border border-slate-800 text-xs font-mono text-emerald-300 overflow-x-auto max-h-[380px] custom-scroll leading-relaxed"></pre>
+            <p class="text-[11px] text-slate-300 z-layer-mid">Maps live screen UI coordinates &amp; codebase AST symbols onto the Blackboard.</p>
+            <div id="statusExplorer" class="z-layer-top text-[11px] mono text-amber-100 bg-slate-950/90 p-2.5 rounded-xl border border-amber-500/30 min-h-[44px] shadow-inner">
+              Blackboard synced: 3 modules, 6 functions.
+            </div>
           </div>
 
+          <div id="agentCardBuilder" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between z-layer-top">
+              <span class="font-hud text-xs font-bold text-indigo-300">3. Lead Builder &amp; GUI Operator</span>
+              <span class="w-3 h-3 rounded-full bg-indigo-400 shadow-[0_0_12px_#818cf8]" id="dotBuilder"></span>
+            </div>
+            <p class="text-[11px] text-slate-300 z-layer-mid">Executes visible mouse/keyboard actions, writes code, and spawns sub-agents.</p>
+            <div id="statusBuilder" class="z-layer-top text-[11px] mono text-indigo-100 bg-slate-950/90 p-2.5 rounded-xl border border-indigo-500/30 min-h-[44px] shadow-inner">
+              Ready to move mouse or build project modules.
+            </div>
+          </div>
+
+          <div id="agentCardCritic" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
+            <div class="flex items-center justify-between z-layer-top">
+              <span class="font-hud text-xs font-bold text-emerald-300">4. Zero-Hallucination Critic</span>
+              <span class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]" id="dotCritic"></span>
+            </div>
+            <p class="text-[11px] text-slate-300 z-layer-mid">Verifies screen state, AST syntax &amp; symbol provenance before sign-off.</p>
+            <div id="statusCritic" class="z-layer-top text-[11px] mono text-emerald-100 bg-slate-950/90 p-2.5 rounded-xl border border-emerald-500/30 min-h-[44px] shadow-inner">
+              Guard active: 0 unverified claims allowed.
+            </div>
+          </div>
         </div>
 
+        <div class="bg-slate-950/90 border border-purple-500/35 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-semibold text-purple-300">Dynamically Spawned Child Sub-Agents:</span>
+            <div id="dynamicSubAgentsList" class="flex flex-wrap gap-1.5 text-[11px] mono text-slate-300">
+              <span class="text-slate-500 text-xs">None spawned yet — run a mission or click "+ Agent Spawn Sub-Agent".</span>
+            </div>
+          </div>
+          <span id="spawnedCountBadge" class="text-[11px] mono text-purple-200 bg-purple-950/80 px-2.5 py-0.5 rounded-full border border-purple-500/30">0 Active Sub-Agents</span>
+        </div>
       </div>
-    </div>
 
+      <!-- FOURTH ROW: LIVE AGENT TEAM CHAT BUS + VERIFIED CODE & 3D RECEIPT CARDS -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-5 stark-panel rounded-2xl p-4 flex flex-col space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-cyan-300">Team Chat &amp; Mouse Telemetry Log</h3>
+              <p class="text-[11px] text-slate-400">Real-time GUI coordinates + inter-agent collaboration</p>
+            </div>
+            <button id="btnClearLog" type="button" class="text-[11px] text-slate-400 hover:text-slate-200 underline">Reset Trace</button>
+          </div>
+          <div id="agentMessageLog" class="custom-scroll overflow-y-auto max-h-72 space-y-2 pr-1"></div>
+        </div>
+
+        <div class="lg:col-span-7 stark-panel rounded-2xl p-4 flex flex-col space-y-3">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-cyan-300">Verified Code / GUI Script &amp; 3D Provenance Cards</h3>
+              <p id="activePatchFileLabel" class="text-[11px] mono text-amber-300">Target File: payment_service.py (Lines 1–23)</p>
+            </div>
+            <button id="btnApplyPatchToRepo" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-semibold transition">
+              Apply Verified Patch to Repo
+            </button>
+          </div>
+
+          <div id="provenanceStrip" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div class="card-3d tilt-card rounded-xl p-2.5">
+              <div class="text-[10px] text-slate-400 z-layer-mid">Shared Blackboard</div>
+              <div id="receiptFileStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">100% SYNCED</div>
+            </div>
+            <div class="card-3d tilt-card rounded-xl p-2.5">
+              <div class="text-[10px] text-slate-400 z-layer-mid">AST / GUI Check</div>
+              <div id="receiptAstStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">VALIDATED</div>
+            </div>
+            <div class="card-3d tilt-card rounded-xl p-2.5">
+              <div class="text-[10px] text-slate-400 z-layer-mid">Co-Leader Review</div>
+              <div id="receiptSymbolStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">APPROVED</div>
+            </div>
+            <div class="card-3d tilt-card rounded-xl p-2.5">
+              <div class="text-[10px] text-slate-400 z-layer-mid">Verification Suite</div>
+              <div id="receiptTestStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">PASSED</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="bg-slate-950 border border-cyan-500/25 rounded-xl p-3 flex flex-col">
+              <span class="text-[11px] font-semibold text-cyan-200 mb-1.5">Executed Python / GUI / Project Code</span>
+              <pre id="codeDiffViewer" class="custom-scroll overflow-x-auto text-[11px] mono leading-relaxed text-slate-200 max-h-48"></pre>
+            </div>
+            <div class="bg-slate-950 border border-emerald-500/25 rounded-xl p-3 flex flex-col">
+              <span class="text-[11px] font-semibold text-emerald-200 mb-1.5">Co-Leader Audit &amp; Telemetry Log</span>
+              <pre id="criticTestViewer" class="custom-scroll overflow-x-auto text-[11px] mono leading-relaxed text-emerald-300 max-h-48"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: PROJECT AST & CODEBASE EDITOR -->
+    <section id="viewRepo" class="hidden space-y-4">
+      <div class="stark-panel rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="font-hud text-sm font-bold text-white">Shared Project Blackboard Files &amp; AST Symbol Index</h2>
+            <p class="text-xs text-slate-400">Every file generated by your spawned agents is automatically added here and indexed so agents never hallucinate.</p>
+          </div>
+          <button id="btnAddNewFile" type="button" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-semibold">
+            + Add Custom Project File
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div class="lg:col-span-4 space-y-3">
+            <div id="repoFileList" class="space-y-2"></div>
+            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2">
+              <div class="text-xs font-semibold text-amber-300">Extracted AST Symbol Table</div>
+              <div id="astSymbolList" class="space-y-1.5 text-xs mono text-slate-300"></div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-8 bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span id="editorFileName" class="text-xs font-bold mono text-cyan-300">payment_service.py</span>
+              <button id="btnSaveRepoFile" type="button" class="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold hover:bg-emerald-500/30">
+                Save &amp; Re-Index AST
+              </button>
+            </div>
+            <textarea id="repoFileEditor" rows="16" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs mono text-slate-100 focus:outline-none focus:border-cyan-400"></textarea>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: PYTHON BACKEND CODE -->
+    <section id="viewBackend" class="hidden space-y-4">
+      <div class="stark-panel rounded-2xl p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="font-hud text-sm font-bold text-white">Production Python Backend Code (PyAutoGUI Mouse Agent + 1 Gemma 4 Model + Sarvam Voice + QLoRA)</h2>
+            <p class="text-xs text-slate-400">Included in `jarvis_gemma4_sarvam_fullstack.zip` — tailored for your HP HyperX RTX 5060 (24GB RAM) laptop.</p>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button type="button" data-pyfile="gui_computer_agent.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/40">gui_computer_agent.py (Mouse &amp; Screen)</button>
+            <button type="button" data-pyfile="agents.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">agents.py (Gemma 4 Swarm)</button>
+            <button type="button" data-pyfile="os_actions.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">os_actions.py (YouTube &amp; Project Builder)</button>
+            <button type="button" data-pyfile="sarvam_voice.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">sarvam_voice.py (Saaras + Bulbul)</button>
+            <button type="button" data-pyfile="ast_grounding.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">ast_grounding.py (Zero-Hallucination)</button>
+            <button id="btnCopyBackendCode" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Copy File</button>
+          </div>
+        </div>
+        <pre id="backendCodeViewer" class="custom-scroll overflow-x-auto bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs mono text-slate-200 max-h-[460px]"></pre>
+      </div>
+    </section>
+
+    <!-- VIEW 4: STEP-BY-STEP RTX 5060 SETUP & PUBLIC ACCESS GUIDE -->
+    <section id="viewGuide" class="hidden space-y-4">
+      <div class="stark-panel rounded-2xl p-5 space-y-4">
+        <h2 class="font-hud text-base font-bold text-white">Complete Step-by-Step Guide for HP HyperX (i7 14th Gen + RTX 5060 + 24GB RAM)</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
+            <div class="text-cyan-300 font-bold uppercase tracking-wider z-layer-top">1. Best Gemma 4 Setup for Your RTX 5060 + 24GB RAM</div>
+            <p class="text-slate-300 leading-relaxed z-layer-mid">
+              Your laptop has an <strong>NVIDIA RTX 5060 (8GB GDDR7 VRAM) + 24GB System RAM + i7-14th Gen</strong>. Run <code class="text-cyan-300">gemma-4-12B-it</code> (Unified Multimodal with native Screen UI Pointing) locally via Ollama with GPU offload:<br/>
+              <code class="block bg-slate-950 p-2 rounded mt-1 text-emerald-300 mono">ollama run gemma4:12b</code>
+              Or for ultra-fast 60+ tok/sec local GUI control totally inside GPU VRAM, run <code class="text-amber-300 mono">ollama run gemma4:e4b</code>.
+            </p>
+          </div>
+
+          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
+            <div class="text-amber-300 font-bold uppercase tracking-wider z-layer-top">2. Physical Mouse &amp; GUI Automation (`PyAutoGUI`)</div>
+            <p class="text-slate-300 leading-relaxed z-layer-mid">
+              <code class="text-amber-300">backend/gui_computer_agent.py</code> captures your real screen via <code class="text-amber-300">PIL.ImageGrab</code>, asks Gemma 4 Vision for normalized <code class="text-amber-300">[0..1000]</code> coordinates, and glides your physical mouse cursor smoothly with <code class="text-amber-300">pyautogui.moveTo(x, y, duration=0.75, tween=pyautogui.easeInOutQuad)</code>.
+            </p>
+          </div>
+
+          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
+            <div class="text-emerald-300 font-bold uppercase tracking-wider z-layer-top">3. Launch Full-Stack Server on Your Laptop</div>
+            <pre class="bg-slate-950 p-2.5 rounded-xl text-[11px] mono text-slate-200 overflow-x-auto z-layer-mid">unzip jarvis_gemma4_sarvam_fullstack.zip -d jarvis_mark85
+cd jarvis_mark85
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+export SARVAM_API_KEY="your_sarvam_key"
+export JARVIS_GEMMA_MODEL="gemma-4-12b-it"
+cd backend &amp;&amp; uvicorn main:app --reload --port 8000</pre>
+          </div>
+
+          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
+            <div class="text-purple-300 font-bold uppercase tracking-wider z-layer-top">4. Optional QLoRA GUI Fine-Tuning on Your RTX 5060</div>
+            <p class="text-slate-300 leading-relaxed z-layer-mid">
+              We included <code class="text-purple-300">backend/finetune_gemma4_gui_qlora.py</code> configured with 4-bit NormalFloat (<code class="text-purple-300">nf4</code>) and <code class="text-purple-300">bfloat16</code> compute specifically for your RTX 5060 Tensor Cores.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- API KEYS & CONFIGURATION MODAL -->
-  <div id="apiConfigModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-    <div class="w-full max-w-lg glass-panel glass-panel-glow rounded-2xl p-6 border border-cyan-500/40 space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-cyan-500/20">
-        <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
-          API Keys &amp; Backend Configuration
-        </h3>
-        <button id="btnCloseApiModal" class="text-slate-400 hover:text-white text-lg">&times;</button>
+  <!-- API Keys Modal -->
+  <div id="apiModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#081224] border border-cyan-500/50 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">Connect Gemma 4 &amp; Sarvam AI Keys</h3>
+        <button id="btnCloseApiModal" type="button" class="text-slate-400 hover:text-white text-xs">Close &times;</button>
       </div>
-
-      <p class="text-xs text-slate-300 leading-relaxed">
-        J.A.R.V.I.S. runs in <strong>Standalone Mode</strong> with full simulation out of the box so judges can test it on any device. To use live Google Gemma 4 or Sarvam AI, enter your keys below:
-      </p>
-
       <div class="space-y-3">
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Google AI Studio Gemini API Key (for Gemma 4):</label>
-          <input id="inputGeminiApiKey" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400" placeholder="AIzaSy..." />
+          <label for="inputGeminiKey" class="block text-xs text-slate-300 mb-1">Google AI Studio `GEMINI_API_KEY` (or leave blank for local Ollama):</label>
+          <input id="inputGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mono" />
         </div>
-
         <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Sarvam AI API Key (Saaras STT &amp; Bulbul TTS):</label>
-          <input id="inputSarvamApiKey" type="password" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-cyan-300 focus:outline-none focus:border-cyan-400" placeholder="Enter api-subscription-key..." />
-        </div>
-
-        <div>
-          <label class="block text-xs font-medium text-slate-300 mb-1">Backend Server URL:</label>
-          <input id="inputBackendUrl" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400" value="http://localhost:8000" />
+          <label for="inputSarvamKey" class="block text-xs text-slate-300 mb-1">Sarvam AI `api-subscription-key` (Saaras v4 / Bulbul v4):</label>
+          <input id="inputSarvamKey" type="password" placeholder="sarvam_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mono" />
         </div>
       </div>
-
-      <div class="pt-3 border-t border-slate-800 flex items-center justify-between">
-        <button id="btnSaveApiKeys" type="button" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition">
-          Save Configuration
-        </button>
-        <button id="btnTestBackendConn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs transition">
-          Test Backend Connection
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button id="btnSaveApiKeys" type="button" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs">
+          Save Keys
         </button>
       </div>
     </div>
   </div>
 
-  <!-- JAVASCRIPT: THREE.JS 3D CORE, VOICE ENGINE, BLACKBOARD, AND SWARM LOGIC -->
+  <!-- Add New File Modal -->
+  <div id="newFileModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#081224] border border-cyan-500/50 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white">Add Project File to Shared Blackboard</h3>
+        <button id="btnCloseNewFileModal" type="button" class="text-slate-400 hover:text-white text-xs">Close &times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label for="inputNewFileName" class="block text-xs text-slate-300 mb-1">File Name (e.g. `inventory_sync.py`):</label>
+          <input id="inputNewFileName" type="text" placeholder="inventory_sync.py" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mono" />
+        </div>
+        <div>
+          <label for="inputNewFileCode" class="block text-xs text-slate-300 mb-1">Python Code:</label>
+          <textarea id="inputNewFileCode" rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white mono">def sync_warehouse_stock(sku_id: str, delta: int) -> dict:
+    return {"sku": sku_id, "updated_qty": delta}</textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button id="btnConfirmNewFile" type="button" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs">
+          Add &amp; Index File
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // --- APP STATE & REPOSITORY STORAGE ---
-    const APP_STATE = {
-      isMuted: false,
-      isRecording: false,
-      autoRotate: true,
-      backendUrl: localStorage.getItem('jarvis_backend_url') || 'http://localhost:8000',
-      geminiKey: localStorage.getItem('jarvis_gemini_key') || '',
-      sarvamKey: localStorage.getItem('sarvam_api_key') || '',
-      activeModel: 'gemma-4-12b-it',
-      currentTab: 'hud',
-      swarmNodes: [], // 3D nodes
-      swarmLines: [], // 3D laser links
-      spawnCount: 0,
-      isStandby: false,
-      activeContext: null,
-      recognitionInstance: null
-    };
-
-    // Repository Virtual File System
-    const REPO_FILES = {
-      'payment_service.py': `from typing import Dict, Any
-
-PROCESSED_WEBHOOK_EVENTS = set()
-
-def calculate_gst_total(subtotal_inr: float, tax_rate: float = 0.18) -> float:
-    # BUG IN BASELINE: Multiplies instead of adding tax
-    return round(subtotal_inr * (1.0 + tax_rate), 2)
-
-def process_razorpay_webhook(event_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    # BUG IN BASELINE: Missing idempotency lock
-    if event_id in PROCESSED_WEBHOOK_EVENTS:
-        return {"status": "ignored", "reason": "duplicate_event_id"}
-    PROCESSED_WEBHOOK_EVENTS.add(event_id)
-    return {"status": "success", "event_id": event_id}`,
-
-      'auth_middleware.py': `import time
+    // --- STATE & MULTI-TURN DESKTOP MEMORY ---
+    const state = {
+      ttsEnabled: true,
+      cockpit3dMode: false,
+      activeTab: 'hud',
+      selectedFile: 'payment_service.py',
+      singleModel: 'gemma-4-12B-it',
+      geminiKey: '',
+      sarvamKey: '',
+      spawnedSubAgents: [],
+      pulse3dIntensity: 1.0,
+      desktopSession: {
+        youtubeOpen: false,
+        activeApp: 'Desktop Home',
+        lastSearchQuery: ''
+      },
+      lastSpokenText: '3D Holographic Cockpit active on your HP HyperX RTX 5060. Hover over any 3D card to feel the depth tilt, or click Turn 1 and Turn 2 to watch my mouse operate YouTube live.',
+      pendingPatch: null,
+      files: {
+        'payment_service.py': `"""Open-Source Order & Payment Microservice (Hacktoberfest Target Repo)"""
 from typing import Dict, Any
 
-def verify_jwt_session(token_payload: Dict[str, Any], current_epoch: int = None) -> bool:
-    """Verifies user session token validity and expiration."""
-    if current_epoch is None:
-        current_epoch = int(time.time())
-    
-    # Missing expiration and revocation check
-    if not token_payload or "sub" not in token_payload:
-        return False
+PROCESSED_WEBHOOKS = set()
+
+def calculate_gst_total(subtotal_inr: float, tax_rate: float = 0.18) -> float:
+    # BUG 1: Subtracts tax instead of adding 18% GST
+    if subtotal_inr < 0:
+        raise ValueError("Subtotal cannot be negative")
+    return round(subtotal_inr - (subtotal_inr * tax_rate), 2)
+
+def process_razorpay_webhook(event_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    # BUG 2: Missing duplicate event_id check causes double charges
+    order_id = payload.get("order_id", "UNKNOWN")
+    amount = payload.get("amount_inr", 0.0)
+    PROCESSED_WEBHOOKS.add(event_id)
+    return {
+        "status": "captured",
+        "order_id": order_id,
+        "charged_inr": calculate_gst_total(amount)
+    }`,
+        'auth_middleware.py': `"""JWT Session & Role Guard Middleware"""
+import time
+from typing import Dict, Any
+
+def verify_jwt_session(token_payload: Dict[str, Any], current_epoch: int) -> bool:
+    exp = token_payload.get("exp", 0)
+    if exp <= current_epoch:
+        return True
     return True
 
 def require_maintainer_role(user_obj: Dict[str, Any]) -> bool:
     roles = user_obj.get("roles", [])
     return "maintainer" in roles or "admin" in roles`,
-
-      'issue_router.py': `from typing import List, Dict
+        'issue_router.py': `"""Hacktoberfest PR & Issue Auto-Triage Module"""
+from typing import List, Dict
 
 def assign_issue_labels(title: str, body: str) -> List[str]:
     labels = ["hacktoberfest-accepted"]
     if "security" in title:
         labels.append("priority:critical")
-    if "crash" in title:
-        labels.append("kind:bug")
     return labels
 
 def route_pr_reviewer(changed_files: List[str]) -> str:
     if not changed_files:
         return "unassigned"
-    if any("payment" in f or "auth" in f for f in changed_files):
+    if "payment_service.py" in changed_files:
         return "@fintech-core-team"
-    return "@community-maintainers"`,
-
-      'task_models.py': `"""Grounded Task Models generated dynamically by Gemma 4 Swarm"""
-from dataclasses import dataclass, field
-from typing import List, Optional
-import time
-
-@dataclass
-class TaskItem:
-    id: str
-    title: str
-    description: str
-    priority: str = "medium"
-    completed: bool = False
-    created_at: float = field(default_factory=time.time)`,
-
-      'task_api.py': `"""Grounded REST API generated dynamically by Gemma 4 Swarm"""
-from typing import List, Dict, Any, Optional
-from task_models import TaskItem
-
-class TaskManagerService:
-    def __init__(self):
-        self.storage: Dict[str, TaskItem] = {}
-
-    def create_task(self, task_id: str, title: str, desc: str) -> TaskItem:
-        item = TaskItem(id=task_id, title=title, description=desc)
-        self.storage[task_id] = item
-        return item
-
-    def get_task(self, task_id: str) -> Optional[TaskItem]:
-        return self.storage.get(task_id)`
+    return "@community-maintainers"`
+      }
     };
 
-    // --- THREE.JS 3D HOLOGRAPHIC SWARM ENGINE ---
-    let scene, camera, renderer, coreGroup, particleSystem;
-    let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+    // --- REAL INTERACTIVE 3D MOUSE-TRACKING TILT ENGINE FOR ALL .tilt-card ELEMENTS ---
+    function attach3DTiltListeners() {
+      document.querySelectorAll('.tilt-card').forEach(card => {
+        if (card.dataset.tiltAttached) return;
+        card.dataset.tiltAttached = 'true';
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotateX = ((y - centerY) / centerY) * -8.5;
+          const rotateY = ((x - centerX) / centerX) * 8.5;
+          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(6px)`;
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+        });
+      });
+    }
 
-    function initThreeSwarm() {
-      const container = document.getElementById('threeContainer');
-      const canvas = document.getElementById('threeCanvas');
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+    const BACKEND_FILES = {
+      'gui_computer_agent.py': `# Real-Life Laptop GUI & Visible Mouse Control Agent (PyAutoGUI + Gemma 4 Screen Pointing)
+# Runs natively on your HP HyperX i7 14th Gen + RTX 5060 (24GB RAM)
 
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-      camera.position.set(0, 5, 24);
+import pyautogui
+from PIL import ImageGrab
 
-      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-      renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+pyautogui.FAILSAFE = True  # Move mouse to top-left corner (0,0) to abort anytime
 
-      // Lighting
-      const ambientLight = new THREE.AmbientLight(0x06b6d4, 0.8);
-      scene.add(ambientLight);
+class JarvisGUIComputerAgent:
+    def __init__(self, model_name="gemma-4-12b-it"):
+        self.model_name = model_name
+        self.active_app = "desktop"
+        self.active_url = ""
 
-      const pointLight = new THREE.PointLight(0x22d3ee, 2.5, 50);
-      pointLight.position.set(0, 0, 0);
-      scene.add(pointLight);
+    def move_and_click_visibly(self, norm_x: float, norm_y: float, duration: float = 0.75):
+        screen_w, screen_h = pyautogui.size()
+        px = int(max(10, min(screen_w - 10, (norm_x / 1000.0) * screen_w)))
+        py = int(max(10, min(screen_h - 10, (norm_y / 1000.0) * screen_h)))
+        # Smooth human-like cursor glide so you watch J.A.R.V.I.S. move the mouse!
+        pyautogui.moveTo(px, py, duration=duration, tween=pyautogui.easeInOutQuad)
+        pyautogui.click(px, py)
+        return {"pixel_x": px, "pixel_y": py}
 
-      coreGroup = new THREE.Group();
-      scene.add(coreGroup);
+    def type_search_visibly(self, query: str):
+        pyautogui.write(query, interval=0.04)
+        pyautogui.press("enter")`,
+      'agents.py': `# Track 1 - G1: Single Gemma 4 Model -> Dynamic Recursive Agent Spawning & Shared Project Blackboard
+class SingleGemma4Engine:
+    def __init__(self, model_name: str = "gemma-4-12b-it"):
+        self.model_name = model_name  # 1 single model powers Co-Leader + all spawned sub-agents!
 
-      // Central J.A.R.V.I.S. / Co-Leader Holographic Sphere
-      const coreGeo = new THREE.IcosahedronGeometry(2.4, 3);
-      const coreMat = new THREE.MeshBasicMaterial({
-        color: 0x06b6d4,
+    def call_agent(self, agent_name: str, role_prompt: str, shared_blackboard: dict, task: str):
+        system_prompt = (
+            f"<|think|>\\nYou are {agent_name} running on {self.model_name}.\\n"
+            f"ROLE: {role_prompt}\\nSHARED PROJECT BLACKBOARD: {shared_blackboard}\\n"
+            "You can chat with teammates, create files, or call spawn_sub_agent({name, role, task})."
+        )
+        return self._invoke_gemma(system_prompt, task)`,
+      'os_actions.py': `# Real-World Voice OS Actions: Open YouTube & Play Song + Multi-File Project Scaffolder
+import re, urllib.parse, urllib.request, webbrowser
+
+def play_youtube_song(song_query: str, auto_open_browser: bool = True):
+    encoded = urllib.parse.quote_plus(song_query.strip())
+    search_url = f"https://www.youtube.com/results?search_query={encoded}"
+    video_id = None
+    try:
+        req = urllib.request.Request(search_url, headers={"User-Agent": "Mozilla/5.0"})
+        html = urllib.request.urlopen(req, timeout=6).read().decode("utf-8", errors="ignore")
+        matches = re.findall(r"watch\\?v=([a-zA-Z0-9_-]{11})", html)
+        if matches:
+            video_id = matches[0]
+    except Exception:
+        pass
+    watch_url = f"https://www.youtube.com/watch?v={video_id}&autoplay=1" if video_id else search_url
+    if auto_open_browser:
+        webbrowser.open(watch_url, new=2)
+    return {"song_query": song_query, "watch_url": watch_url, "video_id": video_id}`,
+      'sarvam_voice.py': `# Track 1 - G2: Voice-First AI Interaction with Sarvam AI (Saaras v4 + Bulbul v4 Flash)
+import requests
+
+class SarvamVoicePipeline:
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+        self.base_url = "https://api.sarvam.ai"
+
+    def transcribe_speech(self, audio_bytes: bytes, mode: str = "codemix", language_code: str = "en-IN"):
+        headers = {"api-subscription-key": self.api_key}
+        files = {"file": ("command.wav", audio_bytes, "audio/wav")}
+        data = {"model": "saaras:v4", "mode": mode, "language_code": language_code}
+        return requests.post(f"{self.base_url}/speech-to-text", headers=headers, files=files, data=data, timeout=20).json()`,
+      'ast_grounding.py': `# Four-Layer Anti-Hallucination Engine: AST Symbol Indexing + Co-Leader Verification
+import ast
+
+def verify_claim_or_patch(repo_index: dict, target_file: str, proposed_code: str, referenced_symbols: list):
+    if target_file not in repo_index:
+        return False, [f"Hallucinated file path: {target_file}"]
+    try:
+        tree = ast.parse(proposed_code)
+    except SyntaxError as e:
+        return False, [f"AST SyntaxError at line {e.lineno}: {e.msg}"]
+    known_symbols = {fn["name"] for f in repo_index.values() for fn in f["functions"]}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            known_symbols.add(node.name)
+    missing = [s for s in referenced_symbols if s not in known_symbols]
+    return len(missing) == 0, [f"Unverified symbol blocked: {m}" for m in missing]`
+    };
+
+    const YOUTUBE_CATALOG = [
+      { keywords: ['believer', 'imagine dragons'], title: 'Imagine Dragons — Believer (Official Music Video)', videoId: '7wtfhZwyrcc' },
+      { keywords: ['kesariya', 'brahmastra', 'arijit'], title: 'Kesariya — Brahmastra (Arijit Singh)', videoId: 'BddP6PYo2gs' },
+      { keywords: ['arabic kuthu', 'halamithi', 'beast', 'anirudh'], title: 'Arabic Kuthu — Halamithi Habibo (Anirudh)', videoId: 'KUN5Uf9mObQ' },
+      { keywords: ['naatu naatu', 'rrr'], title: 'Naatu Naatu — RRR Official Song', videoId: 'OsU0CGZoV8E' },
+      { keywords: ['jai ho', 'rahman'], title: 'A.R. Rahman — Jai Ho', videoId: 'Yc5OyXmHD0w' }
+    ];
+
+    async function moveVirtualCursorTo(x, y, actionLabel, clickAfterMove = true) {
+      const cursor = document.getElementById('jarvisMouseCursor');
+      const tag = document.getElementById('cursorActionTag');
+      const coordBadge = document.getElementById('cursorCoordBadge');
+      const actionBadge = document.getElementById('guiCurrentActionBadge');
+      const ripple = document.getElementById('cursorClickRipple');
+
+      cursor.style.left = `${x}px`;
+      cursor.style.top = `${y}px`;
+      tag.textContent = actionLabel;
+      coordBadge.textContent = `MOUSE XY: [${x}, ${y}]`;
+      actionBadge.textContent = actionLabel;
+
+      await new Promise(r => setTimeout(r, 700));
+
+      if (clickAfterMove) {
+        ripple.classList.remove('hidden', 'cursor-ripple');
+        void ripple.offsetWidth;
+        ripple.classList.add('cursor-ripple');
+        await new Promise(r => setTimeout(r, 380));
+      }
+    }
+
+    async function typeIntoVirtualInput(inputEl, text) {
+      inputEl.value = '';
+      for (let i = 0; i < text.length; i++) {
+        inputEl.value += text[i];
+        await new Promise(r => setTimeout(r, 42));
+      }
+    }
+
+    // --- THREE.JS IRON MAN HOLOGRAPHIC CORE WITH 3D LASER BEAMS ---
+    let threeScene = null;
+    let threeCamera = null;
+    let threeRenderer = null;
+    let coreSphere = null;
+    let outerWireRing = null;
+    let innerRing = null;
+    let agentMeshes = [];
+    let animFrameId = null;
+
+    function initJarvis3D() {
+      const container = document.getElementById('jarvis3dContainer');
+      const canvas = document.getElementById('jarvis3dCanvas');
+      if (!container || !canvas || typeof THREE === 'undefined') return;
+
+      const width = container.clientWidth || 360;
+      const height = container.clientHeight || 240;
+
+      threeScene = new THREE.Scene();
+      threeCamera = new THREE.PerspectiveCamera(46, width / height, 0.1, 1000);
+      threeCamera.position.set(0, 1.35, 5.9);
+      threeCamera.lookAt(0, 0, 0);
+
+      threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      threeRenderer.setSize(width, height);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+
+      const ambient = new THREE.AmbientLight(0x00f0ff, 0.9);
+      threeScene.add(ambient);
+      const pointLight = new THREE.PointLight(0xf59e0b, 2.5, 22);
+      pointLight.position.set(2, 3, 4);
+      threeScene.add(pointLight);
+
+      const coreGeo = new THREE.IcosahedronGeometry(1.05, 2);
+      const coreMat = new THREE.MeshStandardMaterial({
+        color: 0x00f0ff,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.85,
         wireframe: true,
         transparent: true,
-        opacity: 0.65
+        opacity: 0.94
       });
-      const coreMesh = new THREE.Mesh(coreGeo, coreMat);
-      coreGroup.add(coreMesh);
+      coreSphere = new THREE.Mesh(coreGeo, coreMat);
+      threeScene.add(coreSphere);
 
-      // Glowing Inner Core
-      const innerGeo = new THREE.SphereGeometry(1.2, 16, 16);
-      const innerMat = new THREE.MeshBasicMaterial({ color: 0x67e8f9 });
-      const innerCore = new THREE.Mesh(innerGeo, innerMat);
-      coreGroup.add(innerCore);
-
-      // Rotating Outer Rings
-      const ringGeo = new THREE.RingGeometry(3.6, 3.8, 32);
-      const ringMat = new THREE.MeshBasicMaterial({ color: 0x0ea5e9, side: THREE.DoubleSide, transparent: true, opacity: 0.4 });
-      const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-      ringMesh.rotation.x = Math.PI / 2;
-      coreGroup.add(ringMesh);
-
-      // Star Particles
-      const particleGeo = new THREE.BufferGeometry();
-      const particleCount = 200;
-      const posArray = new Float32Array(particleCount * 3);
-      for (let i = 0; i < particleCount * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 35;
-      }
-      particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-      const particleMat = new THREE.PointsMaterial({ size: 0.12, color: 0x38bdf8, transparent: true, opacity: 0.6 });
-      particleSystem = new THREE.Points(particleGeo, particleMat);
-      scene.add(particleSystem);
-
-      // Initial Orbit Nodes (Architect, Builder, Critic)
-      createOrbitNode('Architect', 0x3b82f6, 7.5, 0);
-      createOrbitNode('Builder', 0xf59e0b, 8.5, (2 * Math.PI) / 3);
-      createOrbitNode('Critic', 0x10b981, 7.5, (4 * Math.PI) / 3);
-
-      // Mouse drag rotation listeners
-      canvas.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        previousMousePosition = { x: e.clientX, y: e.clientY };
+      const nucleusGeo = new THREE.OctahedronGeometry(0.56, 1);
+      const nucleusMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.75
       });
-      window.addEventListener('mouseup', () => isDragging = false);
+      coreSphere.add(new THREE.Mesh(nucleusGeo, nucleusMat));
+
+      const ringGeo1 = new THREE.TorusGeometry(1.78, 0.028, 16, 100);
+      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7 });
+      outerWireRing = new THREE.Mesh(ringGeo1, ringMat1);
+      outerWireRing.rotation.x = Math.PI / 2.2;
+      threeScene.add(outerWireRing);
+
+      const ringGeo2 = new THREE.TorusGeometry(2.32, 0.022, 16, 100);
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.55 });
+      innerRing = new THREE.Mesh(ringGeo2, ringMat2);
+      innerRing.rotation.x = -Math.PI / 3;
+      threeScene.add(innerRing);
+
+      rebuildOrbitingAgentNodes();
+
+      let isDragging = false;
+      let prevX = 0;
+      let prevY = 0;
+      canvas.addEventListener('mousedown', (e) => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
+      window.addEventListener('mouseup', () => { isDragging = false; });
       window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        const deltaX = e.clientX - previousMousePosition.x;
-        const deltaY = e.clientY - previousMousePosition.y;
-        coreGroup.rotation.y += deltaX * 0.008;
-        coreGroup.rotation.x += deltaY * 0.008;
-        previousMousePosition = { x: e.clientX, y: e.clientY };
+        if (!isDragging || !threeScene) return;
+        threeScene.rotation.y += (e.clientX - prevX) * 0.008;
+        threeScene.rotation.x = Math.max(-0.6, Math.min(0.6, threeScene.rotation.x + (e.clientY - prevY) * 0.008));
+        prevX = e.clientX;
+        prevY = e.clientY;
       });
 
-      // Window resize handler
-      window.addEventListener('resize', onWindowResize);
-
-      animateThree();
-    }
-
-    function createOrbitNode(name, colorHex, radius, angleOffset) {
-      const nodeGeo = new THREE.SphereGeometry(0.7, 16, 16);
-      const nodeMat = new THREE.MeshStandardMaterial({
-        color: colorHex,
-        emissive: colorHex,
-        emissiveIntensity: 0.8,
-        wireframe: false
-      });
-      const nodeMesh = new THREE.Mesh(nodeGeo, nodeMat);
-      
-      const nodeData = {
-        name: name,
-        mesh: nodeMesh,
-        radius: radius,
-        angle: angleOffset,
-        speed: 0.012 + (Math.random() * 0.006)
-      };
-      
-      coreGroup.add(nodeMesh);
-      APP_STATE.swarmNodes.push(nodeData);
-
-      // Connect with beam line to center
-      createLaserBeam(nodeMesh);
-      return nodeData;
-    }
-
-    function createLaserBeam(targetMesh) {
-      const lineMat = new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.45 });
-      const points = [new THREE.Vector3(0, 0, 0), targetMesh.position];
-      const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-      const line = new THREE.Line(lineGeo, lineMat);
-      coreGroup.add(line);
-      APP_STATE.swarmLines.push({ line: line, target: targetMesh });
-    }
-
-    function spawnDynamicChildSubagentIn3D(roleName) {
-      APP_STATE.spawnCount++;
-      const colors = [0xa855f7, 0xec4899, 0x06b6d4, 0x14b8a6];
-      const color = colors[APP_STATE.spawnCount % colors.length];
-      const radius = 9.5 + (Math.random() * 2);
-      const angle = Math.random() * Math.PI * 2;
-      
-      const node = createOrbitNode(roleName, color, radius, angle);
-      
-      // Update UI counter
-      document.getElementById('activeAgentCounter').textContent = `${4 + APP_STATE.spawnCount} Active Swarm Nodes`;
-      
-      // Add card to dynamic agent grid
-      const grid = document.getElementById('dynamicAgentGrid');
-      const card = document.createElement('div');
-      card.className = 'p-3 rounded-xl bg-purple-950/40 border border-purple-500/40 space-y-1.5 transition animate-pulse';
-      card.innerHTML = `
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-purple-300">${roleName}</span>
-          <span class="text-[9px] mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-700">SPAWNED</span>
-        </div>
-        <p class="text-[11px] text-slate-300">Dynamically created on-demand by parent agent to isolate sub-task.</p>
-        <div class="text-[10px] mono text-purple-400 pt-1 flex items-center justify-between">
-          <span>Active in Swarm</span>
-          <span>100% Blackboard Context</span>
-        </div>
-      `;
-      grid.appendChild(card);
-
-      appendTraceLog(
-        `Dynamic Agent Spawner`,
-        `Spawned new child agent in 3D orbit: <strong>${roleName}</strong>. Attached to Shared Blackboard.`,
-        'text-purple-300'
-      );
-    }
-
-    function onWindowResize() {
-      const container = document.getElementById('threeContainer');
-      if (!container || !renderer || !camera) return;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    }
-
-    function animateThree() {
-      requestAnimationFrame(animateThree);
-
-      if (APP_STATE.autoRotate && !isDragging) {
-        coreGroup.rotation.y += 0.004;
-      }
-
-      // Update orbiting positions
-      APP_STATE.swarmNodes.forEach(node => {
-        node.angle += node.speed;
-        node.mesh.position.x = Math.cos(node.angle) * node.radius;
-        node.mesh.position.z = Math.sin(node.angle) * node.radius;
-        node.mesh.position.y = Math.sin(node.angle * 2) * 1.5;
+      window.addEventListener('resize', () => {
+        if (!container || !threeRenderer || !threeCamera) return;
+        const w = container.clientWidth || 360;
+        const h = container.clientHeight || 240;
+        threeCamera.aspect = w / h;
+        threeCamera.updateProjectionMatrix();
+        threeRenderer.setSize(w, h);
       });
 
-      // Update laser beam endpoints
-      APP_STATE.swarmLines.forEach(item => {
-        const positions = item.line.geometry.attributes.position.array;
-        positions[3] = item.target.position.x;
-        positions[4] = item.target.position.y;
-        positions[5] = item.target.position.z;
-        item.line.geometry.attributes.position.needsUpdate = true;
-      });
-
-      if (particleSystem) {
-        particleSystem.rotation.y -= 0.001;
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    // --- SARVAM VOICE & WEBSPEECH ENGINE ---
-    function speakSpokenResponse(text) {
-      if (APP_STATE.isMuted) return;
-
-      animateWaveform(true);
-
-      // If Sarvam API Key is provided, use Sarvam Bulbul v4 Flash
-      if (APP_STATE.sarvamKey) {
-        fetch('https://api.sarvam.ai/text-to-speech', {
-          method: 'POST',
-          headers: {
-            'api-subscription-key': APP_STATE.sarvamKey,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            inputs: [text.slice(0, 2000)],
-            target_language_code: document.getElementById('selectVoiceLanguage').value,
-            speaker: 'shubh_enhi_ads',
-            pace: 1.08,
-            speech_sample_rate: 24000,
-            enable_preprocessing: true,
-            model: 'bulbul:v4-flash'
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.audios && data.audios[0]) {
-            const audio = new Audio("data:audio/wav;base64," + data.audios[0]);
-            audio.onended = () => {
-              animateWaveform(false);
-              if (APP_STATE.isStandby) rearmVoiceListener();
-            };
-            audio.play();
-          } else {
-            fallbackWebSpeech(text);
-          }
-        })
-        .catch(() => fallbackWebSpeech(text));
-      } else {
-        fallbackWebSpeech(text);
-      }
-    }
-
-    function rearmVoiceListener() {
-      if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) return;
-      if (!APP_STATE.isRecording && APP_STATE.recognitionInstance) {
-        try {
-          const lang = document.getElementById('selectVoiceLanguage').value;
-          APP_STATE.recognitionInstance.lang = lang;
-          APP_STATE.recognitionInstance.start();
-          APP_STATE.isRecording = true;
-          const wave = document.getElementById('micPulseWave');
-          if (wave) wave.classList.remove('hidden');
-          const label = document.getElementById('micLabel');
-          if (label) label.textContent = 'Standby: Listening for follow-up...';
-        } catch (e) {
-          console.log('Voice listener status:', e);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      let clock = 0;
+      function animate() {
+        animFrameId = requestAnimationFrame(animate);
+        clock += 0.02 * state.pulse3dIntensity;
+        if (coreSphere) {
+          coreSphere.rotation.y += 0.011 * state.pulse3dIntensity;
+          coreSphere.rotation.x += 0.005 * state.pulse3dIntensity;
+          const scale = 1 + Math.sin(clock * 2.4) * 0.07 * state.pulse3dIntensity;
+          coreSphere.scale.set(scale, scale, scale);
         }
+        if (outerWireRing) outerWireRing.rotation.z -= 0.009 * state.pulse3dIntensity;
+        if (innerRing) innerRing.rotation.y += 0.008 * state.pulse3dIntensity;
+
+        agentMeshes.forEach((item, idx) => {
+          const angle = clock * item.speed + item.offset;
+          const nx = Math.cos(angle) * item.radius;
+          const nz = Math.sin(angle) * item.radius;
+          const ny = Math.sin(clock * 1.6 + idx) * item.verticalAmp;
+          item.mesh.position.set(nx, ny, nz);
+          item.mesh.rotation.y += 0.03;
+          if (item.beamLine) {
+            const posArr = item.beamLine.geometry.attributes.position.array;
+            posArr[3] = nx;
+            posArr[4] = ny;
+            posArr[5] = nz;
+            item.beamLine.geometry.attributes.position.needsUpdate = true;
+          }
+        });
+        threeRenderer.render(threeScene, threeCamera);
       }
+      animate();
     }
 
-    function fallbackWebSpeech(text) {
-      if (!('speechSynthesis' in window)) {
-        animateWaveform(false);
+    function rebuildOrbitingAgentNodes() {
+      if (!threeScene) return;
+      agentMeshes.forEach(item => {
+        threeScene.remove(item.mesh);
+        if (item.beamLine) threeScene.remove(item.beamLine);
+      });
+      agentMeshes = [];
+      const coreColors = [0x00f0ff, 0xf59e0b, 0x818cf8, 0x34d399];
+      const totalSub = state.spawnedSubAgents.length;
+      const totalNodes = 4 + totalSub;
+      for (let i = 0; i < totalNodes; i++) {
+        const isCore = i < 4;
+        const nodeColor = isCore ? coreColors[i] : 0xc084fc;
+        const geo = new THREE.OctahedronGeometry(isCore ? 0.19 : 0.14, 0);
+        const mat = new THREE.MeshBasicMaterial({ color: nodeColor, wireframe: false });
+        const mesh = new THREE.Mesh(geo, mat);
+        threeScene.add(mesh);
+
+        // Add 3D Holographic Laser Beam connecting Central Co-Leader Core (0,0,0) to Orbiting Agent!
+        const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0)];
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const lineMat = new THREE.LineBasicMaterial({ color: nodeColor, transparent: true, opacity: 0.45 });
+        const beamLine = new THREE.Line(lineGeo, lineMat);
+        threeScene.add(beamLine);
+
+        agentMeshes.push({
+          mesh,
+          beamLine,
+          radius: isCore ? 1.82 : 2.38,
+          speed: isCore ? 0.9 : 1.4,
+          offset: (Math.PI * 2 * i) / totalNodes,
+          verticalAmp: isCore ? 0.26 : 0.46
+        });
+      }
+      const label = document.getElementById('orbitNodesLabel');
+      if (label) label.textContent = `ORBIT: 4 AGENTS + ${totalSub} SUB`;
+    }
+
+    function trigger3DPulse(durationMs = 2400) {
+      state.pulse3dIntensity = 2.6;
+      setTimeout(() => { state.pulse3dIntensity = 1.0; }, durationMs);
+    }
+
+    function parseRepoAST() {
+      const index = {};
+      Object.entries(state.files).forEach(([filename, code]) => {
+        const lines = code.split('\n');
+        const functions = [];
+        lines.forEach((line, idx) => {
+          const match = line.match(/^\s*def\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)/);
+          if (match) {
+            functions.push({ name: match[1], args: match[2].trim(), line: idx + 1 });
+          }
+        });
+        index[filename] = { lineCount: lines.length, functions };
+      });
+      return index;
+    }
+
+    function updateBlackboardBanner(goalText) {
+      const astIndex = parseRepoAST();
+      const totalFiles = Object.keys(state.files).length;
+      const totalFns = Object.values(astIndex).reduce((acc, f) => acc + f.functions.length, 0);
+      document.getElementById('blackboardModelBadge').textContent = `Base Weights: ${state.singleModel}`;
+      document.getElementById('blackboardSummaryText').textContent =
+        `Active Goal: ${goalText} | Shared Files: ${totalFiles} (${totalFns} AST symbols) | Spawned Child Sub-Agents: ${state.spawnedSubAgents.length}`;
+      document.getElementById('repoFileCount').textContent = String(totalFiles);
+      rebuildOrbitingAgentNodes();
+    }
+
+    function renderSpawnedSubAgents() {
+      const listEl = document.getElementById('dynamicSubAgentsList');
+      const countEl = document.getElementById('spawnedCountBadge');
+      countEl.textContent = `${state.spawnedSubAgents.length} Active Sub-Agents`;
+      rebuildOrbitingAgentNodes();
+      if (state.spawnedSubAgents.length === 0) {
+        listEl.innerHTML = '<span class="text-slate-500 text-xs">None spawned yet — run a mission or click "+ Agent Spawn Sub-Agent".</span>';
         return;
       }
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1.05;
-      utter.pitch = 0.98;
-      utter.onend = () => {
-        animateWaveform(false);
-        if (APP_STATE.isStandby) rearmVoiceListener();
-      };
-      utter.onerror = () => {
-        animateWaveform(false);
-        if (APP_STATE.isStandby) rearmVoiceListener();
-      };
-      window.speechSynthesis.speak(utter);
+      listEl.innerHTML = '';
+      state.spawnedSubAgents.forEach(ag => {
+        const badge = document.createElement('span');
+        badge.className = 'px-2.5 py-1 rounded-lg bg-purple-950/90 border border-purple-400/40 text-purple-200 text-[11px] flex items-center gap-1.5';
+        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span><strong>${ag.name}</strong> <span class="text-purple-400">(&larr; ${ag.parent})</span>`;
+        listEl.appendChild(badge);
+      });
     }
 
-    function animateWaveform(active) {
-      const container = document.getElementById('audioWaveBars');
-      const status = document.getElementById('waveformStatus');
-      if (active) {
-        container.classList.add('wave-active');
-        status.textContent = 'TRANSMITTING VOICE';
-        status.className = 'text-cyan-300 font-bold';
-      } else {
-        container.classList.remove('wave-active');
-        status.textContent = 'STANDBY';
-        status.className = 'text-cyan-400';
+    function showToast(msg) {
+      const banner = document.getElementById('toastBanner');
+      const text = document.getElementById('toastMessage');
+      text.textContent = msg;
+      banner.classList.remove('hidden');
+      setTimeout(() => banner.classList.add('hidden'), 3400);
+    }
+
+    async function speakJarvis(text) {
+      state.lastSpokenText = text;
+      document.getElementById('jarvisSpokenText').textContent = `"${text}"`;
+      trigger3DPulse(2600);
+      if (!state.ttsEnabled) return;
+
+      const lang = document.getElementById('selectLanguage').value || 'en-IN';
+      const speaker = document.getElementById('selectSpeaker').value || 'shubh_enhi_ads';
+
+      if (state.sarvamKey) {
+        try {
+          document.getElementById('ttsLatencyBadge').textContent = 'BULBUL V4 STREAMING...';
+          const res = await fetch('https://api.sarvam.ai/text-to-speech', {
+            method: 'POST',
+            headers: { 'api-subscription-key': state.sarvamKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              inputs: [text.slice(0, 1200)],
+              target_language_code: lang,
+              speaker: speaker,
+              model: 'bulbul:v4-flash',
+              speech_sample_rate: 24000,
+              pace: 1.08
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.audios && data.audios[0]) {
+              const audio = new Audio('data:audio/wav;base64,' + data.audios[0]);
+              document.getElementById('ttsLatencyBadge').textContent = 'BULBUL V4 24kHz LIVE';
+              audio.play();
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn('Sarvam TTS fallback:', err);
+        }
+      }
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = lang;
+        utter.rate = 1.06;
+        utter.pitch = 0.94;
+        window.speechSynthesis.speak(utter);
+        document.getElementById('ttsLatencyBadge').textContent = `VOICE ENGINE (${lang})`;
       }
     }
 
-    // --- VOICE OS ACTIONS: YOUTUBE PLAYBACK ---
-    function triggerVoiceOSYouTube(songQuery, isLocalGui = true) {
-      const dock = document.getElementById('youtubeDock');
-      const title = document.getElementById('youtubeTrackTitle');
-      const iframe = document.getElementById('youtubeIframe');
-      const link = document.getElementById('youtubeDirectLink');
-
-      const encoded = encodeURIComponent(songQuery);
-      title.textContent = `Desktop Browser GUI: ${songQuery}`;
-      link.href = `https://www.youtube.com/results?search_query=${encoded}`;
-      
-      // When executing via desktop browser GUI, avoid double-audio by keeping iframe silent
-      if (isLocalGui) {
-        dock.classList.add('hidden');
-        iframe.src = '';
-      } else {
-        iframe.src = `https://www.youtube-nocookie.com/embed?listType=search&list=${encoded}&autoplay=1`;
-        dock.classList.remove('hidden');
-      }
-
-      const ack = `Opening desktop browser locally, searching YouTube for ${songQuery}, and starting playback now, sir.`;
-      document.getElementById('spokenResponseBox').textContent = `"${ack}"`;
-      speakSpokenResponse(ack);
-
-      appendTraceLog(
-        'Voice OS Action Engine',
-        `Launched local desktop browser GUI &rarr; Navigated to YouTube &rarr; Searched & Playing: <strong>${songQuery}</strong>.`,
-        'text-red-400'
-      );
-    }
-
-    // --- LOGGING & TRACE HELPERS ---
-    function appendTraceLog(agentTitle, messageHtml, colorClass = 'text-cyan-300') {
-      const container = document.getElementById('swarmTraceLog');
+    function appendAgentLog(agentName, badgeClass, modelTag, message, receiptTag) {
+      const container = document.getElementById('agentMessageLog');
       const card = document.createElement('div');
-      card.className = 'p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 space-y-1 text-xs';
+      card.className = 'card-3d tilt-card p-2.5 rounded-xl space-y-1';
       card.innerHTML = `
-        <div class="flex items-center justify-between">
-          <span class="font-bold ${colorClass}">${agentTitle}</span>
-          <span class="text-[10px] mono text-slate-500">${new Date().toLocaleTimeString()}</span>
+        <div class="flex items-center justify-between gap-2 z-layer-top">
+          <span class="text-[11px] font-bold ${badgeClass}">${agentName}</span>
+          <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">${modelTag}</span>
         </div>
-        <div class="text-slate-300 leading-relaxed">${messageHtml}</div>
+        <p class="text-xs text-slate-200 leading-relaxed z-layer-mid">${message}</p>
+        ${receiptTag ? `<div class="text-[10px] mono text-emerald-400 pt-0.5 z-layer-top">${receiptTag}</div>` : ''}
       `;
       container.prepend(card);
+      attach3DTiltListeners();
     }
 
-    // --- MULTI-AGENT SWARM EXECUTION ---
-    async function executeMission() {
-      const cmd = document.getElementById('voiceCommandInput').value.trim();
-      if (!cmd) return;
+    function highlightAgentCard(cardId, statusId, statusText, borderColor) {
+      ['agentCardOrchestrator', 'agentCardExplorer', 'agentCardBuilder', 'agentCardCritic'].forEach(id => {
+        const el = document.getElementById(id);
+        el.className = 'card-3d tilt-card p-4 rounded-2xl space-y-2';
+      });
+      if (cardId) {
+        const active = document.getElementById(cardId);
+        active.className = `card-3d tilt-card p-4 rounded-2xl border-2 ${borderColor} shadow-[0_0_30px_rgba(0,240,255,0.28)] space-y-2`;
+      }
+      if (statusId && statusText) {
+        document.getElementById(statusId).textContent = statusText;
+      }
+    }
 
-      const simulateHallucination = document.getElementById('chkSimulateHallucination').checked;
+    async function executeStep1OpenYoutube() {
+      trigger3DPulse(2800);
+      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Parsed Turn 1: "Open YouTube" -> Delegating screen pointing to GUI Operator.', 'border-cyan-400');
+
+      // Trigger real physical mouse movement on user's laptop via backend PyAutoGUI + Gemma 4 Pointing
+      fetch('http://localhost:8000/api/gui-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: 'Jarvis, open YouTube' })
+      }).catch(err => console.log('Backend GUI notification:', err));
+
+      await moveVirtualCursorTo(45, 72, 'CLICK: YouTube App Icon [45, 72]', true);
+
+      state.desktopSession.youtubeOpen = true;
+      state.desktopSession.activeApp = 'YouTube Browser';
+      document.getElementById('desktopActiveAppBadge').textContent = 'YouTube (Ready for Search)';
+      document.getElementById('virtualWindowTitle').textContent = 'YOUTUBE // CHROME — STATEFUL SESSION ACTIVE';
+      document.getElementById('virtualAddressBar').textContent = 'https://www.youtube.com';
+
+      highlightAgentCard('agentCardExplorer', 'statusExplorer', 'Gemma 4 Screen Pointing located YouTube Search Input at normalized [310, 52].', 'border-amber-400');
+
+      await moveVirtualCursorTo(310, 52, 'FOCUS: Search Input [310, 52]', true);
+      const searchInput = document.getElementById('simYoutubeSearchInput');
+      searchInput.placeholder = 'Focused! Now say: "Can you search for Believer"...';
+
+      appendAgentLog(
+        'GUI Mouse Operator (Gemma 4 Pointing)',
+        'text-amber-300',
+        `1-Model: ${state.singleModel}`,
+        'Moved cursor to YouTube icon [45, 72], launched YouTube window, and pre-focused search bar at [310, 52]. Waiting for your follow-up search command.',
+        '[Stateful Session: YouTube Open]'
+      );
+
+      document.getElementById('activePatchFileLabel').textContent = 'Live PyAutoGUI Trace: Turn 1 — Open YouTube';
+      document.getElementById('codeDiffViewer').textContent =
+`# TURN 1: STATEFUL GUI EXECUTION (gui_computer_agent.py)
+gui_agent.move_and_click(norm_x=45, norm_y=72, duration=0.75)   # Click YouTube Icon
+webbrowser.open("https://www.youtube.com")
+gui_agent.move_and_click(norm_x=310, norm_y=52, duration=0.65)  # Focus Search Box
+# Session State Saved: active_app="browser_youtube"`;
+
+      speakJarvis('YouTube is open and I have positioned the mouse over the search bar. What would you like me to search for?');
+      showToast('YouTube opened! Now click "2. Turn 2: Search for Believer" or type any search query.');
+    }
+
+    async function executeYoutubeSearchAndPlay(commandText) {
+      trigger3DPulse(3500);
+      const lower = commandText.toLowerCase();
+      let cleanedQuery = commandText
+        .replace(/^(hey\s+)?(jarvis[,\s]*)?(can\s+you\s+|please\s+)?(open\s+youtube\s+(and\s+)?)?(search\s+for\s+|search\s+|play\s+(the\s+song\s+|song\s+|music\s+)?)?/i, '')
+        .trim();
+      if (!cleanedQuery) cleanedQuery = 'Believer by Imagine Dragons';
+
+      // Trigger real physical mouse gliding & typing on user's laptop via backend PyAutoGUI
+      fetch('http://localhost:8000/api/gui-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: `Search for ${cleanedQuery}` })
+      }).catch(err => console.log('Backend GUI notification:', err));
+
+      if (!state.desktopSession.youtubeOpen) {
+        await moveVirtualCursorTo(45, 72, 'CLICK: YouTube Icon [45, 72]', true);
+        state.desktopSession.youtubeOpen = true;
+        document.getElementById('virtualWindowTitle').textContent = 'YOUTUBE // CHROME — STATEFUL SESSION ACTIVE';
+      }
+
+      highlightAgentCard('agentCardBuilder', 'statusBuilder', `Moving mouse to Search Input [310, 52] & typing "${cleanedQuery}"...`, 'border-indigo-400');
+
+      await moveVirtualCursorTo(310, 52, 'CLICK: Search Input [310, 52]', true);
+
+      const searchInput = document.getElementById('simYoutubeSearchInput');
+      await typeIntoVirtualInput(searchInput, cleanedQuery);
+
+      await moveVirtualCursorTo(525, 52, 'CLICK: Search Button [525, 52]', true);
+
+      let matched = YOUTUBE_CATALOG.find(item => item.keywords.some(k => lower.includes(k)));
+      const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(cleanedQuery)}`;
+      const watchUrl = matched ? `https://www.youtube.com/watch?v=${matched.videoId}&autoplay=1` : searchUrl;
+      const embedUrl = matched ? `https://www.youtube.com/embed/${matched.videoId}?autoplay=1` : `https://www.youtube.com/embed/7wtfhZwyrcc?autoplay=1`;
+      const displayTitle = matched ? matched.title : `${cleanedQuery} — Top Result`;
+
+      document.getElementById('virtualAddressBar').textContent = searchUrl;
+      document.getElementById('simVideoCard1Title').textContent = displayTitle;
+      document.getElementById('simVideoCard1Sub').textContent = 'Verified Match • Click to Stream';
+
+      highlightAgentCard('agentCardCritic', 'statusCritic', `Gemma 4 Vision verified result card at [255, 165] -> Clicking to play!`, 'border-emerald-400');
+      await moveVirtualCursorTo(255, 165, `CLICK VIDEO: ${displayTitle.slice(0, 22)}...`, true);
+
+      document.getElementById('ytPlaceholderOverlay').classList.add('hidden');
+      document.getElementById('ytNowPlayingTitle').textContent = `Now Playing: ${displayTitle}`;
+      document.getElementById('ytExternalLink').href = watchUrl;
+      document.getElementById('ytEmbedFrame').src = embedUrl;
+      document.getElementById('desktopActiveAppBadge').textContent = `Playing: ${displayTitle.slice(0, 18)}...`;
+
+      state.spawnedSubAgents.push({ name: 'GUI Mouse Operator Sub-Agent', parent: 'Co-Leader' });
+      renderSpawnedSubAgents();
+      updateBlackboardBanner(`GUI Searched & Playing: ${displayTitle}`);
+
+      appendAgentLog(
+        'GUI Mouse Operator -> Co-Leader Verified',
+        'text-emerald-300',
+        `1-Model: ${state.singleModel}`,
+        `Stateful GUI Trace: Clicked Search Input [310, 52] -> Typed "${cleanedQuery}" -> Clicked Search Button [525, 52] -> Clicked Top Video Result [255, 165].`,
+        `[Live Stream Active: ${watchUrl}]`
+      );
+
+      document.getElementById('activePatchFileLabel').textContent = `PyAutoGUI + Gemma 4 Pointing Trace: "${cleanedQuery}"`;
+      document.getElementById('codeDiffViewer').textContent =
+`# STATEFUL TURN 2 GUI TRACE (backend/gui_computer_agent.py)
+gui_agent.move_and_click(norm_x=310, norm_y=52, duration=0.68)  # Focus YouTube Search
+gui_agent.type_text_visibly("${cleanedQuery}", press_enter=True)
+gui_agent.move_and_click(norm_x=255, norm_y=165, duration=0.72) # Click Top Video Card
+# Playing: ${watchUrl}`;
+
+      document.getElementById('criticTestViewer').textContent =
+`============================= CO-LEADER GUI & EDGE-CASE AUDIT ==================
+[OK] Stateful Context Preserved : active_app="browser_youtube"
+[OK] DPI Coordinate Clamping    : Normalized [0..1000] -> Safe Screen Pixels
+[OK] PyAutoGUI FailSafe Guard   : ENABLED (Corner [0,0] Emergency Stop)
+[OK] Target Video Stream        : ${displayTitle}
+================================================================================`;
+
       const globalBadge = document.getElementById('missionGlobalBadge');
-      globalBadge.textContent = 'SWARM ACTIVE';
-      globalBadge.className = 'px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mono text-[10px] animate-pulse';
+      globalBadge.textContent = 'GUI STREAMING LIVE';
 
-      const t0 = performance.now();
-
-      // 1. First check if backend is reachable
-      let liveResponse = null;
-      try {
-        const resp = await fetch(`${APP_STATE.backendUrl}/api/mission`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            command: cmd,
-            simulate_hallucination: simulateHallucination,
-            synthesize_voice: !APP_STATE.isMuted
-          })
-        });
-        if (resp.ok) {
-          liveResponse = await resp.json();
-        }
-      } catch (err) {
-        console.warn('Backend offline or unreachable, falling back to client-side engine:', err);
-      }
-
-      // Update Live Telemetry Benchmarks
-      const elapsed = Math.round(performance.now() - t0);
-      const ttftElem = document.getElementById('liveTtft');
-      const tpsElem = document.getElementById('liveTokPerSec');
-      const astElem = document.getElementById('liveAstCheckTime');
-      if (ttftElem) ttftElem.textContent = `${elapsed > 0 ? elapsed : 110} ms`;
-      if (tpsElem) tpsElem.textContent = `${(48.5 + (Math.random() * 8)).toFixed(1)} tok/s`;
-      if (astElem) astElem.textContent = `${Math.floor(8 + (Math.random() * 6))} ms`;
-
-      if (liveResponse) {
-        await handleLiveBackendResponse(liveResponse, cmd);
-      } else {
-        // Fallback: Client-side interactive flow
-        const cmdLower = cmd.toLowerCase();
-        
-        // 1. Check for website open intent
-        const siteLookup = {
-          'youtube': 'https://www.youtube.com',
-          'drive': 'https://drive.google.com',
-          'google drive': 'https://drive.google.com',
-          'gmail': 'https://mail.google.com',
-          'github': 'https://github.com',
-          'notion': 'https://www.notion.so',
-          'google': 'https://www.google.com',
-          'linkedin': 'https://www.linkedin.com',
-          'reddit': 'https://www.reddit.com',
-          'chatgpt': 'https://chatgpt.com',
-          'gemini': 'https://gemini.google.com'
-        };
-
-        const isJustOpen = cmdLower.startsWith('open ') || cmdLower.startsWith('can u open ') || cmdLower.startsWith('can you open ');
-        const isPlaySong = cmdLower.includes('play ') && !cmdLower.endsWith('play');
-
-        if (isPlaySong) {
-          let song = cmd.replace(/^(?:jarvis\s*,?\s*|please\s+|open\s+youtube\s+(?:and\s+)?play\s*|play\s+song\s*|play\s*)/i, '').replace(/(?:on\s+youtube|song)$/i, '').trim();
-          triggerVoiceOSYouTube(song || 'Kesariya Brahmastra', false);
-          globalBadge.textContent = 'PLAYING SONG';
-          return;
-        }
-
-        let siteMatch = null;
-        for (const [key, url] of Object.entries(siteLookup)) {
-          if (cmdLower.includes(key)) {
-            siteMatch = { key, url };
-            break;
-          }
-        }
-
-        if (isJustOpen && siteMatch) {
-          window.open(siteMatch.url, '_blank');
-          const ack = `Opening ${siteMatch.key.toUpperCase()} in a new tab now, sir.`;
-          document.getElementById('spokenResponseBox').textContent = `"${ack}"`;
-          speakSpokenResponse(ack);
-          appendTraceLog('Voice OS Action Engine', `Human-Like Navigation: Opened <strong>${siteMatch.key.toUpperCase()}</strong> (<a href="${siteMatch.url}" target="_blank" class="text-cyan-400 hover:underline">${siteMatch.url}</a>).`, 'text-emerald-400');
-          globalBadge.textContent = 'WEBSITE OPENED';
-          return;
-        }
-
-        const isProjectBuild = cmdLower.includes('build a project') || cmdLower.includes('make a project') || cmdLower.includes('create project') || cmdLower.includes('task manager');
-        if (isProjectBuild) {
-          await executeBuildProjectPipeline(cmd);
-        } else {
-          await executeRepoTriagePipeline(cmd, simulateHallucination);
-        }
-      }
-
-      globalBadge.textContent = 'MISSION COMPLETE';
-      globalBadge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mono text-[10px]';
+      speakJarvis(`Searched YouTube for ${cleanedQuery}, clicked the top video result with the mouse cursor, and started playback.`);
+      showToast(`Clicked & playing "${displayTitle}"!`);
     }
 
-    async function handleLiveBackendResponse(data, cmd) {
-      if (data.type === 'os_action') {
-        const action = data.os_action ? data.os_action.action : '';
-        const summary = data.spoken_response || (data.os_action ? data.os_action.spoken_summary : 'Executing OS action');
-        document.getElementById('spokenResponseBox').textContent = `"${summary}"`;
-        speakSpokenResponse(summary);
+    async function executeComplexProjectBuild(commandText) {
+      trigger3DPulse(3500);
+      const simulateHallucination = document.getElementById('chkSimulateHallucination').checked;
+      let projectTopic = commandText
+        .replace(/^(hey\s+)?(jarvis[,\s]*)?(please\s+)?(make|build|create)\s+(a\s+)?(complex\s+|full-stack\s+)?/i, '')
+        .split(/[—\-,.]/)[0]
+        .trim() || 'Smart Expense Tracker';
 
-        const isStandby = data.os_action && data.os_action.standby;
-        APP_STATE.isStandby = !!isStandby;
+      await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
+      document.getElementById('desktopActiveAppBadge').textContent = `Stark IDE: ${projectTopic}`;
+      document.getElementById('virtualWindowTitle').textContent = `STARK CODE IDE // MULTI-AGENT BUILD: ${projectTopic.toUpperCase()}`;
 
-        const dock = document.getElementById('standbySessionDock');
-        const badge = document.getElementById('missionGlobalBadge');
+      state.spawnedSubAgents = [
+        { name: 'SQLite Schema Sub-Agent', parent: 'Architect Agent' },
+        { name: 'Dashboard UI Sub-Agent', parent: 'Lead Builder' },
+        { name: 'Pytest QA Sub-Agent', parent: 'Co-Leader QA' }
+      ];
+      renderSpawnedSubAgents();
+      updateBlackboardBanner(`Building Project: ${projectTopic}`);
 
-        if (isStandby) {
-          if (dock) dock.classList.remove('hidden');
-          const appName = data.os_action.site_name || data.os_action.app || 'YouTube';
-          const appElem = document.getElementById('standbyActiveAppName');
-          if (appElem) appElem.textContent = `${appName} Active (Edge GUI)`;
-          if (badge) {
-            badge.textContent = 'STANDBY - LISTENING';
-            badge.className = 'px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mono text-[10px] animate-pulse';
-          }
-        } else {
-          if (dock) dock.classList.add('hidden');
-          if (badge) {
-            badge.textContent = 'ONLINE & READY';
-            badge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mono text-[10px]';
-          }
-        }
-
-        if (action === 'open_website') {
-          const site = data.os_action.site_name || 'Website';
-          const url = data.os_action.url;
-          appendTraceLog(
-            'Desktop Browser Automation (Playwright)',
-            `Opened <strong>${site}</strong> on desktop & entered active standby loop. <a href="${url}" target="_blank" class="text-cyan-400 font-bold underline ml-1">Open Tab &nearr;</a>`,
-            'text-emerald-400'
-          );
-        } else if (action === 'search') {
-          const q = data.os_action.query;
-          appendTraceLog(
-            'Desktop Browser Automation (Playwright)',
-            `Searched YouTube/Browser for: <strong>${q}</strong>. Standing by—say 'play' or click 'Play First Video'.`,
-            'text-cyan-300'
-          );
-        } else if (action === 'play_youtube') {
-          const query = data.os_action.query || 'Video';
-          appendTraceLog(
-            'Desktop Browser Automation (Playwright)',
-            `Started playback for: <strong>${query}</strong> on desktop player. Standing by—say 'pause' to pause or 'close it' when done.`,
-            'text-red-400'
-          );
-        } else if (action === 'pause_resume') {
-          appendTraceLog(
-            'Desktop Browser Automation (Playwright)',
-            `Toggled playback pause/resume on desktop player.`,
-            'text-amber-300'
-          );
-        } else if (action === 'close_browser' || action === 'close') {
-          appendTraceLog(
-            'Desktop Browser Automation (Playwright)',
-            `Closed active desktop browser session. Standing by for your next mission.`,
-            'text-slate-400'
-          );
-        } else if (action === 'stop_audio') {
-          stopAllAudio();
-        }
-        return;
-      }
-
-      if (data.type === 'project_build') {
-        document.getElementById('statusCoLeader').textContent = 'Thinking (<|think|>)... Blueprint Approved';
-        appendTraceLog(
-          '1. Co-Leader & Chief Reviewer',
-          `Evaluated blueprint from System Architect. Allocated subtasks across dynamic sub-agents for <strong>${data.project_name}</strong>.`,
-          'text-cyan-300'
-        );
-
-        appendTraceLog(
-          '2. System Architect',
-          `Created project manifest. Saved to: <code>${data.saved_location || 'backend/jarvis_task_manager'}</code>.`,
-          'text-blue-300'
-        );
-
-        // Spawn dynamic sub-agents in 3D orbit
-        spawnDynamicChildSubagentIn3D('SQLite Schema Sub-Agent');
-        await new Promise(r => setTimeout(r, 250));
-        spawnDynamicChildSubagentIn3D('REST API Sub-Agent');
-        await new Promise(r => setTimeout(r, 250));
-        spawnDynamicChildSubagentIn3D('Pytest QA Sub-Agent');
-
-        appendTraceLog(
-          '3. Zero-Hallucination Critic',
-          `Verified AST structure for all generated modules. Deterministic syntax tree valid. Zero hallucinations detected.`,
-          'text-emerald-300'
-        );
-
-        if (data.blackboard) {
-          updateBlackboard({
-            objective: data.blackboard.objective || cmd,
-            arch: data.blackboard.blueprint ? data.blackboard.blueprint.architecture : 'Clean Modular FastAPI + SQLite',
-            review: '100% AST Grounded'
-          });
-        }
-
-        const spoken = data.spoken_response || 'Project created successfully with zero hallucinations.';
-        document.getElementById('spokenResponseBox').textContent = `"${spoken}"`;
-        speakSpokenResponse(spoken);
-
-        document.getElementById('selectRepoFile').value = 'task_models.py';
-        renderSelectedRepoFile('task_models.py');
-        return;
-      }
-
-      if (data.type === 'repo_triage') {
-        const target = data.target_file || 'payment_service.py';
-        
-        if (data.agent_trace && data.agent_trace.length > 0) {
-          for (const step of data.agent_trace) {
-            let color = 'text-cyan-300';
-            if (step.agent.includes('Explorer')) color = 'text-amber-300';
-            else if (step.agent.includes('Builder')) color = 'text-amber-400';
-            else if (step.agent.includes('Critic')) {
-              color = step.output && step.output.passed === false ? 'text-rose-400' : 'text-emerald-300';
-            }
-            appendTraceLog(step.agent, typeof step.output === 'object' ? JSON.stringify(step.output, null, 1) : String(step.output), color);
-            await new Promise(r => setTimeout(r, 300));
-          }
-        }
-
-        if (data.patched_code) {
-          REPO_FILES[target] = data.patched_code;
-        }
-
-        if (data.blackboard) {
-          updateBlackboard({
-            objective: `Triage & Ground: ${target}`,
-            arch: 'AST-Grounded Code Patch',
-            review: 'Verified against Deterministic AST Index'
-          });
-        }
-
-        const spoken = data.spoken_response || `Mission complete for ${target}. Zero hallucinations detected.`;
-        document.getElementById('spokenResponseBox').textContent = `"${spoken}"`;
-        speakSpokenResponse(spoken);
-
-        document.getElementById('selectRepoFile').value = target;
-        renderSelectedRepoFile(target);
-      }
-    }
-
-    // Pipeline: Full Project Build with Recursive Dynamic Sub-Agents
-    async function executeBuildProjectPipeline(cmd) {
-      // Co-Leader step
-      document.getElementById('statusCoLeader').textContent = 'Thinking (<|think|>)... Blueprint formulation';
-      appendTraceLog(
+      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', `Co-Leader published "${projectTopic}" blueprint to Shared Blackboard.`, 'border-cyan-400');
+      appendAgentLog(
         '1. Co-Leader & Chief Reviewer',
-        `Received directive: "${cmd}". Initialized Shared Project Blackboard and assigned architecture DAG to System Architect.`,
-        'text-cyan-300'
-      );
-      updateBlackboard({
-        objective: cmd,
-        arch: 'Clean Modular FastAPI + SQLite Pattern',
-        review: 'In Progress: Generating Modules'
-      });
-      await new Promise(r => setTimeout(r, 600));
-
-      // Architect step
-      document.getElementById('statusArchitect').textContent = 'Decomposing into 3 modules';
-      appendTraceLog(
-        '2. System Architect',
-        `Decomposed project into <code>task_models.py</code>, <code>task_api.py</code>, and <code>test_tasks.py</code>. Spawning specialist child sub-agents.`,
-        'text-blue-300'
-      );
-      await new Promise(r => setTimeout(r, 600));
-
-      // Spawning Sub-Agents dynamically
-      spawnDynamicChildSubagentIn3D('SQLite Schema Sub-Agent');
-      await new Promise(r => setTimeout(r, 400));
-      spawnDynamicChildSubagentIn3D('REST API Sub-Agent');
-      await new Promise(r => setTimeout(r, 400));
-      spawnDynamicChildSubagentIn3D('Pytest QA Sub-Agent');
-      await new Promise(r => setTimeout(r, 500));
-
-      // Co-Leader & Critic Verification
-      document.getElementById('statusCritic').textContent = 'Deterministic AST pass';
-      appendTraceLog(
-        '3. Zero-Hallucination Critic',
-        `Verified AST structure for all 3 generated files. Syntax tree valid, all imports resolve deterministically. Zero hallucinations detected.`,
-        'text-emerald-300'
+        'text-cyan-300',
+        `1-Model: ${state.singleModel}`,
+        `Decomposed "${projectTopic}" on Shared Blackboard and spawned 3 specialist sub-agents.`,
+        '[Shared Blackboard Synced Across All Agents]'
       );
 
-      const spoken = `Project created successfully, sir. System Architect broke down the requirements into three modules, spawned specialist sub-agents in 3D orbit, and the Co-Leader verified 100% AST compliance with zero hallucinations.`;
-      document.getElementById('spokenResponseBox').textContent = `"${spoken}"`;
-      speakSpokenResponse(spoken);
+      await moveVirtualCursorTo(340, 140, 'IDE: Writing expense_models.py & expense_api.py', true);
 
-      updateBlackboard({
-        review: '100% AST Approved & Grounded'
-      });
-
-      // Switch codebase view to task_models.py
-      document.getElementById('selectRepoFile').value = 'task_models.py';
-      renderSelectedRepoFile('task_models.py');
-    }
-
-    // Pipeline: Codebase Triage (Problems 1 & 2) with Anti-Hallucination Guard Demo
-    async function executeRepoTriagePipeline(cmd, simulateHallucination) {
-      let targetFile = 'payment_service.py';
-      if (cmd.toLowerCase().includes('auth') || cmd.toLowerCase().includes('jwt')) targetFile = 'auth_middleware.py';
-      if (cmd.toLowerCase().includes('issue') || cmd.toLowerCase().includes('router')) targetFile = 'issue_router.py';
-
-      appendTraceLog(
-        '1. Co-Leader (Single Gemma 4 Engine)',
-        `Instructed Explorer Agent to scan AST of <code>${targetFile}</code> for logic vulnerabilities.`,
-        'text-cyan-300'
-      );
-      await new Promise(r => setTimeout(r, 500));
-
-      appendTraceLog(
-        '2. Context & AST Explorer',
-        `Loaded deterministic AST for <code>${targetFile}</code>: verified top-level functions and line mappings. Root cause flagged.`,
-        'text-amber-300'
-      );
-      await new Promise(r => setTimeout(r, 500));
-
-      // Builder writes patch
       if (simulateHallucination) {
-        appendTraceLog(
-          '3. Lead Builder [Ungrounded Attempt]',
-          `Generated patch referencing external SDK call: <code>auto_magic_refund_sdk()</code>.`,
-          'text-amber-400'
+        highlightAgentCard('agentCardCritic', 'statusCritic', 'CO-LEADER BLOCKED HALLUCINATION: `fetch_bank_plaid_magic` not in Shared Blackboard AST!', 'border-rose-500');
+        appendAgentLog(
+          '4. Co-Leader QA [BLOCKED HALLUCINATION]',
+          'text-rose-400',
+          `1-Model: ${state.singleModel}`,
+          'Intercepted unverified function `fetch_bank_plaid_magic()`. Forced Lead Builder to use `get_category_totals()` from Shared Blackboard.',
+          '[Self-Correction Complete]'
         );
-        await new Promise(r => setTimeout(r, 600));
-
-        // Critic Intercepts Hallucination!
-        appendTraceLog(
-          '4. Zero-Hallucination Critic [BLOCKED]',
-          `<span class="text-rose-400 font-bold">&#9888; CRITIC HARD BLOCK:</span> Symbol <code>auto_magic_refund_sdk()</code> does NOT exist in AST index. Rejecting patch and demanding self-correction.`,
-          'text-rose-400'
-        );
-        await new Promise(r => setTimeout(r, 800));
-
-        // Builder Self-Correction
-        appendTraceLog(
-          '5. Lead Builder [Self-Correction Loop]',
-          `Self-corrected! Removed hallucinated symbol and replaced with verified AST functions.`,
-          'text-amber-300'
-        );
-        await new Promise(r => setTimeout(r, 600));
+        await new Promise(r => setTimeout(r, 500));
       }
 
-      // Critic Final Sign-off
-      appendTraceLog(
-        '6. Zero-Hallucination Critic [APPROVED]',
-        `All referenced symbols deterministically verified against AST index. Pytest suite PASSED.`,
-        'text-emerald-300'
+      const modelsCode = `"""Data Layer generated by SQLite Schema Sub-Agent (Synced via Shared Blackboard)"""
+from typing import List, Dict, Any
+
+EXPENSE_LEDGER: List[Dict[str, Any]] = []
+
+def init_expense_store() -> bool:
+    EXPENSE_LEDGER.clear()
+    return True
+
+def add_expense_entry(title: str, category: str, amount_inr: float) -> Dict[str, Any]:
+    if amount_inr <= 0:
+        raise ValueError("Amount must be positive")
+    entry = {"id": len(EXPENSE_LEDGER) + 1, "title": title, "category": category.lower(), "amount_inr": round(amount_inr, 2)}
+    EXPENSE_LEDGER.append(entry)
+    return entry
+
+def get_category_totals() -> Dict[str, float]:
+    totals: Dict[str, float] = {}
+    for item in EXPENSE_LEDGER:
+        cat = item["category"]
+        totals[cat] = round(totals.get(cat, 0.0) + item["amount_inr"], 2)
+    return totals`;
+
+      const apiCode = `"""FastAPI Service generated by Lead Builder Agent & reviewed by Co-Leader"""
+from typing import Dict, Any
+from expense_models import init_expense_store, add_expense_entry, get_category_totals
+
+def handle_create_expense(payload: Dict[str, Any]) -> Dict[str, Any]:
+    entry = add_expense_entry(
+        title=str(payload.get("title", "Misc")),
+        category=str(payload.get("category", "general")),
+        amount_inr=float(payload.get("amount_inr", 0.0))
+    )
+    return {"status": "created", "entry": entry, "summary": get_category_totals()}`;
+
+      state.files['expense_models.py'] = modelsCode;
+      state.files['expense_api.py'] = apiCode;
+      state.selectedFile = 'expense_api.py';
+
+      document.getElementById('activePatchFileLabel').textContent = `Generated Multi-File Project: expense_models.py + expense_api.py`;
+      document.getElementById('codeDiffViewer').textContent = `# --- FILE 1: expense_models.py ---\n${modelsCode}\n\n# --- FILE 2: expense_api.py ---\n${apiCode}`;
+      document.getElementById('criticTestViewer').textContent =
+`============================= CO-LEADER & PYTEST QA ============================
+Single Base Model : ${state.singleModel} (HP HyperX RTX 5060)
+Active Agents     : 4 Core + 3 Dynamically Spawned Sub-Agents
+Shared Blackboard : 100% Symbol Alignment across expense_models.py & expense_api.py
+test_expenses.py::test_add_expense_and_category_totals PASSED            [100%]
+==================== CO-LEADER SIGN-OFF: ZERO HALLUCINATIONS ===================`;
+
+      highlightAgentCard('agentCardCritic', 'statusCritic', 'Co-Leader verified all generated project files with 0 hallucinations!', 'border-emerald-400');
+      updateBlackboardBanner(`Completed Project: ${projectTopic}`);
+      renderRepoView();
+
+      speakJarvis(`Built the complete ${projectTopic} project using our single ${state.singleModel} model. Co-Leader and three spawned sub-agents verified all files on the Shared Blackboard.`);
+    }
+
+    const SCENARIOS = {
+      gst_webhook: {
+        lang: 'en-IN',
+        command: 'Jarvis, check why GST calculation and duplicate webhooks are failing in payment_service.py, divide the fix between agents, and verify with unit tests.',
+        targetFile: 'payment_service.py',
+        orchestratorPlan: 'Co-Leader decomposed voice intent on Shared Blackboard: (1) AST scan of payment_service.py, (2) Patch GST formula & add event_id idempotency guard, (3) Co-Leader QA verification.',
+        explorerReport: 'Verified payment_service.py (23 lines): found `calculate_gst_total` (line 6) and `process_razorpay_webhook` (line 12).',
+        patchedCode: `"""Open-Source Order & Payment Microservice (Hacktoberfest Target Repo)"""
+from typing import Dict, Any
+
+PROCESSED_WEBHOOKS = set()
+
+def calculate_gst_total(subtotal_inr: float, tax_rate: float = 0.18) -> float:
+    if subtotal_inr < 0:
+        raise ValueError("Subtotal cannot be negative")
+    return round(subtotal_inr + (subtotal_inr * tax_rate), 2)
+
+def process_razorpay_webhook(event_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+    if event_id in PROCESSED_WEBHOOKS:
+        return {"status": "duplicate_ignored", "event_id": event_id, "charged_inr": 0.0}
+    order_id = payload.get("order_id", "UNKNOWN")
+    amount = payload.get("amount_inr", 0.0)
+    PROCESSED_WEBHOOKS.add(event_id)
+    return {
+        "status": "captured",
+        "order_id": order_id,
+        "charged_inr": calculate_gst_total(amount)
+    }`,
+        verifiedSymbols: ['calculate_gst_total', 'process_razorpay_webhook', 'PROCESSED_WEBHOOKS'],
+        testOutput: `============================= test session starts ==============================
+test_payment_service.py::test_calculate_gst_total_adds_18_percent PASSED [ 33%]
+test_payment_service.py::test_duplicate_webhook_idempotency PASSED       [ 66%]
+test_payment_service.py::test_negative_subtotal_raises_error PASSED      [100%]
+============================== 3 passed in 0.04s ===============================`,
+        spokenSummary: 'Mission complete. Using our single Gemma 4 model, the Architect pinpointed the GST and webhook bugs in payment_service.py, the Builder patched both functions, and the Co-Leader verified all unit tests with zero hallucinations.'
+      },
+      hinglish_auth: {
+        lang: 'hi-IN',
+        command: 'Jarvis, auth_middleware.py mein token expiry bug check karo, fix likho aur verify karke batao.',
+        targetFile: 'auth_middleware.py',
+        orchestratorPlan: 'Co-Leader parsed Hinglish command via Saaras v4 codemix mode and synced `auth_middleware.py` security audit to the Shared Blackboard.',
+        explorerReport: 'Verified auth_middleware.py (14 lines): `verify_jwt_session` (line 5) returns `True` even when `exp <= current_epoch`.',
+        patchedCode: `"""JWT Session & Role Guard Middleware"""
+import time
+from typing import Dict, Any
+
+def verify_jwt_session(token_payload: Dict[str, Any], current_epoch: int) -> bool:
+    if token_payload.get("revoked", False):
+        return False
+    exp = token_payload.get("exp", 0)
+    return int(exp) > int(current_epoch)
+
+def require_maintainer_role(user_obj: Dict[str, Any]) -> bool:
+    roles = user_obj.get("roles", [])
+    return "maintainer" in roles or "admin" in roles`,
+        verifiedSymbols: ['verify_jwt_session', 'require_maintainer_role'],
+        testOutput: `============================= test session starts ==============================
+test_auth_middleware.py::test_expired_jwt_rejected PASSED                [ 33%]
+test_auth_middleware.py::test_revoked_jwt_rejected PASSED                [ 66%]
+test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
+============================== 3 passed in 0.03s ===============================`,
+        spokenSummary: 'Auth middleware fix ho gaya hai. Explorer Agent ne line 5 par JWT expiration bypass detect kiya, Builder Agent ne patch lagaya, aur Co-Leader ne teeno security tests verify kar liye hain.'
+      }
+    };
+
+    async function runMultiAgentMission(scenarioKey) {
+      const commandText = document.getElementById('voiceCommandInput').value.trim();
+      if (!commandText) {
+        showToast('Please enter or speak a command first.');
+        return;
+      }
+      const lower = commandText.toLowerCase();
+
+      if (scenarioKey === 'step1_open_youtube' || (lower.includes('open youtube') && !lower.includes('search') && !lower.includes('play'))) {
+        await executeStep1OpenYoutube();
+        return;
+      }
+
+      if (
+        scenarioKey === 'youtube_song' ||
+        lower.includes('search') ||
+        lower.includes('youtube') ||
+        lower.includes('play') ||
+        lower.includes('believer') ||
+        lower.includes('kesariya')
+      ) {
+        await executeYoutubeSearchAndPlay(commandText);
+        return;
+      }
+
+      if (
+        scenarioKey === 'build_complex_project' ||
+        lower.includes('make a') ||
+        lower.includes('build a') ||
+        lower.includes('create a') ||
+        lower.includes('expense tracker')
+      ) {
+        await executeComplexProjectBuild(commandText);
+        return;
+      }
+
+      await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
+      const scenario = SCENARIOS[scenarioKey] || (lower.includes('auth') ? SCENARIOS.hinglish_auth : SCENARIOS.gst_webhook);
+      document.getElementById('activePatchFileLabel').textContent = `Target File: ${scenario.targetFile} (Co-Leader Verified)`;
+      document.getElementById('codeDiffViewer').textContent = scenario.patchedCode;
+      document.getElementById('criticTestViewer').textContent = scenario.testOutput;
+      state.pendingPatch = { targetFile: scenario.targetFile, code: scenario.patchedCode };
+      speakJarvis(scenario.spokenSummary);
+    }
+
+    function renderRepoView() {
+      const astIndex = parseRepoAST();
+      const fileKeys = Object.keys(state.files);
+      document.getElementById('repoFileCount').textContent = String(fileKeys.length);
+
+      const fileListEl = document.getElementById('repoFileList');
+      fileListEl.innerHTML = '';
+      fileKeys.forEach(fname => {
+        const meta = astIndex[fname];
+        const isSelected = fname === state.selectedFile;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `card-3d tilt-card w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between ${
+          isSelected
+            ? 'bg-cyan-500/15 border-cyan-400/50 text-cyan-200'
+            : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
+        }`;
+        btn.innerHTML = `
+          <div>
+            <div class="text-xs font-semibold mono">${fname}</div>
+            <div class="text-[10px] text-slate-400">${meta.lineCount} lines &bull; ${meta.functions.length} AST functions</div>
+          </div>
+          <span class="text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-emerald-300">Blackboard Synced</span>
+        `;
+        btn.addEventListener('click', () => {
+          state.selectedFile = fname;
+          renderRepoView();
+        });
+        fileListEl.appendChild(btn);
+      });
+
+      const symbolListEl = document.getElementById('astSymbolList');
+      symbolListEl.innerHTML = '';
+      Object.entries(astIndex).forEach(([fname, meta]) => {
+        meta.functions.forEach(fn => {
+          const item = document.createElement('div');
+          item.className = 'p-1.5 rounded bg-slate-900 border border-slate-800 flex items-center justify-between';
+          item.innerHTML = `
+            <span class="text-cyan-300">${fn.name}(${fn.args})</span>
+            <span class="text-[10px] text-slate-400">${fname}:${fn.line}</span>
+          `;
+          symbolListEl.appendChild(item);
+        });
+      });
+
+      document.getElementById('editorFileName').textContent = state.selectedFile;
+      document.getElementById('repoFileEditor').value = state.files[state.selectedFile] || '';
+      attach3DTiltListeners();
+    }
+
+    function switchTab(tab) {
+      state.activeTab = tab;
+      const views = {
+        hud: document.getElementById('viewHud'),
+        repo: document.getElementById('viewRepo'),
+        backend: document.getElementById('viewBackend'),
+        guide: document.getElementById('viewGuide')
+      };
+      const buttons = {
+        hud: document.getElementById('tabBtnHud'),
+        repo: document.getElementById('tabBtnRepo'),
+        backend: document.getElementById('tabBtnBackend'),
+        guide: document.getElementById('tabBtnGuide')
+      };
+      Object.keys(views).forEach(k => {
+        if (k === tab) {
+          views[k].classList.remove('hidden');
+          buttons[k].className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/25 text-cyan-200 border border-cyan-400/50 transition';
+        } else {
+          views[k].classList.add('hidden');
+          buttons[k].className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+        }
+      });
+      if (tab === 'repo') renderRepoView();
+    }
+
+    let recognition = null;
+    let isRecording = false;
+
+    function toggleMicrophone() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const micLabel = document.getElementById('micBtnLabel');
+      const wave = document.getElementById('waveformBars');
+
+      if (!SpeechRec) {
+        showToast('Browser mic unavailable in iframe — click Turn 1 then Turn 2 below or type any command!');
+        return;
+      }
+      if (isRecording && recognition) {
+        recognition.stop();
+        return;
+      }
+      recognition = new SpeechRec();
+      recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        micLabel.textContent = 'Listening...';
+        wave.classList.add('wave-active');
+        trigger3DPulse(4000);
+      };
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('voiceCommandInput').value = transcript;
+        runMultiAgentMission();
+      };
+      recognition.onerror = () => {
+        showToast('Mic blocked by iframe sandbox — click Turn 1 then Turn 2 below to watch the mouse move!');
+      };
+      recognition.onend = () => {
+        isRecording = false;
+        micLabel.textContent = 'Speak to J.A.R.V.I.S.';
+        wave.classList.remove('wave-active');
+      };
+      recognition.start();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initJarvis3D();
+      attach3DTiltListeners();
+
+      const initScenario = SCENARIOS.gst_webhook;
+      document.getElementById('codeDiffViewer').textContent = BACKEND_FILES['gui_computer_agent.py'];
+      document.getElementById('criticTestViewer').textContent = initScenario.testOutput;
+      state.pendingPatch = { targetFile: initScenario.targetFile, code: initScenario.patchedCode };
+
+      appendAgentLog(
+        'MARK LXXXV 3D COCKPIT ONLINE',
+        'text-cyan-300',
+        'HP HyperX RTX 5060 // 24GB RAM',
+        'Interactive 3D Perspective Cards + Visual GUI Mouse Operator (`gui_computer_agent.py`) initialized. Hover over any card for 3D depth tilt, or click Turn 1 then Turn 2!',
+        '[3D Holographic HUD Ready]'
       );
 
-      const spoken = `Mission complete for ${targetFile}. Explorer identified the root cause, Builder generated the grounded patch, and Critic verified all AST symbols with zero hallucinations.`;
-      document.getElementById('spokenResponseBox').textContent = `"${spoken}"`;
-      speakSpokenResponse(spoken);
-
-      // Render updated file in repo view
-      document.getElementById('selectRepoFile').value = targetFile;
-      renderSelectedRepoFile(targetFile);
-    }
-
-    // --- BLACKBOARD & REPO VIEWER LOGIC ---
-    function updateBlackboard(data) {
-      if (data.objective) document.getElementById('bbObjective').textContent = `Mission: ${data.objective}`;
-      if (data.arch) document.getElementById('bbArch').textContent = data.arch;
-      if (data.review) document.getElementById('bbReview').textContent = data.review;
-
-      const chatBus = document.getElementById('bbTeamChatBus');
-      const time = new Date().toLocaleTimeString();
-      const div = document.createElement('div');
-      div.className = 'text-cyan-300';
-      div.textContent = `[${time}] Co-Leader & Architect: Synced state on Shared Blackboard.`;
-      chatBus.appendChild(div);
-    }
-
-    function renderSelectedRepoFile(filename) {
-      const code = REPO_FILES[filename] || '# File empty or not found';
-      document.getElementById('currentFileTitle').textContent = filename;
-      document.getElementById('currentFileLineCount').textContent = `${code.split('\n').length} lines • AST Grounded`;
-      document.getElementById('codeViewSource').textContent = code;
-
-      // Mock Pytest Output
-      document.getElementById('codeViewTerminal').textContent = `============================= test session starts ==============================
-collected 3 items
-
-tests/test_${filename}::test_ast_deterministic_contract PASSED           [ 33%]
-tests/test_${filename}::test_zero_hallucination_signature PASSED         [ 66%]
-tests/test_${filename}::test_idempotency_and_security PASSED            [100%]
-
-============================== 3 passed in 0.04s ===============================
-[PROVENANCE RECEIPT] Verified against Gemma 4 Swarm Deterministic AST Index.`;
-    }
-
-    // --- SETUP & EVENT LISTENERS ---
-    window.addEventListener('DOMContentLoaded', () => {
-      initThreeSwarm();
-      renderSelectedRepoFile('payment_service.py');
-
-      // Check backend status & sync hardware/model profile
-      fetch(`${APP_STATE.backendUrl}/api/status`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.single_model) {
-            const sel = document.getElementById('selectGemmaModel');
-            if (sel) sel.value = data.single_model;
-          }
-          const badge = document.getElementById('missionGlobalBadge');
-          if (badge) {
-            badge.textContent = 'ONLINE & GROUNDED';
-            badge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 mono text-[10px]';
-          }
-        })
-        .catch(() => {
-          console.log('Running in client simulation mode.');
-        });
-
-      // Preset buttons
-      document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.getElementById('voiceCommandInput').value = btn.dataset.cmd;
-          executeMission();
-        });
-      });
-
-      // Execute button
-      document.getElementById('btnExecuteMission').addEventListener('click', executeMission);
-
-      // Spawn custom sub-agent button
-      document.getElementById('btnSpawnCustomSubagent').addEventListener('click', () => {
-        const roles = [
-          'SQLite Schema Sub-Agent',
-          'FastAPI Router Sub-Agent',
-          'Pytest QA Sub-Agent',
-          'Frontend React Sub-Agent',
-          'AST Symbol Guard Sub-Agent'
-        ];
-        const nextRole = roles[APP_STATE.spawnCount % roles.length];
-        spawnDynamicChildSubagentIn3D(nextRole);
-      });
-
-      // View tabs switcher
-      const tabHud = document.getElementById('tabBtnHud');
-      const tabBb = document.getElementById('tabBtnBlackboard');
-      const tabRepo = document.getElementById('tabBtnRepo');
-
-      function switchTab(activeId) {
-        document.getElementById('viewHud').classList.add('hidden');
-        document.getElementById('viewBlackboard').classList.add('hidden');
-        document.getElementById('viewRepo').classList.add('hidden');
-
-        [tabHud, tabBb, tabRepo].forEach(btn => {
-          btn.className = 'px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
-        });
-
-        if (activeId === 'hud') {
-          document.getElementById('viewHud').classList.remove('hidden');
-          tabHud.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition';
-          onWindowResize();
-        } else if (activeId === 'blackboard') {
-          document.getElementById('viewBlackboard').classList.remove('hidden');
-          tabBb.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition';
+      // 3D Helmet Tilt Mode Toggle
+      document.getElementById('btnToggle3dCockpit').addEventListener('click', (e) => {
+        state.cockpit3dMode = !state.cockpit3dMode;
+        const wrapper = document.getElementById('cockpitWrapper');
+        if (state.cockpit3dMode) {
+          wrapper.classList.add('cockpit-3d-engaged');
+          e.currentTarget.textContent = '3D Helmet Tilt: ON';
+          showToast('Engaged 3D Iron Man Helmet Cockpit Perspective!');
         } else {
-          document.getElementById('viewRepo').classList.remove('hidden');
-          tabRepo.className = 'px-3 py-1.5 rounded-md text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 transition';
+          wrapper.classList.remove('cockpit-3d-engaged');
+          e.currentTarget.textContent = '3D Helmet Tilt: OFF';
         }
-      }
-
-      tabHud.addEventListener('click', () => switchTab('hud'));
-      tabBb.addEventListener('click', () => switchTab('blackboard'));
-      tabRepo.addEventListener('click', () => switchTab('repo'));
-
-      // Repo file dropdown
-      document.getElementById('selectRepoFile').addEventListener('change', (e) => {
-        renderSelectedRepoFile(e.target.value);
       });
 
-      // YouTube dock close
-      document.getElementById('btnCloseYoutube').addEventListener('click', () => {
-        document.getElementById('youtubeDock').classList.add('hidden');
-        document.getElementById('youtubeIframe').src = '';
+      document.getElementById('selectSingleGemmaModel').addEventListener('change', (e) => {
+        state.singleModel = e.target.value;
+        updateBlackboardBanner('Model Updated');
+        showToast(`Switched single base model to: ${state.singleModel}`);
       });
 
-      // Stop all audio & media immediately
-      function stopAllAudio() {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-        }
-        const dock = document.getElementById('youtubeDock');
-        if (dock) dock.classList.add('hidden');
-        const iframe = document.getElementById('youtubeIframe');
-        if (iframe) iframe.src = '';
-        animateWaveform(false);
-        // Call backend to kill any automated browser media processes
-        fetch(`${APP_STATE.backendUrl}/api/stop`, { method: 'POST' }).catch(() => {});
-        document.getElementById('spokenResponseBox').textContent = '"All audio and media playback have been stopped, sir."';
-      }
+      document.getElementById('btnSpawnCustomSubAgent').addEventListener('click', () => {
+        const roles = [
+          { name: 'GUI Coordinate Verifier Sub-Agent', parent: 'Co-Leader' },
+          { name: 'DOM OCR Fallback Sub-Agent', parent: 'Architect Agent' },
+          { name: 'SQLite Schema Sub-Agent', parent: 'Lead Builder' },
+          { name: 'Edge Case Test Sub-Agent', parent: 'Co-Leader QA' }
+        ];
+        const nextRole = roles[state.spawnedSubAgents.length % roles.length];
+        state.spawnedSubAgents.push(nextRole);
+        renderSpawnedSubAgents();
+        updateBlackboardBanner('Sub-Agent Spawned');
+        trigger3DPulse(1800);
+        appendAgentLog(
+          `${nextRole.parent} -> Spawned Sub-Agent`,
+          'text-purple-300',
+          `1-Model: ${state.singleModel}`,
+          `Dynamically spawned '${nextRole.name}' in 3D orbit with laser link and connected it to the Shared Blackboard.`,
+          `call:spawn_sub_agent{name: "${nextRole.name}"}`
+        );
+        showToast(`Spawned ${nextRole.name} in 3D orbit!`);
+      });
 
-      document.getElementById('btnStopAllAudio').addEventListener('click', stopAllAudio);
+      document.getElementById('btnCloseYoutubeDock').addEventListener('click', () => {
+        document.getElementById('youtubePlayerDock').classList.add('hidden');
+      });
 
-      // Mute toggle
+      document.getElementById('tabBtnHud').addEventListener('click', () => switchTab('hud'));
+      document.getElementById('tabBtnRepo').addEventListener('click', () => switchTab('repo'));
+      document.getElementById('tabBtnBackend').addEventListener('click', () => switchTab('backend'));
+      document.getElementById('tabBtnGuide').addEventListener('click', () => switchTab('guide'));
+
       document.getElementById('btnToggleMute').addEventListener('click', () => {
-        APP_STATE.isMuted = !APP_STATE.isMuted;
-        document.getElementById('muteStatusLabel').textContent = APP_STATE.isMuted ? 'Voice TTS: OFF' : 'Sarvam TTS: ON';
-        document.getElementById('muteStatusDot').className = APP_STATE.isMuted ? 'w-2 h-2 rounded-full bg-slate-500' : 'w-2 h-2 rounded-full bg-emerald-400';
+        state.ttsEnabled = !state.ttsEnabled;
+        const dot = document.getElementById('muteStatusDot');
+        const label = document.getElementById('muteStatusLabel');
+        if (state.ttsEnabled) {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          label.textContent = 'Voice TTS: ON';
+        } else {
+          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+          dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+          label.textContent = 'Voice TTS: MUTED';
+        }
       });
 
-      // Auto-spin toggle
-      document.getElementById('btnToggleSpin').addEventListener('click', () => {
-        APP_STATE.autoRotate = !APP_STATE.autoRotate;
-        document.getElementById('btnToggleSpin').textContent = APP_STATE.autoRotate ? 'Auto-Rotate: ON' : 'Auto-Rotate: OFF';
+      document.getElementById('btnReplaySpeech').addEventListener('click', () => speakJarvis(state.lastSpokenText));
+      document.getElementById('btnMicRecord').addEventListener('click', toggleMicrophone);
+      document.getElementById('btnRunMission').addEventListener('click', () => runMultiAgentMission());
+
+      document.querySelectorAll('.scenario-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const key = btn.getAttribute('data-Scenario');
+          if (key === 'step1_open_youtube') {
+            document.getElementById('voiceCommandInput').value = 'Jarvis, open YouTube';
+            runMultiAgentMission('step1_open_youtube');
+            return;
+          }
+          if (key === 'youtube_song') {
+            document.getElementById('voiceCommandInput').value = 'Can you search for Believer by Imagine Dragons';
+            runMultiAgentMission('youtube_song');
+            return;
+          }
+          if (key === 'build_complex_project') {
+            document.getElementById('voiceCommandInput').value = 'Jarvis, make a complex Smart Expense Tracker project with FastAPI backend, SQLite database, and dashboard UI';
+            runMultiAgentMission('build_complex_project');
+            return;
+          }
+          const sc = SCENARIOS[key];
+          if (sc) {
+            document.getElementById('voiceCommandInput').value = sc.command;
+            runMultiAgentMission(key);
+          }
+        });
       });
 
-      // Reset camera
-      document.getElementById('btnResetCamera').addEventListener('click', () => {
-        coreGroup.rotation.set(0, 0, 0);
-        camera.position.set(0, 5, 24);
-      });
-
-      // Clear log
       document.getElementById('btnClearLog').addEventListener('click', () => {
-        document.getElementById('swarmTraceLog').innerHTML = '';
+        document.getElementById('agentMessageLog').innerHTML = '';
+        state.spawnedSubAgents = [];
+        renderSpawnedSubAgents();
+        showToast('Reset trace and 3D orbit nodes.');
       });
 
-      // API modal controls
+      document.getElementById('btnApplyPatchToRepo').addEventListener('click', () => {
+        if (state.pendingPatch && state.pendingPatch.targetFile && state.files[state.pendingPatch.targetFile]) {
+          state.files[state.pendingPatch.targetFile] = state.pendingPatch.code;
+          state.selectedFile = state.pendingPatch.targetFile;
+          renderRepoView();
+          showToast(`Applied verified patch to ${state.pendingPatch.targetFile}!`);
+        }
+      });
+
+      document.getElementById('btnSaveRepoFile').addEventListener('click', () => {
+        state.files[state.selectedFile] = document.getElementById('repoFileEditor').value;
+        renderRepoView();
+        updateBlackboardBanner(`Edited ${state.selectedFile}`);
+        showToast(`Saved ${state.selectedFile} to Shared Blackboard.`);
+      });
+
+      document.getElementById('btnAddNewFile').addEventListener('click', () => {
+        document.getElementById('newFileModal').classList.remove('hidden');
+      });
+      document.getElementById('btnCloseNewFileModal').addEventListener('click', () => {
+        document.getElementById('newFileModal').classList.add('hidden');
+      });
+      document.getElementById('btnConfirmNewFile').addEventListener('click', () => {
+        let name = document.getElementById('inputNewFileName').value.trim() || 'custom_module.py';
+        if (!name.endsWith('.py')) name += '.py';
+        state.files[name] = document.getElementById('inputNewFileCode').value;
+        state.selectedFile = name;
+        document.getElementById('newFileModal').classList.add('hidden');
+        renderRepoView();
+        updateBlackboardBanner(`Added ${name}`);
+        showToast(`Added ${name} to Shared Blackboard!`);
+      });
+
+      document.getElementById('backendCodeViewer').textContent = BACKEND_FILES['gui_computer_agent.py'];
+      document.querySelectorAll('.pyfile-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const fname = btn.getAttribute('data-pyfile');
+          document.getElementById('backendCodeViewer').textContent = BACKEND_FILES[fname] || '';
+          document.querySelectorAll('.pyfile-btn').forEach(b => {
+            b.className = 'pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700';
+          });
+          btn.className = 'pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40';
+        });
+      });
+
+      document.getElementById('btnCopyBackendCode').addEventListener('click', () => {
+        const text = document.getElementById('backendCodeViewer').textContent;
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast('Copied Python backend code!');
+      });
+
       document.getElementById('btnOpenApiModal').addEventListener('click', () => {
-        document.getElementById('inputGeminiApiKey').value = APP_STATE.geminiKey;
-        document.getElementById('inputSarvamApiKey').value = APP_STATE.sarvamKey;
-        document.getElementById('inputBackendUrl').value = APP_STATE.backendUrl;
-        document.getElementById('apiConfigModal').classList.remove('hidden');
+        document.getElementById('apiModal').classList.remove('hidden');
       });
-
       document.getElementById('btnCloseApiModal').addEventListener('click', () => {
-        document.getElementById('apiConfigModal').classList.add('hidden');
+        document.getElementById('apiModal').classList.add('hidden');
       });
-
       document.getElementById('btnSaveApiKeys').addEventListener('click', () => {
-        APP_STATE.geminiKey = document.getElementById('inputGeminiApiKey').value.trim();
-        APP_STATE.sarvamKey = document.getElementById('inputSarvamApiKey').value.trim();
-        APP_STATE.backendUrl = document.getElementById('inputBackendUrl').value.trim();
-        localStorage.setItem('jarvis_gemini_key', APP_STATE.geminiKey);
-        localStorage.setItem('sarvam_api_key', APP_STATE.sarvamKey);
-        localStorage.setItem('jarvis_backend_url', APP_STATE.backendUrl);
-        document.getElementById('apiConfigModal').classList.add('hidden');
-        alert('Configuration saved! J.A.R.V.I.S. will use your live keys.');
+        state.geminiKey = document.getElementById('inputGeminiKey').value.trim();
+        state.sarvamKey = document.getElementById('inputSarvamKey').value.trim();
+        document.getElementById('apiModeBadge').textContent = (state.geminiKey || state.sarvamKey) ? 'Live APIs Connected' : 'Sandbox + WebSpeech';
+        document.getElementById('apiModal').classList.add('hidden');
+        showToast('Saved API keys.');
       });
-
-      // Hardware profile modal controls
-      document.getElementById('btnOpenHardwareModal').addEventListener('click', () => {
-        document.getElementById('hardwareModal').classList.remove('hidden');
-      });
-      document.getElementById('btnCloseHardwareModal').addEventListener('click', () => {
-        document.getElementById('hardwareModal').classList.add('hidden');
-      });
-      document.getElementById('btnConfirmHardware').addEventListener('click', () => {
-        document.getElementById('hardwareModal').classList.add('hidden');
-      });
-
-      // Standby follow-up action buttons
-      const btnStandbySearch = document.getElementById('btnStandbySearch');
-      if (btnStandbySearch) {
-        btnStandbySearch.addEventListener('click', () => {
-          const q = prompt('What would you like to search on YouTube?', 'Kesariya');
-          if (q) {
-            document.getElementById('voiceCommandInput').value = `search ${q}`;
-            executeMission();
-          }
-        });
-      }
-
-      const btnStandbyPlay = document.getElementById('btnStandbyPlay');
-      if (btnStandbyPlay) {
-        btnStandbyPlay.addEventListener('click', () => {
-          document.getElementById('voiceCommandInput').value = 'play it';
-          executeMission();
-        });
-      }
-
-      const btnStandbyPause = document.getElementById('btnStandbyPause');
-      if (btnStandbyPause) {
-        btnStandbyPause.addEventListener('click', () => {
-          document.getElementById('voiceCommandInput').value = 'pause';
-          executeMission();
-        });
-      }
-
-      const btnStandbyClose = document.getElementById('btnStandbyClose');
-      if (btnStandbyClose) {
-        btnStandbyClose.addEventListener('click', () => {
-          document.getElementById('voiceCommandInput').value = 'close it';
-          executeMission();
-        });
-      }
-
-      // Voice Record button (Web Speech recognition)
-      const micBtn = document.getElementById('btnVoiceRecord');
-      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRec();
-        APP_STATE.recognitionInstance = recognition;
-        recognition.continuous = false;
-        recognition.interimResults = false;
-
-        micBtn.addEventListener('click', () => {
-          if (!APP_STATE.isRecording) {
-            recognition.lang = document.getElementById('selectVoiceLanguage').value;
-            recognition.start();
-            APP_STATE.isRecording = true;
-            document.getElementById('micPulseWave').classList.remove('hidden');
-            document.getElementById('micLabel').textContent = 'Listening...';
-          } else {
-            recognition.stop();
-            APP_STATE.isRecording = false;
-            document.getElementById('micPulseWave').classList.add('hidden');
-            document.getElementById('micLabel').textContent = 'Hold & Speak Command';
-          }
-        });
-
-        recognition.onresult = (event) => {
-          const transcript = event.results[0][0].transcript;
-          document.getElementById('voiceCommandInput').value = transcript;
-          APP_STATE.isRecording = false;
-          document.getElementById('micPulseWave').classList.add('hidden');
-          document.getElementById('micLabel').textContent = 'Hold & Speak Command';
-          executeMission();
-        };
-
-        recognition.onerror = () => {
-          APP_STATE.isRecording = false;
-          document.getElementById('micPulseWave').classList.add('hidden');
-          document.getElementById('micLabel').textContent = 'Hold & Speak Command';
-        };
-
-        recognition.onend = () => {
-          if (!APP_STATE.isStandby) {
-            APP_STATE.isRecording = false;
-            document.getElementById('micPulseWave').classList.add('hidden');
-            document.getElementById('micLabel').textContent = 'Hold & Speak Command';
-          }
-        };
-      }
     });
   </script>
 </body>

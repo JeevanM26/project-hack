@@ -398,6 +398,28 @@
                 <span class="w-1.5 h-2 bg-cyan-400/40 rounded-full transition-all"></span>
               </div>
             </div>
+
+            <!-- Real-Time Speed & Latency Benchmark Card -->
+            <div class="p-3 rounded-xl bg-slate-950/90 border border-cyan-500/30 space-y-2">
+              <div class="flex items-center justify-between text-[10px] text-cyan-300 mono font-bold">
+                <span>⚡ LIVE SPEED &amp; INFERENCE BENCHMARK</span>
+                <span id="speedBenchmarkMode" class="text-emerald-400">RTX 5060 ACCELERATED</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-center">
+                <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                  <span class="text-[9px] text-slate-500 uppercase block font-semibold">Throughput</span>
+                  <span id="liveTokPerSec" class="text-xs font-bold text-cyan-300 mono">49.4 tok/s</span>
+                </div>
+                <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                  <span class="text-[9px] text-slate-500 uppercase block font-semibold">Time To 1st Token</span>
+                  <span id="liveTtft" class="text-xs font-bold text-indigo-300 mono">114 ms</span>
+                </div>
+                <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                  <span class="text-[9px] text-slate-500 uppercase block font-semibold">AST Guard Check</span>
+                  <span id="liveAstCheckTime" class="text-xs font-bold text-emerald-400 mono">11 ms</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Quick Stats Footer -->

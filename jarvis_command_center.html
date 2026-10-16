@@ -1157,10 +1157,47 @@ class TaskManagerService:
       } else {
         // Fallback: Client-side interactive flow
         const cmdLower = cmd.toLowerCase();
-        if (cmdLower.includes('youtube') || (cmdLower.includes('play') && (cmdLower.includes('song') || cmdLower.includes('music') || cmdLower.includes('kesariya')))) {
+        
+        // 1. Check for website open intent
+        const siteLookup = {
+          'youtube': 'https://www.youtube.com',
+          'drive': 'https://drive.google.com',
+          'google drive': 'https://drive.google.com',
+          'gmail': 'https://mail.google.com',
+          'github': 'https://github.com',
+          'notion': 'https://www.notion.so',
+          'google': 'https://www.google.com',
+          'linkedin': 'https://www.linkedin.com',
+          'reddit': 'https://www.reddit.com',
+          'chatgpt': 'https://chatgpt.com',
+          'gemini': 'https://gemini.google.com'
+        };
+
+        const isJustOpen = cmdLower.startsWith('open ') || cmdLower.startsWith('can u open ') || cmdLower.startsWith('can you open ');
+        const isPlaySong = cmdLower.includes('play ') && !cmdLower.endsWith('play');
+
+        if (isPlaySong) {
           let song = cmd.replace(/^(?:jarvis\s*,?\s*|please\s+|open\s+youtube\s+(?:and\s+)?play\s*|play\s+song\s*|play\s*)/i, '').replace(/(?:on\s+youtube|song)$/i, '').trim();
-          triggerVoiceOSYouTube(song || 'Kesariya Brahmastra');
-          globalBadge.textContent = 'OS ACTION EXECUTED';
+          triggerVoiceOSYouTube(song || 'Kesariya Brahmastra', false);
+          globalBadge.textContent = 'PLAYING SONG';
+          return;
+        }
+
+        let siteMatch = null;
+        for (const [key, url] of Object.entries(siteLookup)) {
+          if (cmdLower.includes(key)) {
+            siteMatch = { key, url };
+            break;
+          }
+        }
+
+        if (isJustOpen && siteMatch) {
+          window.open(siteMatch.url, '_blank');
+          const ack = `Opening ${siteMatch.key.toUpperCase()} in a new tab now, sir.`;
+          document.getElementById('spokenResponseBox').textContent = `"${ack}"`;
+          speakSpokenResponse(ack);
+          appendTraceLog('Voice OS Action Engine', `Human-Like Navigation: Opened <strong>${siteMatch.key.toUpperCase()}</strong> (<a href="${siteMatch.url}" target="_blank" class="text-cyan-400 hover:underline">${siteMatch.url}</a>).`, 'text-emerald-400');
+          globalBadge.textContent = 'WEBSITE OPENED';
           return;
         }
 
@@ -1178,8 +1215,32 @@ class TaskManagerService:
 
     async function handleLiveBackendResponse(data, cmd) {
       if (data.type === 'os_action') {
-        const query = data.os_action ? data.os_action.query : 'Kesariya';
-        triggerVoiceOSYouTube(query);
+        const action = data.os_action ? data.os_action.action : '';
+        const summary = data.spoken_response || (data.os_action ? data.os_action.spoken_summary : 'Executing OS action');
+        document.getElementById('spokenResponseBox').textContent = `"${summary}"`;
+        speakSpokenResponse(summary);
+
+        if (action === 'open_website') {
+          const site = data.os_action.site_name || 'Website';
+          const url = data.os_action.url;
+          appendTraceLog(
+            'Voice OS Action Engine',
+            `Human-Like Navigation: Opened <strong>${site}</strong> (<a href="${url}" target="_blank" class="text-cyan-400 hover:underline">${url}</a>) in your browser.`,
+            'text-emerald-400'
+          );
+        } else if (action === 'web_search') {
+          const q = data.os_action.query;
+          appendTraceLog(
+            'Voice OS Action Engine',
+            `Google Web Search: Opened search results for <strong>${q}</strong>.`,
+            'text-cyan-400'
+          );
+        } else if (action === 'play_youtube') {
+          const query = data.os_action.query || 'Kesariya';
+          triggerVoiceOSYouTube(query, true);
+        } else if (action === 'stop_audio') {
+          stopAllAudio();
+        }
         return;
       }
 

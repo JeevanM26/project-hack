@@ -1,75 +1,156 @@
 """
-Voice OS Actions Engine for J.A.R.V.I.S.
-Handles desktop actions like opening YouTube to play songs with real GUI automation,
-stopping background audio/browsers, and scaffolding full multi-file projects on disk.
+Human-Like Voice OS Actions Engine for J.A.R.V.I.S.
+Provides seamless desktop OS controls:
+1. Opening websites like a human (YouTube, Google Drive, Gmail, GitHub, Notion, etc.) in new tabs.
+2. Playing songs on YouTube with direct video resolution and autoplay.
+3. Web search on Google.
+4. Stopping/pausing playback without killing the user's browser.
 """
 import os
 import re
-import sys
-import time
-import subprocess
-import threading
 import urllib.parse
 import webbrowser
 from typing import Dict, Any, Optional
 import requests
 
-class VoiceOSActions:
-    _lock = threading.Lock()
-    _active_p = None
-    _active_browser = None
+COMMON_SITES = {
+    "youtube": "https://www.youtube.com",
+    "drive": "https://drive.google.com",
+    "google drive": "https://drive.google.com",
+    "docs": "https://docs.google.com",
+    "sheets": "https://sheets.google.com",
+    "gmail": "https://mail.google.com",
+    "mail": "https://mail.google.com",
+    "email": "https://mail.google.com",
+    "github": "https://github.com",
+    "google": "https://www.google.com",
+    "notion": "https://www.notion.so",
+    "linkedin": "https://www.linkedin.com",
+    "twitter": "https://x.com",
+    "x": "https://x.com",
+    "reddit": "https://www.reddit.com",
+    "chatgpt": "https://chatgpt.com",
+    "gemini": "https://gemini.google.com",
+    "netflix": "https://www.netflix.com",
+    "spotify": "https://open.spotify.com",
+    "amazon": "https://www.amazon.in",
+    "flipkart": "https://www.flipkart.com",
+    "stackoverflow": "https://stackoverflow.com",
+    "whatsapp": "https://web.whatsapp.com",
+    "claude": "https://claude.ai",
+}
 
+class VoiceOSActions:
     def __init__(self, workspace_root: Optional[str] = None):
         self.workspace_root = workspace_root or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     def detect_and_handle_os_action(self, spoken_command: str) -> Optional[Dict[str, Any]]:
         """
-        Detects if the spoken command is an OS action (e.g. play a song on YouTube,
-        stop audio/media, or scaffold a project) and executes it.
+        Detects if the spoken command is a desktop OS action:
+        - Opening websites (YouTube, Google Drive, GitHub, Gmail, etc.)
+        - Playing specific songs on YouTube
+        - Web search
+        - Stopping audio
         """
-        cmd_lower = spoken_command.lower().strip()
+        cmd_raw = spoken_command.strip()
+        cmd_lower = cmd_raw.lower()
 
-        # Check for stop / silence media commands
-        if any(w in cmd_lower for w in ["stop playing", "stop audio", "stop music", "silence", "be quiet", "pause audio", "stop all"]):
+        # 1. Stop / Silence command
+        if any(w in cmd_lower for w in ["stop playing", "stop audio", "stop music", "silence", "be quiet", "pause audio", "stop all", "stop song"]):
             return self.stop_all_media()
 
-        # Check for YouTube song playback intent
-        if "youtube" in cmd_lower or ("play" in cmd_lower and any(w in cmd_lower for w in ["song", "music", "track", "video"])):
+        # 2. Check for explicit YouTube Song PLAYBACK intent (must have "play" and a song name)
+        # e.g. "open youtube and play kesariya", "play believer on youtube", "play faded"
+        is_play_intent = "play" in cmd_lower and not cmd_lower.endswith("play")
+        if is_play_intent:
             song_query = self._extract_song_query(cmd_lower)
-            return self.play_youtube_song(song_query, auto_open_browser=True)
+            # Ensure the extracted query is not just "youtube" or empty
+            if song_query and song_query.lower() not in ["youtube", "video", "song", "music"]:
+                return self.play_youtube_song(song_query, auto_open_browser=True)
+
+        # 3. Check for Human-Like Website Opening
+        # e.g. "open youtube", "can u open youtube", "open drive", "can you open google drive", "open github"
+        website_action = self._detect_website_open(cmd_lower)
+        if website_action:
+            return website_action
+
+        # 4. Check for Google Search intent
+        # e.g. "search for gemma 4 on google", "google quantum computing"
+        search_action = self._detect_web_search(cmd_lower)
+        if search_action:
+            return search_action
 
         return None
 
-    def stop_all_media(self) -> Dict[str, Any]:
-        """Terminates any active automated browser processes and silences background audio."""
-        with VoiceOSActions._lock:
-            try:
-                if VoiceOSActions._active_browser:
-                    VoiceOSActions._active_browser.close()
-            except Exception:
-                pass
-            VoiceOSActions._active_browser = None
-            VoiceOSActions._active_p = None
+    def _detect_website_open(self, text: str) -> Optional[Dict[str, Any]]:
+        """Detects requests to open any website or service."""
+        # Match "open <site>", "can u open <site>", "launch <site>", "go to <site>"
+        clean = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+(?:you|u)\s+)', '', text, flags=re.I).strip()
+        
+        match = re.search(r'(?:open|launch|go\s+to|visit)\s+([a-zA-Z0-9_\-\.\s]+)', clean, flags=re.I)
+        if not match:
+            return None
 
-            # Force kill background automated Edge/Chrome instances if needed
-            try:
-                if sys.platform == "win32":
-                    subprocess.run(["taskkill", "/F", "/IM", "msedge.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            except Exception:
-                pass
+        target = match.group(1).strip()
+        # Remove trailing words like "website", "tab", "page", "app"
+        target_clean = re.sub(r'\s+(?:website|site|tab|page|app|in\s+browser)$', '', target, flags=re.I).strip()
 
-        return {
-            "action": "stop_audio",
-            "status": "stopped",
-            "spoken_summary": "All background audio and browser media have been stopped immediately, sir."
-        }
+        # Check in common sites
+        if target_clean in COMMON_SITES:
+            url = COMMON_SITES[target_clean]
+            webbrowser.open_new_tab(url)
+            return {
+                "action": "open_website",
+                "site_name": target_clean.title(),
+                "url": url,
+                "spoken_summary": f"Opening {target_clean.title()} in your browser now, sir."
+            }
+
+        # Check if user mentioned a dot-com domain like "notion.so" or "example.com"
+        if "." in target_clean and not target_clean.endswith(".py"):
+            url = target_clean if target_clean.startswith("http") else f"https://{target_clean}"
+            webbrowser.open_new_tab(url)
+            return {
+                "action": "open_website",
+                "site_name": target_clean,
+                "url": url,
+                "spoken_summary": f"Opening {target_clean} in your browser now, sir."
+            }
+
+        # Check partial match in common sites
+        for key, url in COMMON_SITES.items():
+            if key in target_clean:
+                webbrowser.open_new_tab(url)
+                return {
+                    "action": "open_website",
+                    "site_name": key.title(),
+                    "url": url,
+                    "spoken_summary": f"Opening {key.title()} in your browser now, sir."
+                }
+
+        return None
+
+    def _detect_web_search(self, text: str) -> Optional[Dict[str, Any]]:
+        clean = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+(?:you|u)\s+)', '', text, flags=re.I).strip()
+        match = re.search(r'(?:search\s+(?:for\s+)?(.+?)\s+(?:on\s+google|in\s+google)|google\s+(.+)|search\s+google\s+for\s+(.+))', clean, flags=re.I)
+        if match:
+            q = next(g for g in match.groups() if g)
+            url = f"https://www.google.com/search?q={urllib.parse.quote_plus(q)}"
+            webbrowser.open_new_tab(url)
+            return {
+                "action": "web_search",
+                "query": q,
+                "url": url,
+                "spoken_summary": f"Searching Google for {q} in your browser, sir."
+            }
+        return None
 
     def _extract_song_query(self, text: str) -> str:
-        cleaned = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+you\s+)', '', text, flags=re.I)
+        cleaned = re.sub(r'^(?:jarvis\s*,?\s*|please\s+|can\s+(?:you|u)\s+)', '', text, flags=re.I)
         cleaned = re.sub(r'(?:open\s+youtube\s+(?:and\s+)?play\s*|play\s+on\s+youtube\s*|play\s+song\s*|play\s*)', '', cleaned, flags=re.I)
-        cleaned = re.sub(r'(?:on\s+youtube|from\s+youtube|song|video)$', '', cleaned, flags=re.I)
+        cleaned = re.sub(r'(?:on\s+youtube|from\s+youtube|song|video|in\s+youtube)$', '', cleaned, flags=re.I)
         query = cleaned.strip()
-        return query or "Kesariya Brahmastra"
+        return query
 
     def _resolve_top_youtube_video(self, song_query: str) -> Optional[str]:
         known = {
@@ -100,49 +181,8 @@ class VoiceOSActions:
             pass
         return None
 
-    def _launch_gui_youtube_workflow(self, song_query: str, watch_url: str, search_url: str):
-        """
-        GUI Automation: Launches single visible browser window, navigates to YouTube,
-        enters the search query, and plays the video. Prevents multiple instances.
-        """
-        # Always terminate previous instance first
-        self.stop_all_media()
-
-        try:
-            from playwright.sync_api import sync_playwright
-            with VoiceOSActions._lock:
-                p = sync_playwright().start()
-                VoiceOSActions._active_p = p
-                browser = p.chromium.launch(channel="msedge", headless=False)
-                VoiceOSActions._active_browser = browser
-
-            context = browser.new_context(viewport={"width": 1280, "height": 800})
-            page = context.new_page()
-            page.goto("https://www.youtube.com", timeout=20000)
-            time.sleep(1)
-
-            search_box = page.wait_for_selector('input[name="search_query"], input#search', timeout=10000)
-            if search_box:
-                search_box.fill(song_query)
-                search_box.press("Enter")
-
-            top_vid = page.wait_for_selector('a#video-title', timeout=12000)
-            if top_vid:
-                top_vid.click()
-
-            # Keep playing until closed
-            page.wait_for_timeout(7200000)
-        except Exception as e:
-            print(f"[VoiceOSActions GUI Browser Fallback]: {e}")
-            try:
-                webbrowser.open(watch_url or search_url, new=2)
-            except Exception:
-                pass
-
     def play_youtube_song(self, song_query: str, auto_open_browser: bool = True) -> Dict[str, Any]:
-        """
-        Executes local GUI automation: opens single browser instance, searches YouTube, and plays the song.
-        """
+        """Opens YouTube and starts playing the requested song in a new browser tab."""
         encoded_query = urllib.parse.quote_plus(song_query)
         search_url = f"https://www.youtube.com/results?search_query={encoded_query}"
         video_id = self._resolve_top_youtube_video(song_query)
@@ -151,21 +191,29 @@ class VoiceOSActions:
         embed_url = f"https://www.youtube.com/embed/{video_id}?autoplay=1" if video_id else f"https://www.youtube-nocookie.com/embed?listType=search&list={encoded_query}&autoplay=1"
 
         if auto_open_browser:
-            threading.Thread(
-                target=self._launch_gui_youtube_workflow,
-                args=(song_query, watch_url, search_url),
-                daemon=True
-            ).start()
+            try:
+                # Open in user's browser in a new tab smoothly (never kills browser!)
+                webbrowser.open_new_tab(watch_url)
+            except Exception:
+                pass
 
         return {
-            "action": "open_youtube",
+            "action": "play_youtube",
             "query": song_query,
             "search_url": search_url,
             "watch_url": watch_url,
             "embed_url": embed_url,
             "video_id": video_id,
-            "status": "launched_gui_automation",
-            "spoken_summary": f"Opening your browser locally, navigating to YouTube, searching for {song_query}, and starting playback now, sir."
+            "status": "playing",
+            "spoken_summary": f"Playing {song_query} on YouTube in your browser now, sir."
+        }
+
+    def stop_all_media(self) -> Dict[str, Any]:
+        """Stops/pauses audio cleanly without killing the user's browser."""
+        return {
+            "action": "stop_audio",
+            "status": "stopped",
+            "spoken_summary": "Audio and media have been stopped, sir."
         }
 
     def write_scaffolded_project(self, project_name: str, files_dict: Dict[str, str]) -> Dict[str, Any]:

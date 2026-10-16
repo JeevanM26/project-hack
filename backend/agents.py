@@ -203,9 +203,9 @@ class JarvisMultiAgentSwarm:
                     {
                         "agent": "J.A.R.V.I.S. Core",
                         "output": {
-                            "intent": "Voice OS Action: Media Playback",
-                            "action": os_action_res["action"],
-                            "query": os_action_res["query"]
+                            "intent": f"Voice OS Action: {os_action_res.get('action')}",
+                            "action": os_action_res.get("action"),
+                            "target": os_action_res.get("url") or os_action_res.get("query")
                         }
                     }
                 ]

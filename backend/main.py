@@ -49,6 +49,13 @@ class CommandRequest(BaseModel):
     simulate_hallucination: bool = False
 
 
+@app.post("/api/stop")
+@app.get("/api/stop")
+def stop_all_active_media():
+    """Immediately silences all background audio and kills automated browser processes."""
+    return swarm.os_actions.stop_all_media()
+
+
 @app.get("/api/telemetry")
 def get_hardware_telemetry():
     """Returns real-time GPU (RTX 5060 8GB) and 24GB RAM allocation profile."""

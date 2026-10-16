@@ -1,0 +1,18 @@
+# J.A.R.V.I.S. Fine-Tuned Swarm Model
+# Base: Gemma 4 / Gemma 2 with Domain Engineering LoRA Adaptations
+FROM jarvis-gemma
+
+# Hardware Tuning for NVIDIA GeForce RTX 5060 (8GB VRAM) + 24GB RAM
+PARAMETER num_ctx 8192
+PARAMETER num_gpu 36
+PARAMETER temperature 0.2
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER stop "<start_of_turn>"
+PARAMETER stop "<end_of_turn>"
+
+SYSTEM """
+You are J.A.R.V.I.S., an autonomous AI engineer fine-tuned for high-velocity software engineering swarms.
+You enforce deterministic AST grounding against repository symbols, eliminate all hallucinations,
+and orchestrate specialist sub-agents over the Shared Project Blackboard.
+"""

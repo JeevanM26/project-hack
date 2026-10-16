@@ -1,0 +1,7 @@
+{
+  "ast_grounding_rate": 100.0,
+  "json_compliance_rate": 100.0,
+  "intent_accuracy": 100.0,
+  "avg_latency_sec": 1.5131699442863464,
+  "total_evaluated": 4
+}

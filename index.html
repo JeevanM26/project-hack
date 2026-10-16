@@ -1373,7 +1373,10 @@ def verify_claim_or_patch(repo_index: dict, target_file: str, proposed_code: str
         document.getElementById('virtualAddressBar').textContent = guiData.active_url || 'https://www.youtube.com';
 
         const searchInput = document.getElementById('simYoutubeSearchInput');
-        searchInput.placeholder = 'Focused! Now say or click: "Search for Believer"...';
+        if (searchInput) {
+          searchInput.placeholder = 'Focused! Now say or click: "Search for Believer"...';
+        }
+        switchViewportMode(1);
 
         appendAgentLog(
           'GUI Mouse Operator (Gemma 4 Pointing)',
@@ -1432,15 +1435,23 @@ def verify_claim_or_patch(repo_index: dict, target_file: str, proposed_code: str
         const watchUrl = guiData.active_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
         const embedUrl = guiData.embed_url || `https://www.youtube.com/embed/7wtfhZwyrcc?autoplay=1`;
 
-        document.getElementById('virtualAddressBar').textContent = watchUrl;
-        document.getElementById('simVideoCard1Title').textContent = displayTitle;
-        document.getElementById('simVideoCard1Sub').textContent = 'Live Audio/Video Playing • Verified Stream';
-
-        document.getElementById('ytPlaceholderOverlay').classList.add('hidden');
-        document.getElementById('ytNowPlayingTitle').textContent = `Now Playing: ${displayTitle}`;
-        document.getElementById('ytExternalLink').href = watchUrl;
-        document.getElementById('ytEmbedFrame').src = embedUrl;
-        document.getElementById('desktopActiveAppBadge').textContent = `Playing: ${displayTitle.slice(0, 18)}...`;
+        const addrBar = document.getElementById('virtualAddressBar');
+        if (addrBar) addrBar.textContent = watchUrl;
+        const vTitle = document.getElementById('simVideoCard1Title');
+        if (vTitle) vTitle.textContent = displayTitle;
+        const vSub = document.getElementById('simVideoCard1Sub');
+        if (vSub) vSub.textContent = 'Live Audio/Video Playing • Verified Stream';
+        const ytOverlay = document.getElementById('ytPlaceholderOverlay');
+        if (ytOverlay) ytOverlay.classList.add('hidden');
+        const ytTitle = document.getElementById('ytNowPlayingTitle');
+        if (ytTitle) ytTitle.textContent = `Now Playing: ${displayTitle}`;
+        const ytLink = document.getElementById('ytExternalLink');
+        if (ytLink) ytLink.href = watchUrl;
+        const ytFrame = document.getElementById('ytEmbedFrame');
+        if (ytFrame) ytFrame.src = embedUrl;
+        const appBadge = document.getElementById('desktopActiveAppBadge');
+        if (appBadge) appBadge.textContent = `Playing: ${displayTitle.slice(0, 18)}...`;
+        switchViewportMode(1);
 
         appendAgentLog(
           'GUI Mouse Operator -> Co-Leader Verified',
@@ -1611,32 +1622,7 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
       }
       const lower = commandText.toLowerCase();
 
-      if (scenarioKey === 'step1_open_youtube' || (lower.includes('open youtube') && !lower.includes('search') && !lower.includes('play'))) {
-        await executeStep1OpenYoutube();
-        return;
-      }
-
-      if (
-        scenarioKey === 'youtube_song' ||
-        lower.includes('search') ||
-        lower.includes('youtube') ||
-        lower.includes('play') ||
-        lower.includes('believer') ||
-        lower.includes('kesariya')
-      ) {
-        await executeYoutubeSearchAndPlay(commandText);
-        return;
-      }
-
-      if (
-        scenarioKey === 'build_complex_project' ||
-        lower.includes('expense tracker')
-      ) {
-        await executeComplexProjectBuild(commandText);
-        return;
-      }
-
-      // Check for General-Purpose Autonomous Deep-Research / Full-Stack Mission
+      // 1. Check for General-Purpose Autonomous Deep-Research / Full-Stack Mission first!
       const isAutonomous = (
         lower.includes('research') ||
         lower.includes('benchmark') ||
@@ -1647,10 +1633,11 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
         lower.includes('build') ||
         lower.includes('make') ||
         lower.includes('create')
-      ) && !lower.includes('refactor payment') && !lower.includes('auth') && !lower.includes('gst');
+      ) && !lower.includes('open youtube') && !lower.includes('play song') && !lower.includes('refactor payment') && !lower.includes('auth') && !lower.includes('gst');
 
       if (isAutonomous) {
         showToast('Initiating 5-Phase Autonomous Mission...');
+        highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Co-Leader & Swarm: Executing 5-Phase Autonomous Mission...', 'border-cyan-400');
         try {
           const autoResp = await fetch('http://127.0.0.1:8000/api/autonomous-mission', {
             method: 'POST',
@@ -1668,8 +1655,12 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
             showToast('Mission completed successfully!');
             if (data.research && data.research.sources_count > 0) {
               switchViewportMode(2);
+              if (data.research.dossier_preview) {
+                document.getElementById('researchDossierViewer').textContent = data.research.dossier_preview;
+              }
             } else if (data.generated_files && data.generated_files.length > 0) {
               switchViewportMode(3);
+              refreshWorkspaceFilesList(data.project_slug);
             }
             if (data.spoken_response) {
               speakJarvis(data.spoken_response);
@@ -1679,6 +1670,35 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
         } catch (e) {
           console.warn('Autonomous mission fallback:', e);
         }
+      }
+
+      // 2. Open YouTube turn
+      if (scenarioKey === 'step1_open_youtube' || (lower.includes('open youtube') && !lower.includes('search') && !lower.includes('play'))) {
+        await executeStep1OpenYoutube();
+        return;
+      }
+
+      // 3. YouTube Song / Video search
+      const isYouTubePlay = (
+        scenarioKey === 'youtube_song' ||
+        lower.includes('youtube') ||
+        lower.includes('play song') ||
+        lower.includes('believer') ||
+        lower.includes('kesariya') ||
+        (lower.startsWith('play ') && !lower.includes('with') && !lower.includes('board'))
+      );
+
+      if (isYouTubePlay) {
+        await executeYoutubeSearchAndPlay(commandText);
+        return;
+      }
+
+      if (
+        scenarioKey === 'build_complex_project' ||
+        lower.includes('expense tracker')
+      ) {
+        await executeComplexProjectBuild(commandText);
+        return;
       }
 
       await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
@@ -2253,9 +2273,23 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
         showToast(`Spawned ${nextRole.name} in 3D orbit!`);
       });
 
-      document.getElementById('btnCloseYoutubeDock').addEventListener('click', () => {
-        document.getElementById('youtubePlayerDock').classList.add('hidden');
-      });
+      const closeYt = document.getElementById('btnCloseYoutubeDock');
+      if (closeYt) {
+        closeYt.addEventListener('click', () => {
+          const dock = document.getElementById('youtubePlayerDock');
+          if (dock) dock.classList.add('hidden');
+        });
+      }
+
+      const voiceCmdInput = document.getElementById('voiceCommandInput');
+      if (voiceCmdInput) {
+        voiceCmdInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            runMultiAgentMission();
+          }
+        });
+      }
 
       document.getElementById('tabBtnHud').addEventListener('click', () => switchTab('hud'));
       document.getElementById('tabBtnRepo').addEventListener('click', () => switchTab('repo'));

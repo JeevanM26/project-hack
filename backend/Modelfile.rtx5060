@@ -1,6 +1,6 @@
 # J.A.R.V.I.S. Custom Modelfile for NVIDIA GeForce RTX 5060 (8GB VRAM) + 24GB RAM
 # Optimal quantization: Q4_K_M or FP8
-FROM gemma4:12b
+FROM gemma:2b
 
 # GPU Layer Offloading: 36 of 40 layers offloaded to 8GB VRAM (6.4 GB allocated)
 # Remaining 4 layers buffer into 24GB DDR5 System RAM for zero OOM risk

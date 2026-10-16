@@ -3,17 +3,20 @@ FastAPI Backend for J.A.R.V.I.S. (Hacktoberfest Hack Day Bengaluru 2026 - Track 
 Combines G1 (Autonomous Dynamic Multi-Agent Swarm with 1 Single Gemma 4 Model)
 and G2 (Voice-First AI Interaction with Sarvam AI).
 """
+import asyncio
+import io
 import os
 import time
 from typing import Optional, List, Dict, Any
-from fastapi import FastAPI, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, UploadFile, File, Form, Query, WebSocket, WebSocketDisconnect, Response
+from fastapi.responses import FileResponse, StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agents import JarvisMultiAgentSwarm
 from sarvam_voice import SarvamVoicePipeline
 from hardware_profile import HardwareOptimizer
 from gui_computer_agent import JarvisGUIComputerAgent
+from blackboard import global_blackboard
 
 app = FastAPI(
     title="J.A.R.V.I.S. Mark LXXXV — Gemma 4 GUI + Multi-Agent + Sarvam Voice OS",
@@ -91,12 +94,13 @@ def build_telemetry_payload() -> Dict[str, Any]:
             "active_app": gui_agent.session_memory.get("active_app")
         },
         "swarm": {
-            "status": "active" if bb else "standby",
-            "active_agents": bb.active_agents if bb else ["Co-Leader & Chief Reviewer"],
+            "status": global_blackboard.status if global_blackboard.status != "IDLE" else ("active" if bb else "standby"),
+            "active_agents": global_blackboard.active_agents,
             "single_model": swarm.engine.model_name,
-            "objective": bb.objective if bb else None,
-            "chat_count": len(bb.chat_bus) if bb else 0
+            "objective": global_blackboard.user_objective or (bb.objective if bb else None),
+            "chat_count": len(global_blackboard.team_chat_bus)
         },
+        "blackboard": global_blackboard.get_snapshot(),
         "ast_grounding": {
             "indexed_files": list(swarm.grounding.build_index().keys()),
             "receipts": bb.verification_receipts if bb else [],
@@ -137,6 +141,21 @@ class CommandRequest(BaseModel):
     synthesize_voice: bool = True
     simulate_hallucination: bool = False
     execute_on_desktop_gui: bool = True
+
+
+class AutonomousMissionRequest(BaseModel):
+    objective: str
+    depth: int = 3
+    run_tests: bool = True
+    launch_app: bool = True
+    synthesize_voice: bool = True
+    language_code: str = "en-IN"
+
+
+class TerminalRunRequest(BaseModel):
+    command: str
+    cwd: Optional[str] = None
+    timeout: int = 60
 
 
 @app.websocket("/ws/telemetry")
@@ -228,18 +247,128 @@ def get_repo_index():
 @app.get("/api/blackboard")
 def get_current_blackboard():
     """Returns the live Shared Project Blackboard state."""
+    snapshot = global_blackboard.get_snapshot()
     bb = swarm.current_blackboard
-    if not bb:
-        return {"status": "idle", "message": "No active mission on blackboard"}
+    if bb and not snapshot.get("user_objective"):
+        return {
+            "status": "active",
+            "objective": bb.objective,
+            "blueprint": bb.blueprint,
+            "active_agents": bb.active_agents,
+            "chat_bus": bb.chat_bus,
+            "files_registered": list(bb.files_registry.keys()),
+            "receipts": bb.verification_receipts
+        }
+    return snapshot
+
+
+@app.post("/api/autonomous-mission")
+async def run_autonomous_mission(req: AutonomousMissionRequest):
+    """
+    Executes the full 5-Phase Autonomous Deep-Research & Software Engineering Swarm.
+    100% General-purpose: works on ANY research topic, full-stack app, or terminal task.
+    """
+    mission_res = swarm.execute_autonomous_mission(
+        objective=req.objective,
+        depth=req.depth,
+        run_tests=req.run_tests,
+        launch_app=req.launch_app
+    )
+
+    if req.synthesize_voice and voice.api_key:
+        try:
+            tts = voice.synthesize_speech(mission_res["spoken_response"], language_code=req.language_code)
+            mission_res["tts_audio"] = tts
+        except Exception as e:
+            mission_res["tts_warning"] = str(e)
+
+    try:
+        await telemetry_manager.broadcast({
+            "event": "autonomous_mission_complete",
+            "payload": build_telemetry_payload(),
+            "mission": {
+                "objective": req.objective,
+                "project_slug": mission_res.get("project_slug"),
+                "workspace_dir": mission_res.get("workspace_dir"),
+                "generated_files": mission_res.get("generated_files", [])
+            }
+        })
+    except Exception:
+        pass
+
+    return mission_res
+
+
+@app.post("/api/terminal-run")
+async def run_terminal_command(req: TerminalRunRequest):
+    """Executes a real shell command in the workspace directory and broadcasts stdout/stderr."""
+    res = swarm.workspace_agent.run_shell_command(req.command, cwd=req.cwd, timeout=req.timeout)
+    try:
+        await telemetry_manager.broadcast({
+            "event": "terminal_command",
+            "payload": build_telemetry_payload(),
+            "command_result": res
+        })
+    except Exception:
+        pass
+    return res
+
+
+@app.get("/api/workspace-files")
+def get_workspace_files(project: Optional[str] = None):
+    """Returns real filesystem files generated in workspaces/<project_slug>."""
+    base_dir = swarm.workspace_agent.base_workspace_dir
+    target_dir = os.path.join(base_dir, project) if project else swarm.workspace_agent.current_workspace or base_dir
+    if not os.path.exists(target_dir):
+        return {"project": project, "workspace_dir": target_dir, "files": []}
+    
+    files_list = []
+    for root, _, files in os.walk(target_dir):
+        for f in files:
+            full_path = os.path.join(root, f)
+            rel = os.path.relpath(full_path, target_dir)
+            try:
+                with open(full_path, "r", encoding="utf-8", errors="ignore") as fh:
+                    content = fh.read(25000)
+            except Exception:
+                content = ""
+            files_list.append({
+                "path": rel,
+                "size": os.path.getsize(full_path),
+                "content": content
+            })
     return {
-        "status": "active",
-        "objective": bb.objective,
-        "blueprint": bb.blueprint,
-        "active_agents": bb.active_agents,
-        "chat_bus": bb.chat_bus,
-        "files_registered": list(bb.files_registry.keys()),
-        "receipts": bb.verification_receipts
+        "project": project or os.path.basename(target_dir),
+        "workspace_dir": target_dir,
+        "files": files_list
     }
+
+
+@app.get("/api/screen-frame")
+def get_screen_frame():
+    """Returns single JPEG frame of active desktop."""
+    img = gui_agent.capture_screen()
+    if not img:
+        return Response(content=b"", media_type="image/jpeg", status_code=503)
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=75)
+    return Response(content=buf.getvalue(), media_type="image/jpeg")
+
+
+@app.get("/api/screen-stream")
+def get_screen_mjpeg_stream():
+    """Live MJPEG video stream of user desktop."""
+    def frame_generator():
+        while True:
+            img = gui_agent.capture_screen()
+            if img:
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=60)
+                frame = buf.getvalue()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(0.12)
+    return StreamingResponse(frame_generator(), media_type="multipart/x-mixed-replace; boundary=frame")
 
 
 @app.post("/api/mission")

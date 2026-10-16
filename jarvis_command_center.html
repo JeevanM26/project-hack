@@ -317,89 +317,125 @@
           </div>
 
           <!-- INTERACTIVE 3D VIRTUAL LAPTOP SCREEN WITH MOVING MOUSE CURSOR -->
-          <div id="virtualDesktopStage" class="relative w-full h-72 rounded-2xl bg-[#050d1a] border-2 border-cyan-400/50 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9),inset_0_0_30px_rgba(0,240,255,0.12)] select-none">
+          <!-- 4-MODE LIVE TELEMETRY VIEWPORT CONTAINER -->
+          <div id="virtualDesktopStage" class="relative w-full h-[380px] rounded-2xl bg-[#050d1a] border-2 border-cyan-400/50 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9),inset_0_0_30px_rgba(0,240,255,0.12)] select-none flex flex-col">
 
-            <!-- Top OS Window Bar -->
-            <div class="h-8 bg-slate-950/95 border-b border-cyan-500/35 px-3 flex items-center justify-between text-[11px] mono">
-              <div class="flex items-center gap-2">
+            <!-- Top Viewport Control Bar with 4 Mode Selector Tabs -->
+            <div class="h-10 bg-slate-950/95 border-b border-cyan-500/35 px-3 flex items-center justify-between text-[11px] mono shrink-0 z-20">
+              <div class="flex items-center gap-1.5">
                 <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
                 <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span id="virtualWindowTitle" class="text-cyan-200 font-semibold ml-2">STARK DESKTOP OS // HP-HYPERX-RTX5060</span>
+                <span id="virtualWindowTitle" class="text-cyan-200 font-semibold ml-2 hidden sm:inline">J.A.R.V.I.S. TELEMETRY COCKPIT</span>
               </div>
-              <div id="virtualAddressBar" class="px-3 py-0.5 rounded bg-slate-900 border border-cyan-500/30 text-cyan-200 text-[10px] truncate max-w-xs">
-                system://desktop/home
+              <!-- 4 Viewport Tabs -->
+              <div class="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-cyan-500/30">
+                <button id="btnTabMode1" type="button" onclick="switchViewportMode(1)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 bg-cyan-500 text-slate-950 shadow">
+                  <span>🖥️</span> <span>Live Screen</span>
+                </button>
+                <button id="btnTabMode2" type="button" onclick="switchViewportMode(2)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60">
+                  <span>🌐</span> <span>Research</span>
+                </button>
+                <button id="btnTabMode3" type="button" onclick="switchViewportMode(3)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60">
+                  <span>📁</span> <span>Workspace</span>
+                </button>
+                <button id="btnTabMode4" type="button" onclick="switchViewportMode(4)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60">
+                  <span>💻</span> <span>Terminal</span>
+                </button>
+              </div>
+              <div id="virtualAddressBar" class="px-2.5 py-0.5 rounded bg-slate-900 border border-cyan-500/30 text-cyan-300 text-[10px] truncate max-w-[140px]">
+                live://stream/0
               </div>
             </div>
 
-            <!-- 3D Desktop Icons Dock -->
-            <div class="absolute top-11 left-3 z-10 flex flex-col gap-2.5">
-              <div id="deskIconYoutube" class="card-3d tilt-card w-20 p-2 rounded-xl bg-rose-950/70 border border-rose-500/50 text-center flex flex-col items-center gap-1">
-                <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-rose-500 to-red-700 text-white font-bold text-xs flex items-center justify-center shadow-lg">&blacktriangleright;</span>
-                <span class="text-[10px] font-bold text-rose-200">YouTube</span>
+            <!-- VIEWPORT MODE 1: LIVE DESKTOP SCREEN & PHYSICAL MOUSE RETICLE -->
+            <div id="viewportMode1" class="relative flex-1 w-full h-full bg-black flex items-center justify-center overflow-hidden">
+              <img id="liveDesktopStream" src="/api/screen-frame" alt="Live Screen Stream" class="w-full h-full object-contain pointer-events-none select-none" onerror="this.src='/api/screen-frame?t=' + Date.now();" />
+              <!-- Holographic Mouse Reticle -->
+              <div id="jarvisMouseCursor" style="left: 50%; top: 50%; transition: left 0.15s ease-out, top 0.15s ease-out;" class="absolute flex items-center gap-1.5 pointer-events-none z-30">
+                <div class="relative flex items-center justify-center">
+                  <div id="cursorClickRipple" class="hidden absolute w-12 h-12 rounded-full border-2 border-cyan-300 shadow-[0_0_15px_#00f0ff] animate-ping"></div>
+                  <div class="w-6 h-6 rounded-full border border-cyan-400 bg-cyan-400/20 flex items-center justify-center shadow-[0_0_15px_#00f0ff]">
+                    <div class="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
+                  </div>
+                </div>
+                <span id="cursorActionTag" class="px-2 py-0.5 rounded-md bg-cyan-950/95 border border-cyan-400 text-[10px] mono font-bold text-cyan-100 whitespace-nowrap shadow-[0_0_15px_rgba(0,240,255,0.4)]">
+                  PHYSICAL RETICLE [0, 0]
+                </span>
               </div>
-              <div id="deskIconVscode" class="card-3d tilt-card w-20 p-2 rounded-xl bg-cyan-950/70 border border-cyan-500/50 text-center flex flex-col items-center gap-1">
-                <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 text-slate-950 font-bold text-xs flex items-center justify-center mono shadow-lg">&lt;/&gt;</span>
-                <span class="text-[10px] font-bold text-cyan-200">Stark IDE</span>
+              <!-- Stream Overlay Status Badge -->
+              <div class="absolute bottom-2 left-2 px-2 py-1 rounded-lg bg-slate-950/80 border border-cyan-500/40 text-[10px] mono text-cyan-300 flex items-center gap-1.5 backdrop-blur-md">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>REAL DESKTOP MJPEG / MSS STREAM</span>
               </div>
             </div>
 
-            <!-- Simulated App Surface Area -->
-            <div class="ml-28 h-[calc(100%-2rem)] p-3 flex flex-col justify-between bg-[#040a15]/90">
-              <div id="simBrowserYoutube" class="space-y-2.5 h-full flex flex-col justify-between">
-                <!-- YouTube Search Row -->
+            <!-- VIEWPORT MODE 2: AUTONOMOUS WEB RESEARCH & DOCUMENTATION FEED -->
+            <div id="viewportMode2" class="hidden flex-1 w-full h-full bg-[#050e1a] p-3 overflow-hidden flex flex-col md:flex-row gap-3">
+              <!-- Left: Crawled URLs & Source Dossier Notes -->
+              <div class="w-full md:w-1/3 flex flex-col gap-2 border-r border-cyan-500/20 pr-2">
+                <div class="flex items-center justify-between text-xs font-bold text-cyan-300">
+                  <span>Crawled Web Sources</span>
+                  <span id="researchSourceCountBadge" class="px-2 py-0.5 rounded bg-cyan-950 text-[10px] border border-cyan-400/40">0 Sources</span>
+                </div>
+                <div id="researchSourcesList" class="flex-1 overflow-y-auto space-y-1.5 text-[11px] mono text-slate-300 pr-1">
+                  <div class="p-2 rounded bg-slate-950/70 border border-slate-800 text-slate-400">Waiting for research mission...</div>
+                </div>
+              </div>
+              <!-- Right: Real-time Markdown Dossier -->
+              <div class="flex-1 flex flex-col gap-1.5">
+                <div class="text-xs font-bold text-amber-300 flex items-center justify-between">
+                  <span>Synthesis Dossier (RESEARCH_DOSSIER.md)</span>
+                  <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('researchDossierViewer').innerText); alert('Copied dossier!');" class="text-[10px] text-cyan-400 hover:underline">Copy Markdown</button>
+                </div>
+                <pre id="researchDossierViewer" class="flex-1 overflow-y-auto p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-xs mono text-cyan-100 whitespace-pre-wrap leading-relaxed">No dossier generated yet. Trigger an autonomous research mission below!</pre>
+              </div>
+            </div>
+
+            <!-- VIEWPORT MODE 3: REAL WORKSPACE FILE TREE & CODE VIEWER -->
+            <div id="viewportMode3" class="hidden flex-1 w-full h-full bg-[#050e1a] p-3 overflow-hidden flex flex-col md:flex-row gap-3">
+              <!-- Left: Physical File Tree -->
+              <div class="w-full md:w-1/4 flex flex-col gap-2 border-r border-cyan-500/20 pr-2">
+                <div class="flex items-center justify-between text-xs font-bold text-cyan-300">
+                  <span>Workspace Files</span>
+                  <button type="button" onclick="refreshWorkspaceFilesList()" class="text-[10px] text-cyan-400 hover:underline">↻ Refresh</button>
+                </div>
+                <div id="workspaceFilesTree" class="flex-1 overflow-y-auto space-y-1 text-[11px] mono text-slate-300 pr-1">
+                  <div class="p-2 rounded bg-slate-950/70 border border-slate-800 text-slate-400">Loading files from disk...</div>
+                </div>
+              </div>
+              <!-- Right: Code Editor Viewer -->
+              <div class="flex-1 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between text-xs font-bold">
+                  <span id="activeWorkspaceFileName" class="text-amber-300 font-hud">Select a file</span>
+                  <span id="activeWorkspaceFileSize" class="text-slate-400 text-[10px] mono">0 bytes</span>
+                </div>
+                <pre id="workspaceCodeViewer" class="flex-1 overflow-y-auto p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-xs mono text-emerald-300 whitespace-pre leading-relaxed select-text">Select any file on the left to inspect real generated source code.</pre>
+              </div>
+            </div>
+
+            <!-- VIEWPORT MODE 4: LIVE TERMINAL & SELF-HEALING TEST CONSOLE -->
+            <div id="viewportMode4" class="hidden flex-1 w-full h-full bg-black p-3 overflow-hidden flex flex-col gap-2">
+              <div class="flex items-center justify-between text-xs font-bold text-emerald-400 border-b border-emerald-500/30 pb-1.5">
                 <div class="flex items-center gap-2">
-                  <span class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-rose-600 to-red-600 text-white font-bold text-[10px] tracking-wider shadow">YouTube IN</span>
-                  <div class="flex-1 flex items-center bg-slate-950 border border-cyan-400/50 rounded-xl px-3 py-1.5 shadow-inner">
-                    <input id="simYoutubeSearchInput" type="text" readonly value="" placeholder="Watch J.A.R.V.I.S. mouse click here &amp; type live..." class="w-full bg-transparent text-xs text-white mono focus:outline-none" />
-                  </div>
-                  <button id="simYoutubeSearchBtn" type="button" class="px-3 py-1.5 rounded-xl bg-cyan-950 border border-cyan-400/50 text-cyan-200 text-xs font-bold mono">
-                    Search
-                  </button>
-                  <a id="ytExternalLink" href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold transition shadow">
-                    Pop Out Tab &nearr;
-                  </a>
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span class="font-hud">SUBPROCESS TERMINAL &amp; SELF-HEALING CONSOLE</span>
                 </div>
-
-                <!-- 3D Video Result Card + Embedded Live Player -->
-                <div id="simYoutubeResultsGrid" class="grid grid-cols-2 gap-3 flex-1 items-center">
-                  <div id="simVideoCard1" class="card-3d tilt-card p-3 rounded-xl flex items-center gap-3">
-                    <div class="w-16 h-12 rounded-xl bg-gradient-to-br from-rose-500 via-amber-500 to-orange-600 flex items-center justify-center text-white font-bold text-base shrink-0 shadow-lg z-layer-top">
-                      &blacktriangleright;
-                    </div>
-                    <div class="min-w-0 z-layer-mid">
-                      <div id="simVideoCard1Title" class="text-xs font-bold text-white truncate">1. Top Verified Video Match</div>
-                      <div id="simVideoCard1Sub" class="text-[10px] text-cyan-300 truncate">Click Turn 1 &rarr; Turn 2 to watch mouse click!</div>
-                    </div>
-                  </div>
-
-                  <div class="h-full rounded-xl overflow-hidden bg-black border border-cyan-400/40 relative min-h-[124px] flex items-center justify-center shadow-lg">
-                    <iframe id="ytEmbedFrame" class="w-full h-full absolute inset-0" src="about:blank" title="J.A.R.V.I.S. Live YouTube Stream" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    <div id="ytPlaceholderOverlay" class="text-center p-2 pointer-events-none">
-                      <div id="ytNowPlayingTitle" class="font-hud text-[11px] font-bold text-cyan-300">LIVE STREAM VIEWPORT</div>
-                      <div class="text-[10px] text-slate-400">Auto-streams when J.A.R.V.I.S. cursor clicks video</div>
-                    </div>
-                  </div>
-                </div>
+                <span id="terminalExitCodeBadge" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] mono border border-emerald-400/40">EXIT: 0</span>
               </div>
+              <!-- Stream of Terminal Logs -->
+              <div id="liveTerminalOutput" class="flex-1 overflow-y-auto p-2 rounded-lg bg-slate-950/90 border border-slate-800 text-xs mono text-green-300 space-y-1 whitespace-pre-wrap select-text leading-relaxed">
+[J.A.R.V.I.S. Terminal Session Initialized]
+HP HyperX RTX 5060 Subprocess Engine Ready. Type any command below or trigger an autonomous mission.
+              </div>
+              <!-- Interactive Terminal Input -->
+              <form id="terminalCommandForm" onsubmit="event.preventDefault(); submitTerminalCommand();" class="flex items-center gap-2 pt-1 border-t border-slate-800">
+                <span class="text-xs font-bold text-cyan-400 mono">$</span>
+                <input id="terminalCmdInput" type="text" placeholder="Enter shell command (e.g. dir, python -m pytest, tree, pip list)..." class="flex-1 bg-slate-950 border border-cyan-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white mono focus:outline-none focus:border-cyan-400" />
+                <button type="submit" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-bold mono">Run &crarr;</button>
+              </form>
             </div>
 
-            <!-- GLOWING IRON MAN J.A.R.V.I.S. VIRTUAL MOUSE CURSOR + TARGET RETICLE -->
-            <div id="jarvisMouseCursor" style="left: 420px; top: 118px;" class="absolute flex items-center gap-1.5">
-              <div class="relative flex items-center justify-center">
-                <div id="cursorClickRipple" class="hidden absolute w-11 h-11 rounded-full border-2 border-cyan-300 shadow-[0_0_15px_#00f0ff]"></div>
-                <svg class="w-6 h-6 text-cyan-300 drop-shadow-[0_0_12px_#00f0ff]" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M4 2l16 10-7 2-3 7L4 2z"/>
-                </svg>
-              </div>
-              <span id="cursorActionTag" class="px-2 py-0.5 rounded-md bg-cyan-950/95 border border-cyan-400 text-[10px] mono font-bold text-cyan-100 whitespace-nowrap shadow-[0_0_15px_rgba(0,240,255,0.4)]">
-                J.A.R.V.I.S. CURSOR
-              </span>
-            </div>
-          </div>
-
-          <div id="youtubePlayerDock" class="hidden">
-            <button id="btnCloseYoutubeDock" type="button">&times;</button>
           </div>
         </div>
       </div>
@@ -453,39 +489,39 @@
           </div>
         </div>
 
-        <!-- 4 Interactive 3D Perspective Mission Cards -->
+        <!-- 4 Universal Quick-Launch Template Chips -->
         <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-cyan-500/20">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
-            <button type="button" data-Scenario="step1_open_youtube" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+            <button type="button" onclick="selectTemplateChip(1)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-cyan-400 transition">
               <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-cyan-300">1. Turn 1: "Open YouTube"</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200">GUI STEP 1</span>
+                <span class="font-hud text-xs font-bold text-cyan-300">1. Deep Web Research</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200">RESEARCH</span>
               </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Watch mouse glide to YouTube icon &amp; focus search bar</div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Next.js 15 vs Remix 2026 performance benchmark dossier</div>
             </button>
 
-            <button type="button" data-Scenario="youtube_song" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+            <button type="button" onclick="selectTemplateChip(2)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-amber-400 transition">
               <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-amber-300">2. Turn 2: "Search for Believer"</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">GUI STEP 2</span>
+                <span class="font-hud text-xs font-bold text-amber-300">2. Build Full-Stack App</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">SWARM</span>
               </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Watch mouse click search box, type query &amp; play video</div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Realtime Kanban Board with SQLite &amp; WebSocket backend</div>
             </button>
 
-            <button type="button" data-Scenario="build_complex_project" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+            <button type="button" onclick="selectTemplateChip(3)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-purple-400 transition">
               <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-purple-300">3. Build Full Project (Spawn Team)</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-200">SWARM</span>
+                <span class="font-hud text-xs font-bold text-purple-300">3. Desktop Automation</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-200">DESKTOP GUI</span>
               </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Co-Leader spawns sub-agents &amp; writes project files</div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Open VS Code, create a Python script, and execute it</div>
             </button>
 
-            <button type="button" data-Scenario="gst_webhook" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl">
+            <button type="button" onclick="selectTemplateChip(4)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-emerald-400 transition">
               <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-emerald-300">4. Fix Repo Bugs &amp; Run Pytest</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">AST QA</span>
+                <span class="font-hud text-xs font-bold text-emerald-300">4. Web Automation</span>
+                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">BROWSER</span>
               </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">AST Explorer + Builder + Co-Leader verification</div>
+              <div class="text-[11px] text-slate-300 z-layer-mid">Open Hacker News, locate top AI post, and extract insights</div>
             </button>
           </div>
 
@@ -1594,13 +1630,55 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
 
       if (
         scenarioKey === 'build_complex_project' ||
-        lower.includes('make a') ||
-        lower.includes('build a') ||
-        lower.includes('create a') ||
         lower.includes('expense tracker')
       ) {
         await executeComplexProjectBuild(commandText);
         return;
+      }
+
+      // Check for General-Purpose Autonomous Deep-Research / Full-Stack Mission
+      const isAutonomous = (
+        lower.includes('research') ||
+        lower.includes('benchmark') ||
+        lower.includes('compare') ||
+        lower.includes('full-stack') ||
+        lower.includes('kanban') ||
+        lower.includes('automation') ||
+        lower.includes('build') ||
+        lower.includes('make') ||
+        lower.includes('create')
+      ) && !lower.includes('refactor payment') && !lower.includes('auth') && !lower.includes('gst');
+
+      if (isAutonomous) {
+        showToast('Initiating 5-Phase Autonomous Mission...');
+        try {
+          const autoResp = await fetch('http://127.0.0.1:8000/api/autonomous-mission', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              objective: commandText,
+              depth: 3,
+              run_tests: true,
+              launch_app: true,
+              synthesize_voice: true
+            })
+          });
+          if (autoResp.ok) {
+            const data = await autoResp.json();
+            showToast('Mission completed successfully!');
+            if (data.research && data.research.sources_count > 0) {
+              switchViewportMode(2);
+            } else if (data.generated_files && data.generated_files.length > 0) {
+              switchViewportMode(3);
+            }
+            if (data.spoken_response) {
+              speakJarvis(data.spoken_response);
+            }
+            return;
+          }
+        } catch (e) {
+          console.warn('Autonomous mission fallback:', e);
+        }
       }
 
       await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
@@ -1839,6 +1917,164 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
       }
     }
 
+    function switchViewportMode(mode) {
+      for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById('viewportMode' + i);
+        const btn = document.getElementById('btnTabMode' + i);
+        if (el) el.classList.toggle('hidden', i !== mode);
+        if (btn) {
+          if (i === mode) {
+            btn.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 bg-cyan-500 text-slate-950 shadow';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60';
+          }
+        }
+      }
+      const addrBar = document.getElementById('virtualAddressBar');
+      if (addrBar) {
+        const modeNames = ['live://stream/0', 'research://dossier/markdown', 'workspace://files/tree', 'terminal://subprocess/stdout'];
+        addrBar.textContent = modeNames[mode - 1] || 'live://telemetry';
+      }
+      if (mode === 1) {
+        refreshLiveDesktopStream();
+      } else if (mode === 3) {
+        refreshWorkspaceFilesList();
+      }
+    }
+
+    function selectTemplateChip(chipIndex) {
+      const input = document.getElementById('voiceCommandInput');
+      if (!input) return;
+      if (chipIndex === 1) {
+        input.value = "Deep Research: Next.js 15 vs Remix 2026 performance benchmark and architecture comparison";
+        switchViewportMode(2);
+      } else if (chipIndex === 2) {
+        input.value = "Build Full-Stack App: Realtime Kanban Board with SQLite and WebSocket backend";
+        switchViewportMode(3);
+      } else if (chipIndex === 3) {
+        input.value = "Desktop Automation: Open VS Code, create a Python script, and run it";
+        switchViewportMode(1);
+      } else if (chipIndex === 4) {
+        input.value = "Web Automation: Open Hacker News, find the top AI post, and extract key insights";
+        switchViewportMode(2);
+      }
+    }
+
+    function refreshLiveDesktopStream() {
+      const img = document.getElementById('liveDesktopStream');
+      if (img) {
+        img.src = '/api/screen-frame?t=' + Date.now();
+      }
+    }
+
+    async function refreshWorkspaceFilesList(project) {
+      try {
+        const url = project ? `/api/workspace-files?project=${encodeURIComponent(project)}` : '/api/workspace-files';
+        const resp = await fetch(url);
+        if (resp.ok) {
+          const data = await resp.json();
+          const filesMap = {};
+          (data.files || []).forEach(f => {
+            filesMap[f.path] = { content: f.content, size: f.size };
+          });
+          renderBlackboardWorkspaceFiles(filesMap);
+        }
+      } catch (e) {
+        console.error('Error refreshing workspace files:', e);
+      }
+    }
+
+    function renderBlackboardWorkspaceFiles(filesMap) {
+      const tree = document.getElementById('workspaceFilesTree');
+      if (!tree) return;
+      const fnames = Object.keys(filesMap);
+      if (fnames.length === 0) {
+        tree.innerHTML = '<div class="p-2 text-slate-500 text-xs">No files generated yet</div>';
+        return;
+      }
+      tree.innerHTML = fnames.map(f => `
+        <button type="button" onclick="displayWorkspaceFile('${f.replace(/'/g, "\\'")}')" class="w-full text-left p-1.5 rounded-lg border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-950/30 flex items-center justify-between text-[11px] mono text-cyan-200">
+          <span class="truncate">📄 ${f}</span>
+          <span class="text-[10px] text-slate-500">${filesMap[f].size || 0}B</span>
+        </button>
+      `).join('');
+
+      const nameLabel = document.getElementById('activeWorkspaceFileName');
+      if (nameLabel && (nameLabel.textContent === 'Select a file' || !filesMap[nameLabel.textContent])) {
+        displayWorkspaceFile(fnames[0]);
+      }
+    }
+
+    function displayWorkspaceFile(filename) {
+      const nameLabel = document.getElementById('activeWorkspaceFileName');
+      const sizeLabel = document.getElementById('activeWorkspaceFileSize');
+      const viewer = document.getElementById('workspaceCodeViewer');
+      if (nameLabel) nameLabel.textContent = filename;
+      
+      fetch('/api/workspace-files')
+        .then(r => r.json())
+        .then(data => {
+          const match = (data.files || []).find(f => f.path === filename);
+          if (match) {
+            if (sizeLabel) sizeLabel.textContent = `${match.size} bytes`;
+            if (viewer) viewer.textContent = match.content;
+          }
+        })
+        .catch(err => console.error(err));
+    }
+
+    async function submitTerminalCommand() {
+      const input = document.getElementById('terminalCmdInput');
+      if (!input) return;
+      const cmd = input.value.trim();
+      if (!cmd) return;
+      input.value = '';
+
+      const termEl = document.getElementById('liveTerminalOutput');
+      if (termEl) {
+        termEl.innerHTML += `\n<span class="text-cyan-400">$ ${cmd}</span>\n<span class="text-slate-400">[Executing command...]</span>`;
+        termEl.scrollTop = termEl.scrollHeight;
+      }
+
+      try {
+        const resp = await fetch('http://127.0.0.1:8000/api/terminal-run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd })
+        });
+        const res = await resp.json();
+        if (termEl) {
+          termEl.innerHTML += `\n<span class="${res.exit_code === 0 ? 'text-green-300' : 'text-red-400'}">${res.stdout || ''}${res.stderr || ''}</span>\n<span class="text-slate-500 text-[10px]">[Exit code: ${res.exit_code}]</span>\n`;
+          termEl.scrollTop = termEl.scrollHeight;
+        }
+      } catch (e) {
+        if (termEl) {
+          termEl.innerHTML += `\n<span class="text-red-400">Execution Error: ${e.message}</span>\n`;
+          termEl.scrollTop = termEl.scrollHeight;
+        }
+      }
+    }
+
+    function updateAgentCardsFromBlackboard(agents) {
+      if (agents['Co-Leader']) {
+        const st = document.getElementById('statusOrchestrator');
+        if (st) st.textContent = `${agents['Co-Leader'].status}: ${agents['Co-Leader'].current_task}`;
+      }
+      if (agents['Researcher'] || agents['Architect']) {
+        const a = agents['Researcher'] || agents['Architect'];
+        const st = document.getElementById('statusExplorer');
+        if (st) st.textContent = `${a.status}: ${a.current_task}`;
+      }
+      if (agents['Builder']) {
+        const st = document.getElementById('statusBuilder');
+        if (st) st.textContent = `${agents['Builder'].status}: ${agents['Builder'].current_task}`;
+      }
+      if (agents['Critic']) {
+        const st = document.getElementById('statusCritic');
+        if (st) st.textContent = `${agents['Critic'].status}: ${agents['Critic'].current_task}`;
+      }
+    }
+
     function initWebSocketTelemetry() {
       const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsHost = window.location.host || '127.0.0.1:8000';
@@ -1867,6 +2103,50 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
               }
               if (payload.inference) {
                 updateInferenceBadge(payload.inference);
+              }
+              if (payload.blackboard) {
+                const bb = payload.blackboard;
+                if (bb.research_notes && bb.research_notes.length > 0) {
+                  const rList = document.getElementById('researchSourcesList');
+                  const rCount = document.getElementById('researchSourceCountBadge');
+                  if (rCount) rCount.textContent = `${bb.research_notes.length} Sources`;
+                  if (rList) {
+                    rList.innerHTML = bb.research_notes.map(n => `
+                      <div class="p-2 rounded bg-slate-950/80 border border-cyan-500/30">
+                        <div class="font-bold text-cyan-200 truncate">${n.title || n.url}</div>
+                        <div class="text-[10px] text-slate-400 truncate">${n.url}</div>
+                        <div class="text-[10px] text-amber-200 mt-1 line-clamp-2">${n.summary}</div>
+                      </div>
+                    `).join('');
+                  }
+                  if (bb.workspace_files && bb.workspace_files['RESEARCH_DOSSIER.md']) {
+                    const dossierViewer = document.getElementById('researchDossierViewer');
+                    if (dossierViewer) dossierViewer.textContent = bb.workspace_files['RESEARCH_DOSSIER.md'].content || '';
+                  }
+                }
+                if (bb.terminal_logs && bb.terminal_logs.length > 0) {
+                  const termEl = document.getElementById('liveTerminalOutput');
+                  if (termEl) {
+                    termEl.innerHTML = bb.terminal_logs.map(l => `
+<span class="text-cyan-400">$ ${l.command}</span>
+<span class="${l.exit_code === 0 ? 'text-green-300' : 'text-red-400'}">${l.stdout || ''}${l.stderr || ''}</span>
+<span class="text-slate-500 text-[10px]">[Exit: ${l.exit_code}]</span>
+                    `).join('\n');
+                    termEl.scrollTop = termEl.scrollHeight;
+                  }
+                  const lastLog = bb.terminal_logs[bb.terminal_logs.length - 1];
+                  const exitBadge = document.getElementById('terminalExitCodeBadge');
+                  if (exitBadge) {
+                    exitBadge.textContent = `EXIT: ${lastLog.exit_code}`;
+                    exitBadge.className = `px-2 py-0.5 rounded text-[10px] mono border ${lastLog.exit_code === 0 ? 'bg-emerald-950 text-emerald-300 border-emerald-400/40' : 'bg-red-950 text-red-300 border-red-400/40'}`;
+                  }
+                }
+                if (bb.workspace_files && Object.keys(bb.workspace_files).length > 0) {
+                  renderBlackboardWorkspaceFiles(bb.workspace_files);
+                }
+                if (bb.active_agents) {
+                  updateAgentCardsFromBlackboard(bb.active_agents);
+                }
               }
             } catch (e) {
               console.error('[Telemetry Parse Error]', e);

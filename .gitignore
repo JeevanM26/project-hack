@@ -41,3 +41,7 @@ raw_notion.json
 payload.json
 handbook_*.txt
 notion_*.txt
+
+# Autonomous Agent Workspaces
+workspaces/*
+!workspaces/.gitkeep

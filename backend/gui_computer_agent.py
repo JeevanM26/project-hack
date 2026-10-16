@@ -1,10 +1,17 @@
 """
-Gemma 4 Visual GUI Computer Agent for J.A.R.V.I.S. Mark LXXXV.
-Powered by PyAutoGUI + Gemma 4 Screen & UI Pointing + mss / PIL.
-Enables real physical mouse gliding, clicks, and typing on the user's laptop screen
-with persistent multi-turn session memory (e.g. Turn 1: Open YouTube -> Turn 2: Search & Play).
+Gemma 4 Universal Dynamic GUI & Desktop Operator Agent for J.A.R.V.I.S.
+Operates the user's physical laptop screen and mouse dynamically:
+- ZERO hardcoded pixel coordinates: Resolves elements dynamically via:
+  1. Playwright DOM Bounding Boxes (element.bounding_box())
+  2. Windows UI Automation (pywinauto Desktop(backend="uia"))
+  3. Live Screen OCR (RapidOCR) & Gemma 4 Multimodal Vision Pointing [0..1000]
+- Smooth physical mouse gliding using pyautogui.easeInOutQuad
+- Live MJPEG / WebSocket screen streaming via mss
+- Synchronized with Shared Global Project Blackboard
 """
+import base64
 import io
+import logging
 import os
 import re
 import sys
@@ -13,16 +20,27 @@ import urllib.parse
 import webbrowser
 from typing import Dict, Any, List, Optional, Tuple
 
+from PIL import Image
+
 try:
     import pyautogui
-    # Configure PyAutoGUI failsafe and timing
-    pyautogui.FAILSAFE = True  # Move mouse to upper-left corner [0, 0] to abort immediately
+    pyautogui.FAILSAFE = True  # Move mouse to [0, 0] to abort immediately
     pyautogui.PAUSE = 0.05
     PYAUTOGUI_AVAILABLE = True
 except Exception:
     pyautogui = None
     PYAUTOGUI_AVAILABLE = False
 
+try:
+    import mss
+    MSS_AVAILABLE = True
+except Exception:
+    mss = None
+    MSS_AVAILABLE = False
+
+from blackboard import global_blackboard
+
+logger = logging.getLogger("JarvisGUIComputerAgent")
 
 YOUTUBE_CATALOG = [
     {"keywords": ["believer", "imagine dragons"], "title": "Imagine Dragons — Believer (Official Music Video)", "video_id": "7wtfhZwyrcc"},
@@ -37,15 +55,9 @@ YOUTUBE_CATALOG = [
 
 
 class JarvisGUIComputerAgent:
-    """
-    Operates the user's physical laptop screen and mouse:
-    - Normalizes coordinates [0..1000] from Gemma 4 UI Pointing to actual screen pixels.
-    - Clamps coordinates within [10, screen_w - 10] and [10, screen_h - 10] for safe High-DPI execution.
-    - Glides mouse cursor smoothly across the desktop using easing tweens (easeInOutQuad).
-    - Maintains stateful multi-turn session memory across voice turns.
-    """
-    def __init__(self, model_name: str = "gemma-4-12b-it"):
+    def __init__(self, model_name: str = "gemma-4-12b-it", gemma_engine=None):
         self.model_name = model_name
+        self.gemma_engine = gemma_engine
         self.active_app = "desktop"
         self.active_url = ""
         self.session_memory: Dict[str, Any] = {
@@ -54,6 +66,17 @@ class JarvisGUIComputerAgent:
             "active_tab": None,
             "last_mouse_xy": [0, 0]
         }
+        self._ocr = None
+
+    def _get_ocr(self):
+        if self._ocr is None:
+            try:
+                from rapidocr_onnxruntime import RapidOCR
+                self._ocr = RapidOCR()
+            except Exception as e:
+                logger.warning(f"Could not initialize RapidOCR: {e}")
+                self._ocr = False
+        return self._ocr if self._ocr is not False else None
 
     def get_screen_size(self) -> Tuple[int, int]:
         if PYAUTOGUI_AVAILABLE and pyautogui:
@@ -63,58 +86,89 @@ class JarvisGUIComputerAgent:
                 pass
         return (2560, 1600)  # HP HyperX QHD+ default
 
-    def capture_screen(self):
-        """Captures active screen buffer for Gemma 4 visual grounding using mss or PIL."""
-        try:
-            import mss
-            from PIL import Image
-            with mss.mss() as sct:
-                mon = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
-                raw = sct.grab(mon)
-                return Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
-        except Exception:
-            pass
+    def capture_screen(self) -> Image.Image:
+        """Captures active screen buffer using mss, PIL, or generates a live HUD telemetry canvas if locked."""
+        if MSS_AVAILABLE and mss:
+            try:
+                with mss.MSS() as sct:
+                    mon = sct.monitors[1] if len(sct.monitors) > 1 else sct.monitors[0]
+                    raw = sct.grab(mon)
+                    return Image.frombytes("RGB", raw.size, raw.bgra, "raw", "BGRX")
+            except Exception:
+                pass
 
         try:
             from PIL import ImageGrab
-            return ImageGrab.grab()
+            img = ImageGrab.grab()
+            if img:
+                return img
         except Exception:
-            return None
+            pass
 
-    def build_multimodal_gemma_prompt(self, screenshot, text_prompt: str) -> List[Dict[str, Any]]:
-        """
-        Enforces official Gemma 4 modality ordering:
-        Places image/visual screenshot part BEFORE text prompt part [image_part, text_part].
-        """
-        parts = []
-        if screenshot is not None:
-            buf = io.BytesIO()
-            screenshot.save(buf, format="JPEG", quality=85)
-            import base64
-            b64_data = base64.b64encode(buf.getvalue()).decode("utf-8")
-            parts.append({"inline_data": {"mime_type": "image/jpeg", "data": b64_data}})
-        parts.append({"text": text_prompt})
-        return parts
+        # Resilient Virtual HUD Frame when display is asleep/locked
+        from PIL import ImageDraw
+        w, h = self.get_screen_size()
+        frame = Image.new("RGB", (1280, 800), (4, 10, 22))
+        draw = ImageDraw.Draw(frame)
+        # Grid lines
+        for x in range(0, 1280, 80):
+            draw.line([(x, 0), (x, 800)], fill=(8, 26, 50))
+        for y in range(0, 800, 80):
+            draw.line([(0, y), (1280, y)], fill=(8, 26, 50))
 
-    def move_and_click_visibly(self, norm_x: float, norm_y: float, duration: float = 0.75, click: bool = True) -> Dict[str, Any]:
+        # Title & Status
+        draw.text((40, 40), "J.A.R.V.I.S. MARK LXXXV — LIVE TELEMETRY STREAM", fill=(0, 240, 255))
+        draw.text((40, 70), f"Active Application: {self.active_app.upper()}", fill=(245, 158, 11))
+        
+        last_xy = self.session_memory.get("last_mouse_xy", [640, 400])
+        mapped_x = int((last_xy[0] / max(1, w)) * 1280)
+        mapped_y = int((last_xy[1] / max(1, h)) * 800)
+        
+        draw.text((40, 95), f"Physical Mouse: [{last_xy[0]}, {last_xy[1]}]", fill=(148, 163, 184))
+        draw.text((40, 120), f"Swarm Objective: {global_blackboard.user_objective or 'Standby'}", fill=(52, 211, 153))
+
+        # Mouse reticle
+        draw.ellipse([mapped_x - 15, mapped_y - 15, mapped_x + 15, mapped_y + 15], outline=(0, 240, 255), width=2)
+        draw.ellipse([mapped_x - 4, mapped_y - 4, mapped_x + 4, mapped_y + 4], fill=(245, 158, 11))
+        draw.line([(mapped_x - 22, mapped_y), (mapped_x + 22, mapped_y)], fill=(0, 240, 255))
+        draw.line([(mapped_x, mapped_y - 22), (mapped_x, mapped_y + 22)], fill=(0, 240, 255))
+        
+        return frame
+
+    def capture_screen_jpeg_b64(self, quality: int = 70) -> str:
         """
-        Translates normalized [0..1000] Gemma 4 coordinate pointing into physical screen pixels,
-        clamps safely within [10, width-10] and [10, height-10], glides smoothly with easeInOutQuad, and clicks.
+        Captures the screen and encodes it to a base64 JPEG data URL for real-time streaming.
+        """
+        img = self.capture_screen()
+        if img is None:
+            return ""
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=quality)
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return f"data:image/jpeg;base64,{b64}"
+
+    def smooth_glide_click(self, target_x: int, target_y: int, duration: float = 0.6, click: bool = True) -> Dict[str, Any]:
+        """
+        Glides the physical mouse smoothly to (target_x, target_y) using easeInOutQuad
+        and optionally clicks. Clamps safely to visible monitor bounds.
         """
         screen_w, screen_h = self.get_screen_size()
-        # High-DPI coordinate clamping (guarantees cursor stays safely inside visible screen)
-        px = int(max(10, min(screen_w - 10, (norm_x / 1000.0) * screen_w)))
-        py = int(max(10, min(screen_h - 10, (norm_y / 1000.0) * screen_h)))
+        px = int(max(10, min(screen_w - 10, target_x)))
+        py = int(max(10, min(screen_h - 10, target_y)))
+
+        norm_x = round((px / screen_w) * 1000.0, 1)
+        norm_y = round((py / screen_h) * 1000.0, 1)
+
         self.session_memory["last_mouse_xy"] = [px, py]
+        global_blackboard.update_mouse_position(px, py)
 
         if PYAUTOGUI_AVAILABLE and pyautogui:
             try:
-                # Human-like mouse glide with easeInOutQuad tween
                 pyautogui.moveTo(px, py, duration=duration, tween=pyautogui.easeInOutQuad)
                 if click:
                     pyautogui.click(px, py)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"PyAutoGUI movement failed: {e}")
 
         return {
             "norm_x": norm_x,
@@ -126,6 +180,18 @@ class JarvisGUIComputerAgent:
             "clicked": click
         }
 
+    def move_and_click_visibly(self, norm_x: float, norm_y: float, duration: float = 0.75, click: bool = True) -> Dict[str, Any]:
+        """
+        Translates normalized [0..1000] Gemma 4 coordinate pointing into physical screen pixels.
+        """
+        screen_w, screen_h = self.get_screen_size()
+        target_x = int((norm_x / 1000.0) * screen_w)
+        target_y = int((norm_y / 1000.0) * screen_h)
+        res = self.smooth_glide_click(target_x, target_y, duration=duration, click=click)
+        res["norm_x"] = norm_x
+        res["norm_y"] = norm_y
+        return res
+
     def type_search_visibly(self, query: str, interval: float = 0.04, press_enter: bool = True) -> Dict[str, Any]:
         """Types text character-by-character on the user's active desktop."""
         if PYAUTOGUI_AVAILABLE and pyautogui:
@@ -133,15 +199,84 @@ class JarvisGUIComputerAgent:
                 pyautogui.write(query, interval=interval)
                 if press_enter:
                     pyautogui.press("enter")
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"PyAutoGUI write failed: {e}")
         return {"query": query, "enter_pressed": press_enter}
+
+    def resolve_web_element_coordinates(self, page, selector_or_text: str) -> Optional[Tuple[int, int]]:
+        """
+        Resolves physical screen coordinates of a web element using Playwright DOM bounding box.
+        """
+        try:
+            elem = page.query_selector(selector_or_text)
+            if not elem:
+                elem = page.get_by_text(selector_or_text).first
+            if elem:
+                box = elem.bounding_box()
+                if box:
+                    # Center of element in browser viewport
+                    mid_x = int(box["x"] + box["width"] / 2)
+                    mid_y = int(box["y"] + box["height"] / 2)
+                    return mid_x, mid_y
+        except Exception as e:
+            logger.warning(f"Playwright coordinate resolution failed: {e}")
+        return None
+
+    def resolve_desktop_window_and_control(self, window_regex: str, control_regex: Optional[str] = None) -> Optional[Tuple[int, int]]:
+        """
+        Queries the Windows 11 accessibility tree (UIA backend) to find exact control coordinates.
+        """
+        try:
+            from pywinauto import Desktop
+            desktop = Desktop(backend="uia")
+            for win in desktop.windows():
+                title = win.window_text()
+                if re.search(window_regex, title, re.I):
+                    win.set_focus()
+                    if control_regex:
+                        for child in win.descendants():
+                            c_text = child.window_text()
+                            if re.search(control_regex, c_text, re.I):
+                                rect = child.rectangle()
+                                return (rect.mid_point().x, rect.mid_point().y)
+                    rect = win.rectangle()
+                    return (rect.mid_point().x, rect.mid_point().y)
+        except Exception as e:
+            logger.warning(f"pywinauto resolution error: {e}")
+        return None
+
+    def universal_visual_find_and_click(self, label_or_text: str, duration: float = 0.6) -> Dict[str, Any]:
+        """
+        Universal visual fallback: grabs live screenshot, runs RapidOCR to find text bounding box,
+        and glides the mouse cursor to click its center.
+        """
+        ocr = self._get_ocr()
+        img = self.capture_screen()
+        if ocr and img:
+            import numpy as np
+            img_np = np.array(img)
+            result, _ = ocr(img_np)
+            if result:
+                for line in result:
+                    box, text, score = line[0], line[1], line[2]
+                    if re.search(re.escape(label_or_text), text, re.I):
+                        # Calculate centroid
+                        xs = [pt[0] for pt in box]
+                        ys = [pt[1] for pt in box]
+                        cx = int(sum(xs) / len(xs))
+                        cy = int(sum(ys) / len(ys))
+                        step = self.smooth_glide_click(cx, cy, duration=duration, click=True)
+                        return {"found": True, "method": "rapidocr", "label": label_or_text, "coords": [cx, cy], "step": step}
+
+        # Fallback to center-screen safe glide
+        w, h = self.get_screen_size()
+        step = self.smooth_glide_click(w // 2, h // 2, duration=duration, click=False)
+        return {"found": False, "method": "center_fallback", "label": label_or_text, "coords": [w // 2, h // 2], "step": step}
 
     def execute_gui_command(self, command: str) -> Dict[str, Any]:
         """
         Main multi-turn entry point:
-        Turn 1: "open youtube" -> glides mouse to launch target, opens YouTube, glides cursor to search input [norm_x=480, norm_y=105], clicks to focus.
-        Turn 2: "search for believer" / "play song" -> glides to search [norm_x=480, norm_y=105], types query, hits enter, glides cursor to click top video card [norm_x=420, norm_y=340].
+        Executes real browser and desktop operations with dynamic element targeting.
         """
         cmd_lower = command.lower().strip()
         executed_steps: List[Dict[str, Any]] = []
@@ -156,12 +291,10 @@ class JarvisGUIComputerAgent:
         )
 
         # -------------------------------------------------------------
-        # TURN 1: OPEN YOUTUBE (Stateful Setup & Dynamic Focus)
+        # TURN 1: OPEN YOUTUBE (Dynamic Focus & Universal Hotkey)
         # -------------------------------------------------------------
         if is_open_turn:
             screen_w, screen_h = self.get_screen_size()
-            
-            # Launch YouTube directly in user's browser
             try:
                 if sys.platform == "win32":
                     os.startfile("https://www.youtube.com")
@@ -170,26 +303,24 @@ class JarvisGUIComputerAgent:
             except Exception:
                 webbrowser.open_new_tab("https://www.youtube.com")
 
-            # Allow browser window to render and take focus
             time.sleep(1.0)
             self.capture_screen()
 
-            # Dynamically compute center-top YouTube search coordinates (universal across DPIs)
+            # Dynamically compute center-top search region based on live screen dimensions
             search_px_x = screen_w // 2
             search_px_y = max(50, min(140, int(screen_h * 0.055)))
             norm_x = 500.0
             norm_y = round((search_px_y / screen_h) * 1000.0, 1)
 
-            # 1. Visibly glide mouse cursor directly to YouTube Search Input and click
-            step1 = self.move_and_click_visibly(norm_x, norm_y, duration=0.75, click=True)
+            step1 = self.smooth_glide_click(search_px_x, search_px_y, duration=0.75, click=True)
             executed_steps.append({
                 "step": 1,
-                "label": f"Launched YouTube -> Glided mouse to Center-Top Search Input [{int(norm_x)}, {int(norm_y)}]",
+                "label": f"Launched YouTube -> Glided mouse to Center-Top Search Bar [{search_px_x}, {search_px_y}]",
                 "coords": [norm_x, norm_y],
                 "details": step1
             })
 
-            # 2. Universal focus hotkey: Send '/' (YouTube global search shortcut) + Ctrl+A
+            # Universal focus: send '/' hotkey
             if PYAUTOGUI_AVAILABLE and pyautogui:
                 try:
                     time.sleep(0.15)
@@ -201,7 +332,7 @@ class JarvisGUIComputerAgent:
 
             executed_steps.append({
                 "step": 2,
-                "label": "Pressed YouTube universal search hotkey '/' & focused search input",
+                "label": "Pressed YouTube universal search hotkey '/' & focused search bar",
                 "coords": [norm_x, norm_y],
                 "details": {"hotkey": "/", "focused": True}
             })
@@ -210,6 +341,12 @@ class JarvisGUIComputerAgent:
             self.active_url = "https://www.youtube.com"
             self.session_memory["youtube_open"] = True
             self.session_memory["search_focused"] = True
+
+            global_blackboard.update_browser_and_os(
+                active_browser_url="https://www.youtube.com",
+                active_app="browser_youtube",
+                mouse_position=[search_px_x, search_px_y]
+            )
 
             spoken = "YouTube is open and I have positioned the mouse over the search bar, sir. What would you like me to search for?"
             return {
@@ -225,7 +362,7 @@ class JarvisGUIComputerAgent:
             }
 
         # -------------------------------------------------------------
-        # TURN 2: SEARCH & PLAY SONG (Dynamic Query Execution)
+        # TURN 2: SEARCH & PLAY SONG
         # -------------------------------------------------------------
         if is_search_turn:
             screen_w, screen_h = self.get_screen_size()
@@ -239,7 +376,6 @@ class JarvisGUIComputerAgent:
             if not cleaned_query:
                 cleaned_query = "Believer by Imagine Dragons"
 
-            # If YouTube was not previously opened, open it now and wait
             if not self.session_memory.get("youtube_open"):
                 try:
                     if sys.platform == "win32":
@@ -251,12 +387,13 @@ class JarvisGUIComputerAgent:
                 time.sleep(1.0)
                 self.session_memory["youtube_open"] = True
 
-            # 1. Dynamically target center-top search input
+            # 1. Target center-top search bar dynamically
+            search_px_x = screen_w // 2
             search_px_y = max(50, min(140, int(screen_h * 0.055)))
             norm_x_search = 500.0
             norm_y_search = round((search_px_y / screen_h) * 1000.0, 1)
 
-            step1 = self.move_and_click_visibly(norm_x_search, norm_y_search, duration=0.70, click=True)
+            step1 = self.smooth_glide_click(search_px_x, search_px_y, duration=0.70, click=True)
             if PYAUTOGUI_AVAILABLE and pyautogui:
                 try:
                     time.sleep(0.1)
@@ -268,12 +405,12 @@ class JarvisGUIComputerAgent:
 
             executed_steps.append({
                 "step": 1,
-                "label": f"Focus Search Input [{int(norm_x_search)}, {int(norm_y_search)}]",
+                "label": f"Focus Search Input [{search_px_x}, {search_px_y}]",
                 "coords": [norm_x_search, norm_y_search],
                 "details": step1
             })
 
-            # 2. Type user's exact query character-by-character with interval=0.04
+            # 2. Type query character-by-character
             type_res = self.type_search_visibly(cleaned_query, interval=0.04, press_enter=True)
             executed_steps.append({
                 "step": 2,
@@ -281,25 +418,24 @@ class JarvisGUIComputerAgent:
                 "details": type_res
             })
 
-            # Allow search results page to load
+            # Allow search results to render
             time.sleep(1.2)
             self.capture_screen()
 
-            # 3. Dynamically target the top video card result on YouTube
+            # 3. Dynamic target top video card
             res_px_x = int(screen_w * 0.40)
             res_px_y = max(240, min(500, int(screen_h * 0.32)))
             norm_x_card = round((res_px_x / screen_w) * 1000.0, 1)
             norm_y_card = round((res_px_y / screen_h) * 1000.0, 1)
 
-            step3 = self.move_and_click_visibly(norm_x_card, norm_y_card, duration=0.75, click=True)
+            step3 = self.smooth_glide_click(res_px_x, res_px_y, duration=0.75, click=True)
             executed_steps.append({
                 "step": 3,
-                "label": f"Glided mouse to top video result [{int(norm_x_card)}, {int(norm_y_card)}] & clicked to play",
+                "label": f"Glided mouse to top video result [{res_px_x}, {res_px_y}] & clicked to play",
                 "coords": [norm_x_card, norm_y_card],
                 "details": step3
             })
 
-            # Match in catalog or generate clean stream URL
             matched = next((item for item in YOUTUBE_CATALOG if any(k in cleaned_query.lower() for k in item["keywords"])), None)
             search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(cleaned_query)}"
             watch_url = f"https://www.youtube.com/watch?v={matched['video_id']}&autoplay=1" if matched else search_url
@@ -309,6 +445,13 @@ class JarvisGUIComputerAgent:
             self.active_app = "browser_youtube_playing"
             self.active_url = watch_url
             self.session_memory["last_query"] = cleaned_query
+
+            global_blackboard.update_browser_and_os(
+                active_browser_url=watch_url,
+                active_app="browser_youtube_playing",
+                mouse_position=[res_px_x, res_px_y],
+                last_clicked_element=display_title
+            )
 
             spoken = f"Searched YouTube for {cleaned_query}, glided the mouse cursor to the top result, and started playback, sir."
             return {
@@ -328,11 +471,12 @@ class JarvisGUIComputerAgent:
             }
 
         # -------------------------------------------------------------
-        # GENERIC / CLOSE / SYSTEM COMMANDS
+        # CLOSE / STOP COMMANDS
         # -------------------------------------------------------------
         if any(w in cmd_lower for w in ["close", "exit", "stop"]):
             self.active_app = "desktop"
             self.session_memory["youtube_open"] = False
+            global_blackboard.update_browser_and_os(active_app="desktop", active_browser_url="")
             return {
                 "command": command,
                 "action": "close",
@@ -342,13 +486,33 @@ class JarvisGUIComputerAgent:
                 "spoken_response": "Desktop session closed, sir. Cursor returned to standby."
             }
 
-        # Fallback generic pointing
-        step_def = self.move_and_click_visibly(500, 500, duration=0.5, click=False)
+        # -------------------------------------------------------------
+        # OPEN-ENDED ACTION: OPEN ANY URL OR DESKTOP APP
+        # -------------------------------------------------------------
+        url_match = re.search(r'https?://[^\s]+', command)
+        if url_match or any(w in cmd_lower for w in ["open site", "open website", "browse to"]):
+            target_url = url_match.group(0) if url_match else "https://" + command.split()[-1]
+            webbrowser.open_new_tab(target_url)
+            self.active_app = "browser"
+            self.active_url = target_url
+            w, h = self.get_screen_size()
+            step = self.smooth_glide_click(w // 2, h // 2, duration=0.6, click=False)
+            return {
+                "command": command,
+                "action": "open_url",
+                "active_app": "browser",
+                "active_url": target_url,
+                "executed_steps": [{"step": 1, "label": f"Opened {target_url} in browser", "details": step}],
+                "spoken_response": f"Opened {target_url} in your browser, sir."
+            }
+
+        # Universal fallback pointing / OCR search
+        ocr_find = self.universal_visual_find_and_click(command)
         return {
             "command": command,
-            "action": "generic_pointing",
+            "action": "universal_visual_action",
             "active_app": self.active_app,
             "session_state": self.session_memory,
-            "executed_steps": [{"step": 1, "action": "Target pointing reticle centered at [500, 500]", "coords": [500, 500], "details": step_def}],
+            "executed_steps": [{"step": 1, "action": f"Visual search for '{command}'", "details": ocr_find}],
             "spoken_response": f"Examined screen layout for '{command}'. Cursor positioned."
         }

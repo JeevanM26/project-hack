@@ -2182,7 +2182,7 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
       const text = document.getElementById('inferenceModeText');
       if (!badge || !text) return;
 
-      if (info.is_live_gpu) {
+      if (info.is_live_gpu || info.ollama_connected) {
         badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/90 border border-emerald-400 text-emerald-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.4)]';
         text.textContent = `LIVE OLLAMA GPU (${info.active_model || info.model || 'jarvis-gemma:latest'})`;
       } else {

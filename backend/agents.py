@@ -64,10 +64,15 @@ class SingleGemma4Engine:
                 data = resp.json()
                 self.installed_models = [m["name"] for m in data.get("models", [])]
                 self.ollama_connected = True
+                self.is_live_gpu = True
+                self.using_mock_fallback = False
+                self.last_inference_source = "OLLAMA_GPU"
                 return True
         except Exception:
             pass
         self.ollama_connected = False
+        self.is_live_gpu = False
+        self.using_mock_fallback = True
         return False
 
     def call_agent(self, role_name: str, system_prompt: str, user_prompt: str, blackboard_context: str = "") -> Dict[str, Any]:

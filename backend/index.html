@@ -1067,50 +1067,32 @@ class TaskManagerService:
     }
 
     // --- VOICE OS ACTIONS: YOUTUBE PLAYBACK ---
-    function triggerVoiceOSYouTube(songQuery) {
+    function triggerVoiceOSYouTube(songQuery, isLocalGui = true) {
       const dock = document.getElementById('youtubeDock');
       const title = document.getElementById('youtubeTrackTitle');
       const iframe = document.getElementById('youtubeIframe');
       const link = document.getElementById('youtubeDirectLink');
 
       const encoded = encodeURIComponent(songQuery);
-      title.textContent = `Playing: ${songQuery}`;
+      title.textContent = `Desktop Browser GUI: ${songQuery}`;
+      link.href = `https://www.youtube.com/results?search_query=${encoded}`;
       
-      // Top songs embed ID map
-      const lookup = {
-        'kesariya': 'BddP6PYo2gs',
-        'believer': '7wtfhZwyrcc',
-        'shape of you': 'JGwWNGJdvx8',
-        'faded': '60ItHLz5WEA',
-        'despacito': 'kJQP7kiw5Fk',
-        'interstellar': 'UDVtMYqUAyw',
-        'starboy': '34Na4j8AVgA',
-        'jai ho': 'Yc_8_5YqR7E'
-      };
-
-      let videoId = null;
-      for (const [key, id] of Object.entries(lookup)) {
-        if (songQuery.toLowerCase().includes(key)) {
-          videoId = id;
-          break;
-        }
+      // When executing via desktop browser GUI, avoid double-audio by keeping iframe silent
+      if (isLocalGui) {
+        dock.classList.add('hidden');
+        iframe.src = '';
+      } else {
+        iframe.src = `https://www.youtube-nocookie.com/embed?listType=search&list=${encoded}&autoplay=1`;
+        dock.classList.remove('hidden');
       }
 
-      const embedSrc = videoId 
-        ? `https://www.youtube.com/embed/${videoId}?autoplay=1` 
-        : `https://www.youtube-nocookie.com/embed?listType=search&list=${encoded}&autoplay=1`;
-
-      iframe.src = embedSrc;
-      link.href = `https://www.youtube.com/results?search_query=${encoded}`;
-      dock.classList.remove('hidden');
-
-      const ack = `Opening YouTube and playing ${songQuery} right now, sir.`;
+      const ack = `Opening desktop browser locally, searching YouTube for ${songQuery}, and starting playback now, sir.`;
       document.getElementById('spokenResponseBox').textContent = `"${ack}"`;
       speakSpokenResponse(ack);
 
       appendTraceLog(
         'Voice OS Action Engine',
-        `Recognized media intent &rarr; Launched YouTube player dock for <strong>${songQuery}</strong>.`,
+        `Launched local desktop browser GUI &rarr; Navigated to YouTube &rarr; Searched & Playing: <strong>${songQuery}</strong>.`,
         'text-red-400'
       );
     }

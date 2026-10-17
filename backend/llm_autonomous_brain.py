@@ -333,15 +333,33 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
 
         # Final Synthesis by Co-Leader based strictly on real tool outputs (ZERO hardcoded dialogue!)
         synth_system = (
-            "You are J.A.R.V.I.S. Respond directly and naturally to the user based strictly on the real tool execution "
-            "results below. State the exact apps launched, exact files/lines inspected or fixed, and exact command outputs. "
-            "Never use generic filler."
+            "You are J.A.R.V.I.S., the user's desktop AI assistant with full local OS control. "
+            "Respond in 1-2 clear, natural sentences based strictly on the real tool execution results below. "
+            "Report exactly what apps were launched, files created or fixed, or commands executed. "
+            "Never output generic assistant refusals like 'I cannot access external systems'."
         )
         final_reply = self.call_llm(
             synth_system,
             f"User Command: {instruction}\nReal Tool Execution Traces:\n{json.dumps(tool_traces, indent=2)}",
             json_mode=False,
         )
+
+        # Safety override if small model defaults to canned AI refusal despite successful tool execution
+        if not final_reply or any(phrase in str(final_reply).lower() for phrase in ["unable to access", "cannot access", "as an ai", "don't have access", "cannot run any applications", "cannot provide the information"]):
+            trace_summaries = []
+            for t in tool_traces:
+                tool_n = t.get("tool")
+                res = t.get("result", {})
+                if tool_n == "open_system_app_or_url" and res.get("ok"):
+                    trace_summaries.append(f"Launched {res.get('target', 'application')} on your system")
+                elif tool_n == "inspect_directory_and_find_mistakes" and res.get("ok"):
+                    trace_summaries.append(f"Audited {res.get('file_count', 0)} files in {res.get('directory', 'directory')}")
+                elif tool_n == "write_file_to_disk" and res.get("ok"):
+                    trace_summaries.append(f"Wrote {res.get('relative_path')} ({res.get('bytes_written')} bytes)")
+                elif tool_n == "run_terminal_command":
+                    trace_summaries.append(f"Ran '{res.get('command')}' with exit code {res.get('exit_code')}")
+            if trace_summaries:
+                final_reply = ". ".join(trace_summaries) + "."
 
         self.graph.set_agent_task("agent_coleader", "idle", "Completed mission & updated memory graph")
         return {

@@ -47,6 +47,7 @@ COMMON_WINDOWS_APPS = {
 def open_system_app_or_url(target: str) -> Dict[str, Any]:
     """Physically opens any installed application, folder, or website URL on the user's laptop."""
     cleaned = target.strip().strip('"\'')
+    cleaned = re.sub(r'[\.\?!,;]+$', '', cleaned).strip()
     lower = cleaned.lower()
 
     # 1. Check if it's a URL or website domain
@@ -65,19 +66,31 @@ def open_system_app_or_url(target: str) -> Dict[str, Any]:
             subprocess.Popen(["xdg-open", os.path.abspath(cleaned)])
         return {"ok": True, "action": "opened_path", "target": os.path.abspath(cleaned)}
 
-    # 3. Map common application names with conversational word stripping
-    clean_app = re.sub(r'^(?:the|an|a)\s+', '', lower)
+    # 3. Robust conversational & platform normalization
+    # Strip conversational prefixes: "open", "launch", "start", "run", "please"
+    clean_app = re.sub(r'^(?:please\s+)?(?:open|launch|start|run)\s+', '', lower).strip()
+    clean_app = re.sub(r'^(?:the|an|a)\s+', '', clean_app).strip()
     clean_app = re.sub(r'\s+(?:app|application|program|software)$', '', clean_app).strip()
-    clean_app = re.sub(r'\bin\s+(?:the\s+|my\s+)?system\b', '', clean_app).strip()
-    clean_app_noext = re.sub(r'\.exe$', '', clean_app).strip()
-    if not clean_app or clean_app in {'system', 'laptop', 'desktop', 'computer'}:
-        clean_app = 'notepad'
-        clean_app_noext = 'notepad'
+    clean_app = re.sub(r'\bin\s+(?:the\s+|my\s+)?(?:system|laptop|pc|computer)\b', '', clean_app).strip()
+    clean_app = re.sub(r'[\.\?!,;]+$', '', clean_app).strip()
 
-    mapped = COMMON_WINDOWS_APPS.get(lower) or COMMON_WINDOWS_APPS.get(clean_app) or COMMON_WINDOWS_APPS.get(clean_app_noext, cleaned)
+    # Strip OS extensions (.app from macOS, .exe, .lnk, .bat, .cmd from Windows)
+    clean_base = re.sub(r'\.(?:exe|app|lnk|bat|cmd)$', '', clean_app).strip()
+
+    if not clean_base or clean_base in {'system', 'laptop', 'desktop', 'computer'}:
+        clean_base = 'notepad'
+
+    # Check mapped dictionary
+    mapped = (
+        COMMON_WINDOWS_APPS.get(lower)
+        or COMMON_WINDOWS_APPS.get(clean_app)
+        or COMMON_WINDOWS_APPS.get(clean_base)
+        or COMMON_WINDOWS_APPS.get(clean_base.replace(" ", ""))
+        or clean_base
+    )
 
     if sys.platform == "win32":
-        # Try direct os.startfile (works for registered apps, URI schemes like spotify:, ms-settings:, chrome, etc.)
+        # Try direct os.startfile (works for registered apps, URI schemes like calc.exe, notepad.exe, spotify:, ms-settings:, chrome, etc.)
         try:
             os.startfile(mapped)
             return {"ok": True, "action": "os_startfile", "target": mapped}
@@ -85,24 +98,25 @@ def open_system_app_or_url(target: str) -> Dict[str, Any]:
             pass
 
         # Try PATH executable lookup (e.g. code.cmd, wt.exe)
-        which_bin = shutil.which(mapped) or shutil.which(cleaned)
+        which_bin = shutil.which(mapped) or shutil.which(f"{mapped}.exe") or shutil.which(clean_base) or shutil.which(cleaned)
         if which_bin:
             proc = subprocess.Popen([which_bin], shell=True)
             return {"ok": True, "action": "spawned_binary", "target": which_bin, "pid": proc.pid}
 
         # Dynamic PowerShell Get-StartApps lookup for any installed Windows Store / Desktop app
+        search_term = clean_base or cleaned
         try:
             ps_cmd = (
-                f"Get-StartApps | Where-Object {{$_.Name -match '{cleaned}'}} "
+                f"Get-StartApps | Where-Object {{$_.Name -match '{search_term}'}} "
                 "| Select-Object -First 1 -ExpandProperty AppID"
             )
             res = subprocess.run(["powershell", "-NoProfile", "-Command", ps_cmd], capture_output=True, text=True, timeout=8)
             app_id = res.stdout.strip()
             if app_id:
                 subprocess.Popen(["explorer.exe", f"shell:AppsFolder\\{app_id}"])
-                return {"ok": True, "action": "launched_start_app", "target": cleaned, "app_id": app_id}
+                return {"ok": True, "action": "launched_start_app", "target": search_term, "app_id": app_id}
         except Exception as e:
-            return {"ok": False, "error": f"Failed to launch '{cleaned}': {e}"}
+            return {"ok": False, "error": f"Failed to launch '{search_term}': {e}"}
 
     else:
         which_bin = shutil.which(mapped) or shutil.which(cleaned)
@@ -110,7 +124,7 @@ def open_system_app_or_url(target: str) -> Dict[str, Any]:
             proc = subprocess.Popen([which_bin])
             return {"ok": True, "action": "spawned_binary", "target": which_bin, "pid": proc.pid}
 
-    return {"ok": False, "error": f"Application '{cleaned}' was not found on this system."}
+    return {"ok": False, "error": f"Application '{target}' was not found on this system."}
 
 
 def inspect_directory_and_find_mistakes(directory_path: str) -> Dict[str, Any]:

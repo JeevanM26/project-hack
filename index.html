@@ -3,1889 +3,606 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. ANTIGRAVITY AI IDE — Real Gemma 4 Multi-Agent Swarm, Live Code Stream &amp; Playwright Vision Backend</title>
+  <title>J.A.R.V.I.S. &mdash; Autonomous AI System (Gemma 4 Neural Core)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --ide-bg: #0d1117;
-      --ide-sidebar: #161b22;
-      --ide-panel: #090d13;
-      --ide-border: #262c36;
+      --jarvis-cyan: #00f0ff;
+      --jarvis-blue: #0066ff;
+      --jarvis-crimson: #ff0055;
+      --jarvis-gold: #ffaa00;
     }
     * { box-sizing: border-box; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--ide-bg);
-      color: #e6edf3;
+      font-family: 'Inter', sans-serif;
+      background-color: #030712;
+      color: #e0f2fe;
       margin: 0;
       padding: 0;
       height: 100vh;
       width: 100vw;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
       user-select: none;
     }
+    .orbitron { font-family: 'Orbitron', sans-serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
 
-    .ide-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .ide-scroll::-webkit-scrollbar-track { background: transparent; }
-    .ide-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
-    .ide-scroll::-webkit-scrollbar-thumb:hover { background: #484f58; }
-
-    @keyframes cursorBlink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
+    /* Holographic Glows */
+    .glow-cyan {
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.45), inset 0 0 15px rgba(0, 240, 255, 0.25);
     }
-    .ide-cursor {
-      display: inline-block;
-      width: 7px;
-      height: 14px;
-      background: #38bdf8;
-      vertical-align: text-bottom;
-      margin-left: 1px;
-      animation: cursorBlink 0.65s infinite;
-      box-shadow: 0 0 6px #38bdf8;
+    .glow-text-cyan {
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.8), 0 0 24px rgba(0, 102, 255, 0.5);
+    }
+    .glow-text-crimson {
+      text-shadow: 0 0 12px rgba(255, 0, 85, 0.85);
     }
 
-    .code-line {
-      display: flex;
-      align-items: baseline;
-      line-height: 1.45;
-      padding: 0 8px 0 0;
-      white-space: pre;
+    /* Soundwave bars */
+    .wave-bar {
+      width: 3px;
+      height: 8px;
+      background-color: #00f0ff;
+      border-radius: 2px;
+      animation: soundwave 1.2s ease-in-out infinite;
     }
-    .code-line:hover { background: rgba(56, 139, 253, 0.08); }
-    .code-line-error {
-      background: rgba(248, 81, 73, 0.24) !important;
-      border-left: 3px solid #f85149;
+    @keyframes soundwave {
+      0%, 100% { height: 6px; opacity: 0.35; }
+      50% { height: 26px; opacity: 1; }
     }
-    .code-line-fixed {
-      background: rgba(46, 160, 67, 0.22) !important;
-      border-left: 3px solid #3fb950;
-    }
-    .gutter-num {
-      width: 40px;
-      min-width: 40px;
-      text-align: right;
-      padding-right: 12px;
-      color: #6e7681;
-      font-size: 11px;
-      user-select: none;
-    }
+    .wave-bar:nth-child(2) { animation-delay: 0.15s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.45s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.6s; }
+    .wave-bar:nth-child(6) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(7) { animation-delay: 0.35s; }
+    .wave-bar:nth-child(8) { animation-delay: 0.5s; }
 
-    .syn-kw { color: #ff7b72; font-weight: 600; }
-    .syn-str { color: #a5d6ff; }
-    .syn-cmt { color: #8b949e; font-style: italic; }
-
-    #visualAgentCursor {
-      transition: top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 0.18s ease;
-    }
+    /* Custom scrollbar */
+    .hud-scroll::-webkit-scrollbar { width: 4px; }
+    .hud-scroll::-webkit-scrollbar-track { background: transparent; }
+    .hud-scroll::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.25); border-radius: 2px; }
   </style>
 </head>
-<body>
+<body class="relative flex flex-col justify-between">
+
+  <!-- 3D Three.js Hologram Canvas Background -->
+  <div id="canvasContainer" class="absolute inset-0 z-0 pointer-events-auto"></div>
+
+  <!-- Subtle Arc Background Grid Lines -->
+  <div class="absolute inset-0 z-0 pointer-events-none opacity-20 bg-[radial-gradient(circle_at_center,transparent_0%,#030712_85%)]"></div>
+  <div class="absolute inset-0 z-0 pointer-events-none opacity-10 bg-[linear-gradient(to_right,#00f0ff_1px,transparent_1px),linear-gradient(to_bottom,#00f0ff_1px,transparent_1px)] bg-[size:64px_64px]"></div>
 
   <!-- ======================================================================================== -->
-  <!-- 1. TOP NATIVE IDE TITLE BAR & VISUAL / MULTIMODAL ACTION BAR                             -->
+  <!-- TOP HEADER: STARK INDUSTRIES HUD                                                         -->
   <!-- ======================================================================================== -->
-  <header class="h-10 bg-[#161b22] border-b border-[#262c36] px-3 flex items-center justify-between gap-2 shrink-0">
-    <div class="flex items-center gap-2.5">
-      <div class="flex items-center gap-1.5">
-        <span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block"></span>
-        <span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block"></span>
-        <span class="w-3 h-3 rounded-full bg-[#27c93f] inline-block"></span>
+  <header class="relative z-10 flex items-center justify-between px-6 py-4 border-b border-cyan-500/20 bg-black/40 backdrop-blur-md">
+    <div class="flex items-center gap-3">
+      <!-- Arc Reactor Icon -->
+      <div class="relative w-8 h-8 rounded-full border border-cyan-400 flex items-center justify-center glow-cyan">
+        <div class="w-3 h-3 rounded-full bg-cyan-300 animate-ping"></div>
+        <div class="absolute w-4 h-4 rounded-full border border-dashed border-cyan-200 animate-spin"></div>
       </div>
-      <div class="flex items-center gap-1.5 font-bold text-xs tracking-wide text-white">
-        <span class="px-1.5 py-0.5 rounded bg-rose-600 text-[10px] mono font-extrabold">J.A.R.V.I.S.</span>
-        <span>ANTIGRAVITY AI IDE</span>
-        <span class="text-[10px] mono text-sky-400 font-normal hidden md:inline">// 100% Real LLM + Playwright + Pytest Pipeline</span>
-      </div>
-      <div class="hidden xl:flex items-center gap-2 text-[11px] text-slate-400 pl-2 border-l border-[#30363d]">
-        <button type="button" id="btnPickLocalDir" class="hover:text-white transition">Folder: <span id="mountedDirLabel" class="text-slate-200 mono">Mount Disk</span></button>
-        <span>&bull;</span>
-        <button type="button" id="btnInspectExistingDir" class="hover:text-white transition">Scan Workspace</button>
-        <span>&bull;</span>
-        <button type="button" id="btnOpenInDesktopVsCode" class="hover:text-white transition">VS Code (`code -g`)</button>
-        <span>&bull;</span>
-        <button type="button" id="btnOpenToolsModal" class="hover:text-white transition">Open-Source Tools &amp; Swarm Graph</button>
+      <div>
+        <h1 class="orbitron font-black text-lg tracking-widest text-cyan-400 glow-text-cyan flex items-center gap-2">
+          J.A.R.V.I.S.
+          <span class="text-[9px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">MARK VII</span>
+        </h1>
+        <p class="text-[10px] mono text-slate-400 tracking-wider">AUTONOMOUS COMPUTER-USE &bull; POWERED BY GEMMA 4</p>
       </div>
     </div>
 
-    <!-- Center: Hackathon Track Badges -->
-    <div class="hidden lg:flex items-center gap-1.5 text-[10px] mono">
-      <span class="px-2 py-0.5 rounded bg-[#1f2937] border border-sky-500/40 text-sky-300">
-        Track 1: Gemma 4 (G1&bull;G2&bull;G3&bull;G5)
-      </span>
-      <span class="px-2 py-0.5 rounded bg-[#1f2937] border border-emerald-500/40 text-emerald-300">
-        Track 2: Open-Source (O1&bull;O2&bull;O3&bull;O5)
-      </span>
-      <span id="sarvamHeaderBadge" class="px-2 py-0.5 rounded bg-[#1f2937] border border-purple-500/40 text-purple-300">
-        Track 3: Sarvam STT/TTS (en-IN / kn-IN)
-      </span>
+    <!-- Center HUD Status -->
+    <div class="hidden md:flex items-center gap-6 text-[11px] mono">
+      <div class="flex items-center gap-2 text-cyan-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>NEURAL ENGINE: <strong class="text-white">GEMMA 4 (OLLAMA)</strong></span>
+      </div>
+      <div class="flex items-center gap-2 text-slate-400">
+        <span>HARDWARE: <strong class="text-slate-200">RTX 5060 Ti</strong></span>
+      </div>
+      <div class="flex items-center gap-2 text-slate-400">
+        <span>DESKTOP AUTOMATION: <strong class="text-emerald-400">ARMED</strong></span>
+      </div>
     </div>
 
-    <!-- Right: Visual Sketchpad, Build & Test, Camera, Settings -->
-    <div class="flex items-center gap-1.5 text-[11px] mono">
-      <span id="liveConnectionBadge" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 text-[10px]">
-        Probing Backend...
-      </span>
-      <button id="btnOpenSketchModal" type="button" class="px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center gap-1 transition shadow" title="Draw a UI wireframe or upload an image for Gemma 4 Vision to synthesize into an app">
-        <span>&#9998;</span> Visual Sketch / Image-to-App
-      </button>
-      <button id="btnHeaderRunPipeline" type="button" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1 transition shadow">
-        <span>&#9654;</span> Build &amp; Test
-      </button>
-      <button id="btnHeaderStop" type="button" class="hidden px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold flex items-center gap-1 transition animate-pulse" title="Halt running pipeline">
-        <span>■</span> Stop Task
-      </button>
-      <button id="btnAstraVision" type="button" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-amber-300 transition">
-        &#128065; Astra Cam
-      </button>
-      <button id="btnOpenConfig" type="button" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-slate-300 transition">
-        &#9881;
+    <!-- Latency & Log Toggle -->
+    <div class="flex items-center gap-3">
+      <div id="latencyPill" class="text-[11px] mono px-2.5 py-1 rounded bg-cyan-950/60 border border-cyan-500/40 text-cyan-300">
+        0ms READY
+      </div>
+      <button id="btnToggleHudLog" type="button" class="text-[11px] mono px-3 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-600 text-slate-300 transition">
+        HUD Log
       </button>
     </div>
   </header>
 
   <!-- ======================================================================================== -->
-  <!-- 2. MAIN IDE WORKSPACE (ACTIVITY BAR + LEFT SIDEBAR + CENTER EDITOR/TERM + RIGHT BROWSER) -->
+  <!-- CENTER: 3D HOLOGRAPHIC JARVIS SPHERE INTERACTIVE OVERLAY                                -->
   <!-- ======================================================================================== -->
-  <div class="flex-1 flex overflow-hidden">
-
-    <!-- FAR-LEFT VS CODE ACTIVITY BAR (w-11) -->
-    <aside class="w-11 bg-[#090d13] border-r border-[#262c36] flex flex-col items-center justify-between py-2.5 shrink-0 text-slate-400">
-      <div class="flex flex-col items-center gap-3">
-        <button type="button" id="actBtnExplorer" class="p-2 rounded text-white border-l-2 border-rose-500 bg-[#161b22]" title="Workspace Explorer &amp; Muse Plan">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
-        </button>
-        <button type="button" id="actBtnSketch" class="p-2 rounded hover:text-purple-400 hover:bg-[#161b22] transition" title="Visual UI Sketchpad &amp; Image-to-App (Gemma 4 Multimodal)">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
-        </button>
-        <button type="button" id="actBtnSwarmGraph" class="p-2 rounded hover:text-white hover:bg-[#161b22] transition" title="Open Physics Swarm &amp; Memory Graph">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M14.5 9.5L17.5 6.5M9.5 14.5L6.5 17.5"/></svg>
-        </button>
-        <button type="button" id="actBtnVoice" class="p-2 rounded hover:text-rose-400 hover:bg-[#161b22] transition" title="Speak Command (Sarvam AI STT/TTS)">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
-        </button>
-        <button type="button" id="actBtnScreenshot" class="p-2 rounded hover:text-emerald-400 hover:bg-[#161b22] transition" title="Run Playwright Visual Agent &amp; Screenshot Audit">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        </button>
+  <main class="relative z-10 flex-1 flex flex-col items-center justify-center pointer-events-none">
+    
+    <!-- Central Jarvis Pulse Ring Text -->
+    <div class="text-center mb-6 space-y-1">
+      <div id="jarvisStateBadge" class="orbitron text-xs tracking-widest text-cyan-400 uppercase glow-text-cyan">
+        &bull; J.A.R.V.I.S. SYSTEM ONLINE &bull;
       </div>
-      <div class="flex flex-col items-center gap-2">
-        <span id="sidebarConnDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-      </div>
-    </aside>
-
-    <!-- ====================================================================================== -->
-    <!-- LEFT SIDEBAR (w-72): FILE EXPLORER + META MUSE AI PLANNER + 7-AGENT SWARM TREE         -->
-    <!-- ====================================================================================== -->
-    <aside class="w-72 bg-[#161b22] border-r border-[#262c36] flex flex-col justify-between shrink-0 overflow-hidden">
-
-      <div class="flex-1 overflow-y-auto ide-scroll divide-y divide-[#262c36]">
-
-        <!-- SECTION A: WORKSPACE FILE EXPLORER -->
-        <div class="p-2.5 space-y-1.5">
-          <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            <span>EXPLORER: <span id="explorerFolderTitle" class="text-slate-200 mono">HACKATHON_APP</span></span>
-            <span id="explorerFileCount" class="mono text-sky-400">0 files</span>
-          </div>
-          <div id="ideFileTree" class="space-y-0.5 text-xs mono text-slate-500">
-            <div class="py-1 text-[11px]">No files generated yet. Enter a prompt below or click "Scan Workspace".</div>
-          </div>
-        </div>
-
-        <!-- SECTION B: META MUSE AI // ARCHITECTURAL PLAN & EXECUTION DAG -->
-        <div class="p-2.5 space-y-1.5">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
-              <span>&#9670;</span> META MUSE AI // EXECUTION PLAN
-            </span>
-            <span id="dagStepCounter" class="text-[10px] mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-              0/5 Steps
-            </span>
-          </div>
-          <div id="liveTaskDagList" class="space-y-1 text-[11px] mono text-slate-500">
-            <div class="py-1 text-[10px]">Waiting for task prompt...</div>
-          </div>
-        </div>
-
-        <!-- SECTION C: 7-AGENT GEMMA 4 OPEN-SOURCE SWARM (G1 + O1) -->
-        <div class="p-2.5 space-y-1.5">
-          <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-              GEMMA 4 SWARM (G1 / O1)
-            </span>
-            <span id="a2aMessageCount" class="text-[10px] mono text-slate-400">7 Agents</span>
-          </div>
-          <div id="compactAgentSwarmGrid" class="space-y-1 text-[11px] mono"></div>
-        </div>
-
-      </div>
-
-      <!-- BOTTOM OF LEFT SIDEBAR: 3D NEURAL VOICE & ASTRA LIVE CAMERA CORE -->
-      <div id="crimsonOrbContainer" class="h-32 bg-[#090d13] border-t border-[#262c36] relative flex items-center justify-center overflow-hidden">
-        <canvas id="crimsonOrbCanvas" class="w-full h-full block"></canvas>
-        <div class="absolute top-1.5 left-2 right-2 flex items-center justify-between text-[9px] mono text-slate-400 pointer-events-none">
-          <span>VOICE &amp; ASTRA VISION</span>
-          <span id="latencyPill" class="text-emerald-400 font-bold">Ready</span>
-        </div>
-
-        <!-- Project Astra Live Camera Overlay -->
-        <div id="astraOverlayBox" class="hidden absolute inset-1 bg-black/95 border border-amber-400/60 rounded p-1.5 z-20 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-[9px] mono text-amber-300">
-            <span>ASTRA LIVE CAM / SCREEN</span>
-            <button id="btnCloseAstra" type="button" class="text-rose-400 font-bold">&times;</button>
-          </div>
-          <video id="astraVideoFeed" autoplay muted playsinline class="w-full h-14 object-cover rounded bg-zinc-950"></video>
-          <button id="btnCaptureAstraFrame" type="button" class="w-full py-0.5 rounded bg-amber-500 text-black font-bold text-[9px] mono">
-            Send Frame to Gemma 4 Vision
-          </button>
-        </div>
-
-        <div class="absolute bottom-1.5 left-2 right-2 pointer-events-none">
-          <div id="liveJarvisTranscript" class="text-[10px] mono text-slate-200 bg-black/80 border border-[#30363d] rounded px-2 py-0.5 truncate">
-            Ready: Type, speak, or sketch any app...
-          </div>
-        </div>
-      </div>
-
-    </aside>
-
-    <!-- ====================================================================================== -->
-    <!-- CENTER MAIN PANE (FLEX-1): MONACO/VS CODE EDITOR (TOP) + INTEGRATED TERMINAL (BOTTOM)  -->
-    <!-- ====================================================================================== -->
-    <main class="flex-1 flex flex-col bg-[#0d1117] overflow-hidden">
-
-      <!-- EDITOR FILE TAB BAR -->
-      <div class="h-9 bg-[#161b22] border-b border-[#262c36] flex items-center justify-between px-2 shrink-0">
-        <div id="sideFileTabsBar" class="flex items-center gap-0.5 overflow-x-auto ide-scroll"></div>
-        <div class="flex items-center gap-2 text-[10px] mono shrink-0">
-          <span id="liveTypingBadge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-            IDLE
-          </span>
-          <button id="btnToggleRawEdit" type="button" class="px-2 py-0.5 rounded bg-[#21262d] hover:bg-[#30363d] text-slate-200 border border-[#30363d]">
-            Edit Code
-          </button>
-          <button id="btnSaveDiskFile" type="button" class="px-2 py-0.5 rounded bg-sky-600/25 hover:bg-sky-600/40 text-sky-300 border border-sky-500/40">
-            Save &amp; Run (Ctrl+S)
-          </button>
-        </div>
-      </div>
-
-      <!-- EDITOR BREADCRUMB BAR + O2 SELF-CORRECTION INLINE BANNER -->
-      <div class="bg-[#0d1117] border-b border-[#262c36] px-3 py-1 flex flex-wrap items-center justify-between gap-2 text-[11px] mono text-slate-400 shrink-0">
-        <div class="flex items-center gap-1.5">
-          <span id="breadcrumbRootLabel">hackathon_app</span>
-          <span>&rsaquo;</span>
-          <span id="sideActiveFilenameLabel" class="text-slate-200 font-semibold">No file selected</span>
-          <span id="sideCodeMetricsLabel" class="text-slate-500 pl-2">UTF-8 &bull; Gemma-4 Swarm</span>
-        </div>
-        <div id="selfCorrectionBanner" class="hidden px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/60 text-amber-200 text-[10px] flex items-center gap-2">
-          <span id="selfCorrectionText"></span>
-        </div>
-      </div>
-
-      <!-- CODE EDITOR VIEWPORT (WITH LINE NUMBERS & SYNTAX HIGHLIGHTING) -->
-      <div class="flex-1 relative overflow-hidden flex">
-        <div id="sideLiveCodeViewport" class="flex-1 overflow-y-auto ide-scroll py-2 text-[12px] mono select-text text-slate-500 px-4">
-          // Enter an application prompt in the AI Composer (bottom-right) or click "Scan Workspace" to load files from your target directory.
-        </div>
-        <textarea id="studioCodeEditor" class="hidden flex-1 bg-[#0d1117] text-slate-100 p-3 text-[12px] mono focus:outline-none ide-scroll" spellcheck="false"></textarea>
-      </div>
-
-      <!-- ==================================================================================== -->
-      <!-- BOTTOM INTEGRATED IDE PANEL (h-52): SPLIT TERMINAL (LEFT) + A2A SWARM LOGS (RIGHT)   -->
-      <!-- ==================================================================================== -->
-      <div class="h-52 bg-[#090d13] border-t border-[#262c36] flex flex-col shrink-0">
-        <div class="h-7 bg-[#161b22] border-b border-[#262c36] px-3 flex items-center justify-between text-[10px] mono uppercase tracking-wider">
-          <div class="flex items-center gap-4">
-            <span class="text-white font-bold border-b-2 border-rose-500 py-1">TERMINAL (REAL AST &bull; RUFF &bull; PYTEST &bull; UVICORN)</span>
-            <span class="text-amber-300 font-bold">INTER-AGENT A2A COMMUNICATION BUS</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span id="shaReceiptBadge" class="text-slate-400">SHA-256: WAITING</span>
-          </div>
-        </div>
-
-        <div class="flex-1 grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-[#262c36] overflow-hidden">
-          <pre id="sideTerminalOutput" class="md:col-span-7 p-2.5 overflow-y-auto ide-scroll text-[11px] mono text-emerald-300 leading-relaxed m-0">[TERMINAL READY] Start backend with: uvicorn main:app --reload --host 127.0.0.1 --port 8000</pre>
-
-          <div id="a2aBusFeed" class="md:col-span-5 p-2.5 overflow-y-auto ide-scroll space-y-1.5 text-[11px] mono bg-[#070a0f]">
-            <div class="text-slate-500">[Swarm Bus] Waiting for user instruction...</div>
-          </div>
-        </div>
-      </div>
-
-    </main>
-
-    <!-- ====================================================================================== -->
-    <!-- RIGHT SPLIT PANE (w-[440px]): LIVE LOCALHOST BROWSER + VISUAL AGENT + QA               -->
-    <!-- ====================================================================================== -->
-    <aside class="w-full lg:w-[440px] bg-[#161b22] border-l border-[#262c36] flex flex-col justify-between shrink-0 overflow-hidden">
-
-      <!-- 1. TOP: EMBEDDED LOCALHOST BROWSER PREVIEW + VISUAL BROWSER AGENT CURSOR -->
-      <div class="flex-1 flex flex-col border-b border-[#262c36] min-h-[215px] overflow-hidden relative">
-        <div class="h-8 bg-[#090d13] border-b border-[#262c36] px-2.5 flex items-center justify-between text-[10px] mono">
-          <span class="font-bold text-slate-200 flex items-center gap-1.5">
-            <span id="browserStatusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-            LOCALHOST APP + VISUAL BROWSER AGENT
-          </span>
-          <div class="flex items-center gap-1.5">
-            <span id="localServerPortBadge" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-              STANDBY
-            </span>
-            <button id="btnRunVisualBrowserAgent" type="button" class="px-1.5 py-0.5 rounded bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40" title="Trigger Playwright &amp; Visual DOM Click Test">
-              &#129302; Visual Click Test
-            </button>
-            <button id="btnPopoutLocalApp" type="button" class="px-1.5 py-0.5 rounded bg-[#21262d] hover:bg-[#30363d] text-slate-200 border border-[#30363d]">
-              &#8599;
-            </button>
-          </div>
-        </div>
-
-        <!-- Browser Address Bar -->
-        <div class="bg-[#161b22] border-b border-[#262c36] px-2.5 py-1 flex items-center gap-2 text-[10px] mono">
-          <span class="text-slate-500">&#128274;</span>
-          <input id="liveBrowserUrlBar" type="text" value="http://127.0.0.1:8090/index.html" class="bg-transparent text-sky-300 truncate flex-1 focus:outline-none" />
-          <button id="btnReloadPreview" type="button" class="text-slate-400 hover:text-white">&#8635;</button>
-        </div>
-
-        <!-- Live Running App Iframe + Visual Agent Overlay Reticle -->
-        <div class="relative flex-1 flex flex-col overflow-hidden">
-          <iframe id="liveAppPreviewIframe" title="Live Localhost App Preview" class="w-full flex-1 bg-[#06090f] border-0"></iframe>
-          <div id="visualAgentCursor" class="hidden pointer-events-none absolute z-30 flex items-center gap-1" style="top: 50%; left: 50%;">
-            <div class="w-4 h-4 rounded-full border-2 border-rose-500 bg-rose-500/30 shadow-[0_0_12px_#f43f5e] flex items-center justify-center">
-              <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
-            </div>
-            <span id="visualAgentCursorLabel" class="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] mono font-bold shadow whitespace-nowrap">
-              Gemma-4 Vision Agent
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. MIDDLE: PLAYWRIGHT BROWSER SCREENSHOT CAPTURE & GEMMA 4 MULTIMODAL VISION QA (G3) -->
-      <div class="p-2.5 bg-[#0d1117] border-b border-[#262c36] space-y-2 shrink-0">
-        <div class="flex items-center justify-between text-[10px] mono">
-          <span class="font-bold text-amber-300 uppercase tracking-wider">
-            &#128248; PLAYWRIGHT SCREENSHOT &amp; GEMMA 4 VISION QA (G3)
-          </span>
-          <div class="flex items-center gap-1">
-            <button id="btnRetakeScreenshot" type="button" class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-bold transition">
-              Capture &amp; Audit
-            </button>
-            <a id="downloadScreenshotLink" href="#" download="playwright_screenshot.png" class="px-1.5 py-0.5 rounded bg-[#21262d] text-emerald-300 border border-[#30363d]">
-              PNG
-            </a>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-12 gap-2 items-center">
-          <div class="col-span-6 h-24 bg-black rounded border border-[#30363d] flex items-center justify-center overflow-hidden relative">
-            <img id="capturedScreenshotImg" alt="Playwright Captured Screenshot" class="w-full h-full object-cover hidden" />
-            <span id="screenshotPlaceholderText" class="text-[9px] mono text-slate-500 text-center px-2">
-              Playwright screenshot appears here after `/api/screenshot-verify`
-            </span>
-          </div>
-          <div class="col-span-6 space-y-1 text-[10px] mono">
-            <div class="flex justify-between px-1.5 py-0.5 rounded bg-[#161b22] border border-[#262c36]">
-              <span class="text-slate-400">DOM Click Test:</span>
-              <span id="qaScoreLayout" class="text-slate-400 font-bold">WAITING</span>
-            </div>
-            <div class="flex justify-between px-1.5 py-0.5 rounded bg-[#161b22] border border-[#262c36]">
-              <span class="text-slate-400">Console Errors:</span>
-              <span id="qaScoreErrors" class="text-slate-400 font-bold">--</span>
-            </div>
-            <div id="gemmaVisionQaReport" class="p-1.5 rounded bg-[#161b22] border border-[#262c36] text-slate-300 text-[9px] leading-snug max-h-12 overflow-y-auto ide-scroll">
-              Waiting for Playwright + Gemma 4 Vision inspection...
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. BOTTOM: AI COMPOSER PROMPT BOX -->
-      <div class="p-2.5 bg-[#161b22] space-y-2 shrink-0">
-        <div class="flex items-center justify-between text-[10px] mono">
-          <span class="font-bold text-rose-400">AI COMPOSER // TEXT, VOICE OR VISUAL SKETCH</span>
-          <input id="targetDirInput" type="text" value="./hackathon_app" class="w-32 bg-[#0d1117] border border-[#30363d] rounded px-1.5 py-0.5 text-[10px] text-slate-300 mono" />
-        </div>
-
-        <div class="flex items-center gap-1.5">
-          <button id="btnVoiceMic" type="button" class="px-2.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-[11px] mono shrink-0 flex items-center gap-1 shadow">
-            <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-            <span id="micLabel">Speak</span>
-          </button>
-          <input id="mainCommandInput" type="text" placeholder="Describe any app to build &amp; test with Gemma 4, or 'Open calculator.'..." class="flex-1 bg-[#0d1117] border border-[#30363d] focus:border-sky-500 rounded-lg px-2.5 py-2 text-xs text-white mono focus:outline-none" />
-          <button id="btnExecuteCommand" type="button" class="px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs mono shrink-0 transition">
-            Run &rarr;
-          </button>
-          <button id="btnStopPipeline" type="button" class="px-3 py-2 rounded-lg bg-rose-950 hover:bg-rose-900 border border-rose-500/60 text-rose-200 font-bold text-xs mono shrink-0 transition flex items-center gap-1 shadow" title="Halt current pipeline immediately (Esc key)">
-            <span>■</span> Stop
-          </button>
-        </div>
-
-        <!-- Quick Prompt Shortcuts (Real Computer-Use & Multi-Agent Swarm) -->
-        <div class="grid grid-cols-2 gap-1 text-[10px] mono">
-          <button type="button" data-cmd="Build a Real-Time DevOps & Cloud Incident Command Center web app with service health cards and live event log" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-sky-300 truncate text-left" title="DevOps Incident App">
-            &#9889; 1. DevOps Incident App
-          </button>
-          <button type="button" data-cmd="Build an AI Multilingual Rural Healthcare Triage & ICU Dispatch web app with patient vital cards" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Rural Healthcare Triage App">
-            &#128030; 2. Rural Triage App
-          </button>
-          <button type="button" data-cmd="Build a Real-Time FinTech UPI Fraud & Anomaly Detection Radar web app with live transactions" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-emerald-300 truncate text-left" title="FinTech Fraud Radar">
-            &#128200; 3. FinTech Fraud Radar
-          </button>
-          <button type="button" data-cmd="open calculator and perform 10+20" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-rose-500/40 text-rose-300 truncate text-left" title="State-Aware Calculator (No duplicate spawn, performs 10+20)">
-            &#129518; 4. Calc: 10+20 (State-Aware)
-          </button>
-          <button type="button" data-cmd="Build a Classic Snake Arcade Game in HTML5 Canvas with score board and restart controls" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-emerald-500/40 text-emerald-300 truncate text-left" title="Snake Canvas Game">
-            &#127918; 5. Snake Canvas Game
-          </button>
-          <button type="button" data-cmd="Build a simple OS" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-indigo-500/40 text-indigo-300 truncate text-left" title="Complete Desktop WebOS with Terminal, Calc & Taskbar">
-            &#129680; 6. Simple WebOS Desktop
-          </button>
-          <button type="button" data-cmd="Build an app for startup" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-cyan-500/40 text-cyan-300 truncate text-left" title="Modern SaaS Startup Platform with Hero, Demo & Pricing">
-            &#128640; 7. Startup SaaS Platform
-          </button>
-          <button type="button" data-cmd="Model a 3D metallic torus in Blender" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-sky-500/40 text-sky-200 truncate text-left" title="Blender 5.2.2 3D Modeling Pipeline">
-            &#127912; 8. Blender 3D: Torus
-          </button>
-          <button type="button" data-cmd="open gmail and draft email to investors" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-teal-500/40 text-teal-300 truncate text-left" title="Drafts email in Gmail and requests user review">
-            &#128231; 9. Gmail: Investor Update
-          </button>
-          <button type="button" data-cmd="open youtube and play lofi hip hop" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-red-500/40 text-red-300 truncate text-left" title="Deep-link YouTube video stream">
-            &#127916; 10. YouTube: Play Lo-Fi
-          </button>
-          <button type="button" data-cmd="open netflix and play movies" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-rose-600/40 text-rose-300 truncate text-left" title="Netflix Streaming Search">
-            &#127871; 11. Netflix: Stream Movies
-          </button>
-          <button type="button" data-cmd="book a table at restaurant in Bengaluru" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Restaurant & Dining Reservation Radar">
-            &#127869; 12. Book Restaurant Radar
-          </button>
-        </div>
-      </div>
-
-    </aside>
-
-  </div>
-
-  <!-- ======================================================================================== -->
-  <!-- 3. BOTTOM VS CODE STATUS BAR (h-6)                                                       -->
-  <!-- ======================================================================================== -->
-  <footer class="h-6 bg-[#161b22] border-t border-[#262c36] px-3 flex items-center justify-between text-[11px] mono text-slate-400 shrink-0">
-    <div class="flex items-center gap-3">
-      <span class="text-emerald-400 font-semibold">&#9095; main*</span>
-      <span id="footerDiagnosticsLabel">Ready</span>
-      <span id="activeModelFooter" class="text-sky-400">Model: Probing...</span>
+      <p id="jarvisStateDetail" class="text-xs text-slate-400 mono">
+        Awaiting verbal or written directive for desktop control...
+      </p>
     </div>
-    <div class="flex items-center gap-3">
-      <span>Toolchain: AST + Ruff + Pytest + Playwright</span>
-      <span id="footerServerLabel">App Server: Standby</span>
-      <span>UTF-8</span>
+
+  </main>
+
+  <!-- ======================================================================================== -->
+  <!-- BOTTOM: SPEECH WAVEFORM, GLASS COMMAND BAR & QUICK DIRECTIVE CHIPS                       -->
+  <!-- ======================================================================================== -->
+  <footer class="relative z-10 px-4 md:px-12 pb-6 pt-2 flex flex-col items-center gap-3 bg-gradient-to-t from-black via-black/80 to-transparent">
+
+    <!-- 1. Real-Time Speech Subtitle Pill with Soundwave -->
+    <div id="speechSubtitleBox" class="flex items-center gap-3 px-5 py-2 rounded-full bg-slate-900/90 border border-cyan-500/40 backdrop-blur-xl shadow-2xl max-w-2xl w-full">
+      <div class="flex items-center gap-1 shrink-0" id="soundwaveBars">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+      <p id="speechSubtitleText" class="text-xs md:text-sm text-cyan-200 mono truncate italic">
+        "At your service, sir. I am fully linked to your Windows desktop and ready."
+      </p>
     </div>
+
+    <!-- 2. Glassmorphic Main Command Bar -->
+    <div class="max-w-3xl w-full flex items-center gap-2 bg-[#090d16]/90 border border-cyan-500/40 focus-within:border-cyan-400 rounded-2xl p-2 backdrop-blur-xl shadow-[0_0_40px_rgba(0,240,255,0.15)] transition">
+      <!-- Voice Speak Mic Button -->
+      <button id="btnVoiceMic" type="button" class="px-4 py-2.5 rounded-xl bg-rose-600/90 hover:bg-rose-500 text-white font-bold text-xs mono flex items-center gap-2 shadow-lg shadow-rose-900/40 transition shrink-0">
+        <span class="w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span>
+        <span id="micLabel">Speak</span>
+      </button>
+
+      <!-- Input Text -->
+      <input id="mainCommandInput" type="text" autocomplete="off" placeholder="Instruct J.A.R.V.I.S. (e.g. 'Open Netflix', 'Code a snake game', 'Calc 10+20', 'Draft email')..." class="flex-1 bg-transparent px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none mono" />
+
+      <!-- Engage Button -->
+      <button id="btnExecuteCommand" type="button" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs orbitron tracking-wider shadow-lg shadow-cyan-900/50 transition shrink-0 flex items-center gap-1.5">
+        <span>ENGAGE</span>
+        <span>&rarr;</span>
+      </button>
+    </div>
+
+    <!-- 3. Quick Directive Chips (One-Click Demonstrations for Judges) -->
+    <div class="flex items-center justify-center flex-wrap gap-1.5 max-w-4xl w-full text-[10px] mono">
+      <button type="button" data-cmd="open netflix and play sci-fi movie" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-rose-900/40 border border-rose-500/30 text-rose-300 hover:text-white transition">
+        🎬 Open Netflix
+      </button>
+      <button type="button" data-cmd="open youtube and play interstellar soundtrack" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-red-900/40 border border-red-500/30 text-red-300 hover:text-white transition">
+        ▶️ Open YouTube
+      </button>
+      <button type="button" data-cmd="open calculator and perform 10+20" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-cyan-900/40 border border-cyan-500/30 text-cyan-300 hover:text-white transition">
+        🔢 Calc: 10 + 20 (UIA)
+      </button>
+      <button type="button" data-cmd="code a complete snake game in python with score tracking and open it in antigravity ide" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-emerald-900/40 border border-emerald-500/30 text-emerald-300 hover:text-white transition">
+        💻 Code in Antigravity IDE
+      </button>
+      <button type="button" data-cmd="send an email to mjeevan665@gmail.com congratulating on winning the hackathon" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-teal-900/40 border border-teal-500/30 text-teal-300 hover:text-white transition">
+        ✉️ Draft Gmail to Jeevan
+      </button>
+      <button type="button" data-cmd="create a 3D red sports car in Blender" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-sky-900/40 border border-sky-500/30 text-sky-300 hover:text-white transition">
+        🎨 Blender 3D Model
+      </button>
+      <button type="button" data-cmd="book a table at a top restaurant in Bangalore for dinner tonight" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-amber-900/40 border border-amber-500/30 text-amber-300 hover:text-white transition">
+        🍱 Book Restaurant
+      </button>
+      <button type="button" data-cmd="book movie tickets for Interstellar" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-purple-900/40 border border-purple-500/30 text-purple-300 hover:text-white transition">
+        🎟️ Book Movie Tickets
+      </button>
+      <button type="button" data-cmd="download the best browser" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-indigo-900/40 border border-indigo-500/30 text-indigo-300 hover:text-white transition">
+        🌐 Download Best Browser
+      </button>
+      <button type="button" data-cmd="create a pdf document summarizing the autonomous agent architecture" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-blue-900/40 border border-blue-500/30 text-blue-300 hover:text-white transition">
+        📄 Generate PDF
+      </button>
+    </div>
+
   </footer>
 
   <!-- ======================================================================================== -->
-  <!-- MODAL 0: VISUAL UI SKETCHPAD & IMAGE-TO-APP STUDIO (TRACK 1 G3 MULTIMODAL AI)            -->
+  <!-- FLOATING HUD TERMINAL (TELEMETRY & GEMMA 4 REASONING)                                    -->
   <!-- ======================================================================================== -->
-  <div id="sketchModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#161b22] border border-[#30363d] rounded-xl max-w-3xl w-full p-4 space-y-3">
-      <div class="flex items-center justify-between border-b border-[#262c36] pb-2">
-        <div>
-          <h3 class="text-xs font-bold mono uppercase text-purple-300">&#9998; Multimodal Visual UI Sketchpad &amp; Image-to-App (Track 1 G3)</h3>
-          <p class="text-[11px] text-slate-400">Draw a wireframe sketch below OR upload any UI screenshot/image — sends base64 PNG to `/api/swarm-generate` for Gemma 4 Vision synthesis.</p>
-        </div>
-        <button id="btnCloseSketchModal" type="button" class="text-slate-400 hover:text-white text-xs font-bold">Close &times;</button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-        <div class="md:col-span-8 space-y-2">
-          <div class="flex items-center justify-between text-[10px] mono">
-            <span class="text-slate-300">Draw UI Layout on Canvas:</span>
-            <button id="btnClearSketchCanvas" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-slate-300">Clear Canvas</button>
-          </div>
-          <canvas id="uiSketchCanvas" width="480" height="260" class="w-full h-60 bg-[#090d13] border border-purple-500/40 rounded-lg cursor-crosshair block"></canvas>
-        </div>
-
-        <div class="md:col-span-4 space-y-3 text-xs mono">
-          <div class="p-2.5 rounded-lg bg-[#0d1117] border border-[#262c36] space-y-2">
-            <label class="block text-slate-300 text-[11px]">Or Upload UI Screenshot / Wireframe:</label>
-            <input id="inputUploadVisualImg" type="file" accept="image/*" class="w-full text-[10px] text-slate-300" />
-          </div>
-          <div class="p-2.5 rounded-lg bg-[#0d1117] border border-[#262c36] space-y-1.5">
-            <label for="sketchPromptInput" class="block text-slate-300 text-[11px]">Prompt Instructions for Vision Model:</label>
-            <input id="sketchPromptInput" type="text" placeholder="Describe the app to generate from this image..." class="w-full bg-[#161b22] border border-[#30363d] rounded px-2 py-1.5 text-white text-[11px]" />
-          </div>
-          <button id="btnConvertSketchToApp" type="button" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-rose-600 hover:from-purple-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg transition">
-            &#9889; Send Image + Prompt to Gemma 4 &rarr;
-          </button>
-        </div>
-      </div>
+  <aside id="floatingHudLog" class="fixed right-6 top-20 z-20 w-80 md:w-96 max-h-[60vh] bg-black/85 border border-cyan-500/30 rounded-xl p-3 shadow-2xl backdrop-blur-md flex flex-col gap-2 transition-all duration-300">
+    <div class="flex items-center justify-between border-b border-cyan-500/20 pb-1.5">
+      <span class="orbitron text-[10px] text-cyan-400 tracking-wider">HUD TELEMETRY // REAL-TIME A2A BUS</span>
+      <button id="btnCloseHudLog" type="button" class="text-xs text-slate-400 hover:text-white">&times;</button>
     </div>
-  </div>
-
-  <!-- ======================================================================================== -->
-  <!-- MODAL 1: OPEN-SOURCE PACKAGE INSTALLER & PHYSICS SWARM SYNAPSE GRAPH                     -->
-  <!-- ======================================================================================== -->
-  <div id="toolsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#161b22] border border-[#30363d] rounded-xl max-w-4xl w-full p-4 space-y-3">
-      <div class="flex items-center justify-between border-b border-[#262c36] pb-2">
-        <h3 class="text-xs font-bold mono uppercase text-sky-400">Open-Source Package Installer (winget / pip / npm / VS Code Exts) &amp; Physics Swarm Graph</h3>
-        <button id="btnCloseToolsModal" type="button" class="text-slate-400 hover:text-white text-xs font-bold">Close &times;</button>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 bg-[#0d1117] border border-[#262c36] rounded-lg p-2.5">
-        <div class="flex items-center gap-2">
-          <input id="inputVscodeExt" type="text" placeholder="VS Code Extension (ms-python.python, charliermarsh.ruff)..." class="flex-1 bg-[#161b22] border border-[#30363d] rounded px-2.5 py-1.5 text-xs text-white mono" />
-          <button id="btnInstallVscodeExt" type="button" class="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold mono">Install Ext</button>
-        </div>
-        <div class="flex items-center gap-2">
-          <select id="selectPkgManager" class="bg-[#161b22] border border-[#30363d] rounded px-2 py-1.5 text-xs text-slate-200 mono">
-            <option value="auto">Auto</option>
-            <option value="pip">pip</option>
-            <option value="winget">winget</option>
-            <option value="npm">npm -g</option>
-          </select>
-          <input id="inputOpenSourcePkg" type="text" placeholder="Package (playwright, ruff, pytest, Ollama.Ollama)..." class="flex-1 bg-[#161b22] border border-[#30363d] rounded px-2.5 py-1.5 text-xs text-white mono" />
-          <button id="btnInstallOpenSourcePkg" type="button" class="px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold mono">Install</button>
-        </div>
-      </div>
-
-      <div class="space-y-1.5">
-        <div class="flex items-center justify-between text-xs mono">
-          <span class="text-amber-300 font-bold">PHYSICS FORCE-DIRECTED SWARM &amp; MEMORY GRAPH</span>
-          <div class="flex gap-1.5">
-            <button id="btnResetGraphLayout" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-slate-200 text-[10px]">Auto-Spread</button>
-            <button id="btnSpawnGraphAgent" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-amber-300 text-[10px]">+ Spawn Sub-Agent</button>
-          </div>
-        </div>
-        <div class="relative w-full h-64 rounded-lg bg-[#090d13] border border-[#262c36] overflow-hidden">
-          <canvas id="memoryGraphCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
-        </div>
-        <pre id="studioDiagnosticOutput" class="bg-[#090d13] border border-[#262c36] rounded p-2 text-[10px] mono text-slate-300 max-h-24 overflow-auto">Ready.</pre>
-      </div>
+    <div id="hudTerminalOutput" class="flex-1 overflow-y-auto hud-scroll text-[10px] mono text-cyan-300 leading-relaxed whitespace-pre-wrap max-h-96">
+[J.A.R.V.I.S. READY] Initialized Gemma 4 Autonomous Computer-Use Engine.
+[SYSTEM] Listening on default desktop. Zero hardcoded routing.
     </div>
-  </div>
+  </aside>
 
   <!-- ======================================================================================== -->
-  <!-- MODAL 2: GEMMA 4, GEMINI FLASH, OLLAMA & SARVAM AI VOICE CONFIG                          -->
+  <!-- JAVASCRIPT: THREE.JS 3D SPHERE ENGINE & ZERO-LATENCY OS DISPATCH                          -->
   <!-- ======================================================================================== -->
-  <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#161b22] border border-[#30363d] rounded-xl max-w-lg w-full p-5 space-y-4">
-      <div class="flex items-center justify-between border-b border-[#262c36] pb-2">
-        <h3 class="text-sm font-bold mono text-white">IDE Settings — Gemma 4 (Ollama), Gemini Flash &amp; Sarvam AI</h3>
-        <button id="btnCloseConfig" type="button" class="text-slate-400 hover:text-white text-xs">Close &times;</button>
-      </div>
-      <div class="space-y-3 text-xs mono">
-        <div>
-          <label for="cfgBackendUrl" class="block text-slate-300 mb-1">FastAPI Host Backend (`uvicorn main:app --port 8000`):</label>
-          <input id="cfgBackendUrl" type="text" value="http://127.0.0.1:8000" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
-        </div>
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label for="cfgOllamaUrl" class="block text-slate-300 mb-1">Local Ollama URL:</label>
-            <input id="cfgOllamaUrl" type="text" value="http://127.0.0.1:11434" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
-          </div>
-          <div>
-            <label for="cfgOllamaModel" class="block text-slate-300 mb-1">Gemma 4 Model Tag:</label>
-            <input id="cfgOllamaModel" type="text" value="gemma4:latest" placeholder="gemma4:latest or gemma3:12b" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
-          </div>
-        </div>
-        <div>
-          <label for="cfgGeminiKey" class="block text-sky-300 mb-1">Optional Google Gemini Flash API Key (Co-Brain):</label>
-          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy... (Optional — uses Local Ollama if blank)" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
-        </div>
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label for="cfgSarvamKey" class="block text-purple-300 mb-1">Track 3 — Sarvam API Key:</label>
-            <input id="cfgSarvamKey" type="password" placeholder="Optional (WebSpeech fallback)" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
-          </div>
-          <div>
-            <label for="cfgSarvamLang" class="block text-purple-300 mb-1">Voice Language:</label>
-            <select id="cfgSarvamLang" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white">
-              <option value="en-IN">en-IN (Indian English)</option>
-              <option value="kn-IN">kn-IN (Kannada - Bengaluru)</option>
-              <option value="hi-IN">hi-IN (Hindi)</option>
-              <option value="ta-IN">ta-IN (Tamil)</option>
-              <option value="te-IN">te-IN (Telugu)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      <div class="flex justify-end">
-        <button id="btnSaveConfig" type="button" class="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs mono">
-          Save &amp; Probe Brains
-        </button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    // ==========================================================================================
-    // 100% CLEAN, UN-HARDCODED IDE RUNTIME (ALL GENERATION & VERIFICATION GOES TO REAL BACKEND/LLM)
-    // ==========================================================================================
     const state = {
       backendUrl: 'http://127.0.0.1:8000',
-      ollamaUrl: 'http://127.0.0.1:11434',
-      preferredGemmaTag: 'gemma4:latest',
-      geminiKey: '',
-      sarvamKey: '',
-      sarvamLang: 'en-IN',
-      backendOnline: true,
-      isPipelineStopped: false,
-      isPipelineRunning: false,
-      ollamaOnline: false,
-      brain1Model: 'gemma4:latest',
-      orbPulse: 1.0,
-      mountedDirHandle: null,
-      mountedFiles: {},
-      selectedFile: '',
-      lastBuiltHtmlBlobUrl: null,
-      memoryGraph: {
-        nodes: [
-          { id: 'agent_coleader', label: 'Gemma-4 Coordinator', type: 'agent', status: 'idle', current_task: 'Orchestrates IDE & swarm', x: 360, y: 125 },
-          { id: 'agent_muse', label: 'Meta Muse Architect', type: 'agent', status: 'idle', current_task: 'Writes muse_plan.json & DAG', x: 165, y: 55 },
-          { id: 'agent_coder', label: 'Claude-Code Streamer', type: 'agent', status: 'idle', current_task: 'Streams code into IDE editor', x: 555, y: 55 },
-          { id: 'agent_critic', label: 'O2 Ruff/Pytest Critic', type: 'agent', status: 'idle', current_task: 'Runs AST, Ruff & Pytest repair', x: 565, y: 195 },
-          { id: 'agent_runner', label: 'Antigravity Runner', type: 'agent', status: 'idle', current_task: 'Serves localhost :8090', x: 360, y: 210 },
-          { id: 'agent_vision_qa', label: 'Playwright Vision QA', type: 'agent', status: 'idle', current_task: 'Captures PNG & Gemma 4 Vision', x: 160, y: 195 },
-          { id: 'agent_sarvam', label: 'Sarvam Voice Bridge', type: 'agent', status: 'idle', current_task: 'STT/TTS voice interface', x: 80, y: 125 }
-        ],
-        edges: [
-          { source: 'agent_coleader', target: 'agent_muse', relation: 'plans', active: false },
-          { source: 'agent_coleader', target: 'agent_coder', relation: 'streams', active: false },
-          { source: 'agent_coleader', target: 'agent_critic', relation: 'heals', active: false },
-          { source: 'agent_coleader', target: 'agent_runner', relation: 'launches', active: false },
-          { source: 'agent_coleader', target: 'agent_vision_qa', relation: 'audits', active: false },
-          { source: 'agent_coleader', target: 'agent_sarvam', relation: 'speaks', active: false }
-        ]
-      }
+      isSpeaking: false,
+      isListening: false,
+      spherePulse: 1.0,
+      sphereColor: 0x00f0ff
     };
 
-    const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+    // -------------------------------------------------------------
+    // 1. THREE.JS 3D HOLOGRAPHIC JARVIS SPHERE
+    // -------------------------------------------------------------
+    let scene, camera, renderer, jarvisCore, orbitalRing1, orbitalRing2, orbitalRing3, particles;
 
-    function cleanTargetName(raw) {
-      return raw
-        .trim()
-        .replace(/^["'.,!?;:\s]+|["'.,!?;:\s]+$/g, '')
-        .replace(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|run)\s+(?:the\s+|my\s+|an\s+|a\s+)?/i, '')
-        .replace(/\s+(?:app|application|program|on my system|on my laptop|on my pc|for me)$/i, '')
-        .replace(/^["'.,!?;:\s]+|["'.,!?;:\s]+$/g, '');
-    }
+    function initJarvisSphere() {
+      const container = document.getElementById('canvasContainer');
+      const w = window.innerWidth;
+      const h = window.innerHeight;
 
-    function highlightCodeLine(rawLine) {
-      let s = rawLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      if (s.trim().startsWith('#') || s.trim().startsWith('//')) {
-        return `<span class="syn-cmt">${s}</span>`;
-      }
-      s = s.replace(/(&quot;.*?&quot;|'.*?'|".*?")/g, '<span class="syn-str">$1</span>');
-      s = s.replace(/\b(def|class|import|from|return|if|elif|else|for|while|try|except|with|as|assert|async|await|function|const|let|var|true|false|True|False|None)\b/g, '<span class="syn-kw">$1</span>');
-      return s;
-    }
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 1000);
+      camera.position.z = 24;
 
-    function renderIdeFiles() {
-      const tree = document.getElementById('ideFileTree');
-      const tabs = document.getElementById('sideFileTabsBar');
-      const keys = Object.keys(state.mountedFiles);
-      document.getElementById('explorerFileCount').textContent = `${keys.length} files`;
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(w, h);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
 
-      tree.innerHTML = '';
-      tabs.innerHTML = '';
-
-      if (keys.length === 0) {
-        tree.innerHTML = '<div class="py-1 text-[11px] text-slate-500">No files loaded yet.</div>';
-        return;
-      }
-
-      keys.forEach(fname => {
-        const meta = state.mountedFiles[fname];
-        const active = fname === state.selectedFile;
-        const icon = fname.endsWith('.py') ? '🐍' : fname.endsWith('.html') ? '🌐' : fname.endsWith('.json') ? '📋' : '📄';
-
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = `w-full text-left px-2 py-1 rounded flex items-center justify-between transition ${
-          active ? 'bg-[#1f2937] text-white font-semibold border-l-2 border-sky-400' : 'text-slate-400 hover:bg-[#1f242c] hover:text-slate-200'
-        }`;
-        const statusBadge = meta.status === 'bug'
-          ? '<span class="text-rose-400 font-bold">!</span>'
-          : '<span class="text-emerald-400 text-[10px]">&#10003;</span>';
-        row.innerHTML = `<span class="truncate">${icon} ${fname}</span><span class="flex items-center gap-1.5 text-[10px] text-slate-500"><span>${meta.lines}L</span>${statusBadge}</span>`;
-        row.addEventListener('click', () => selectIdeFile(fname));
-        tree.appendChild(row);
-
-        const tab = document.createElement('button');
-        tab.type = 'button';
-        tab.className = `px-3 py-1.5 text-xs mono flex items-center gap-1.5 border-r border-[#262c36] transition ${
-          active ? 'bg-[#0d1117] text-white border-t-2 border-t-rose-500 font-semibold' : 'bg-[#161b22] text-slate-400 hover:bg-[#1f242c]'
-        }`;
-        tab.innerHTML = `<span>${icon}</span><span>${fname}</span>`;
-        tab.addEventListener('click', () => selectIdeFile(fname));
-        tabs.appendChild(tab);
+      // Inner Glowing Core Sphere
+      const coreGeo = new THREE.IcosahedronGeometry(4.8, 4);
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: 0x00f0ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.75
       });
-    }
+      jarvisCore = new THREE.Mesh(coreGeo, coreMat);
+      scene.add(jarvisCore);
 
-    function selectIdeFile(fname) {
-      if (!state.mountedFiles[fname]) return;
-      state.selectedFile = fname;
-      renderIdeFiles();
-      const content = state.mountedFiles[fname].content || '';
-      document.getElementById('sideActiveFilenameLabel').textContent = fname;
-      document.getElementById('studioCodeEditor').value = content;
-      const viewport = document.getElementById('sideLiveCodeViewport');
-      const lines = content.split('\n');
-      viewport.innerHTML = lines.map((ln, idx) => {
-        const cls = (state.mountedFiles[fname].bugLine === idx + 1)
-          ? 'code-line code-line-error'
-          : 'code-line';
-        return `<div class="${cls}"><span class="gutter-num">${idx + 1}</span><span>${highlightCodeLine(ln)}</span></div>`;
-      }).join('');
-    }
-
-    async function streamCodeToEditor(filename, content, agentTag = 'Gemma-4 Coder') {
-      const viewport = document.getElementById('sideLiveCodeViewport');
-      const rawEditor = document.getElementById('studioCodeEditor');
-      const fileLabel = document.getElementById('sideActiveFilenameLabel');
-      const metricsLabel = document.getElementById('sideCodeMetricsLabel');
-      const badge = document.getElementById('liveTypingBadge');
-
-      viewport.classList.remove('hidden');
-      rawEditor.classList.add('hidden');
-      fileLabel.textContent = filename;
-      badge.textContent = `STREAMING: ${filename}`;
-      badge.className = 'px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/50 animate-pulse';
-
-      const lines = content.split('\n');
-      const total = lines.length;
-      const step = Math.max(1, Math.ceil(total / 24));
-      let rendered = [];
-
-      for (let i = 0; i < total; i += step) {
-        if (state.isPipelineStopped) return;
-        const chunk = lines.slice(i, i + step);
-        chunk.forEach((ln, idx) => {
-          const lineNum = i + idx + 1;
-          rendered.push(`<div class="code-line"><span class="gutter-num">${lineNum}</span><span>${highlightCodeLine(ln)}</span></div>`);
-        });
-        viewport.innerHTML = rendered.join('') + `<div class="code-line"><span class="gutter-num"></span><span class="ide-cursor"></span></div>`;
-        viewport.scrollTop = viewport.scrollHeight;
-        metricsLabel.textContent = `${Math.min(i + step, total)}/${total} lines • ${agentTag}`;
-        await sleep(18);
-      }
-
-      viewport.innerHTML = rendered.join('');
-      rawEditor.value = content;
-      badge.textContent = `SAVED (${total}L)`;
-      badge.className = 'px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
-    }
-
-    function renderCompactSwarm() {
-      const box = document.getElementById('compactAgentSwarmGrid');
-      if (!box) return;
-      box.innerHTML = '';
-      const working = state.memoryGraph.nodes.filter(n => n.status === 'working').length;
-      document.getElementById('a2aMessageCount').textContent = working > 0 ? `${working} Active` : `7 Ready`;
-
-      state.memoryGraph.nodes.forEach(n => {
-        const isWork = n.status === 'working';
-        const row = document.createElement('div');
-        row.className = `px-2 py-1 rounded flex items-center justify-between gap-1.5 border ${
-          isWork ? 'bg-amber-500/15 border-amber-400/60 text-amber-200' : 'bg-[#0d1117] border-[#262c36] text-slate-300'
-        }`;
-        row.innerHTML = `
-          <div class="flex items-center gap-1.5 truncate">
-            <span class="w-2 h-2 rounded-full shrink-0 ${isWork ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}"></span>
-            <span class="truncate font-medium">${n.label}</span>
-          </div>
-          <span class="text-[9px] text-slate-400 uppercase shrink-0">${n.status}</span>
-        `;
-        box.appendChild(row);
+      // Second Inner Dense Mesh
+      const innerGeo = new THREE.IcosahedronGeometry(3.6, 2);
+      const innerMat = new THREE.MeshBasicMaterial({
+        color: 0x0066ff,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.6
       });
-    }
+      const innerCore = new THREE.Mesh(innerGeo, innerMat);
+      jarvisCore.add(innerCore);
 
-    function setAgentWorking(agentId, isWorking, taskText) {
-      const node = state.memoryGraph.nodes.find(n => n.id === agentId);
-      if (node) {
-        node.status = isWorking ? 'working' : 'idle';
-        if (taskText) node.current_task = taskText;
+      // Concentric Holographic Orbital Rings
+      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.5 });
+      const ringGeo1 = new THREE.TorusGeometry(7.2, 0.04, 8, 80);
+      orbitalRing1 = new THREE.Mesh(ringGeo1, ringMat1);
+      scene.add(orbitalRing1);
+
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0x0088ff, wireframe: true, transparent: true, opacity: 0.45 });
+      const ringGeo2 = new THREE.TorusGeometry(8.4, 0.03, 8, 90);
+      orbitalRing2 = new THREE.Mesh(ringGeo2, ringMat2);
+      orbitalRing2.rotation.x = Math.PI / 3;
+      scene.add(orbitalRing2);
+
+      const ringMat3 = new THREE.MeshBasicMaterial({ color: 0x00e5ff, wireframe: true, transparent: true, opacity: 0.4 });
+      const ringGeo3 = new THREE.TorusGeometry(9.6, 0.03, 8, 100);
+      orbitalRing3 = new THREE.Mesh(ringGeo3, ringMat3);
+      orbitalRing3.rotation.y = Math.PI / 4;
+      scene.add(orbitalRing3);
+
+      // Particle Dust Swarm
+      const pCount = 900;
+      const pGeo = new THREE.BufferGeometry();
+      const pPos = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount * 3; i += 3) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+        const rad = 6.0 + Math.random() * 8.0;
+        pPos[i] = rad * Math.sin(phi) * Math.cos(theta);
+        pPos[i + 1] = rad * Math.sin(phi) * Math.sin(theta);
+        pPos[i + 2] = rad * Math.cos(phi);
       }
-      state.memoryGraph.edges.forEach(e => {
-        if (e.source === agentId || e.target === agentId) e.active = isWorking;
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      const pMat = new THREE.PointsMaterial({
+        color: 0x00ffff,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.75
       });
-      renderCompactSwarm();
-    }
+      particles = new THREE.Points(pGeo, pMat);
+      scene.add(particles);
 
-    function pushA2AMessage(fromAgent, toAgent, msg, color = 'text-amber-300') {
-      const feed = document.getElementById('a2aBusFeed');
-      if (feed.children.length === 1 && feed.textContent.includes('Waiting for user')) {
-        feed.innerHTML = '';
-      }
-      const div = document.createElement('div');
-      div.className = 'border-l-2 border-sky-500/60 pl-2 py-0.5 leading-snug';
-      div.innerHTML = `<span class="font-bold ${color}">${fromAgent} &rarr; ${toAgent}:</span> <span class="text-slate-200">${msg}</span>`;
-      feed.prepend(div);
-    }
-
-    function renderTaskDag(steps) {
-      const box = document.getElementById('liveTaskDagList');
-      const counter = document.getElementById('dagStepCounter');
-      const done = steps.filter(s => s.status === 'completed').length;
-      counter.textContent = `${done}/${steps.length} Steps`;
-      box.innerHTML = '';
-      steps.forEach(s => {
-        const icon = s.status === 'completed'
-          ? '<span class="text-emerald-400 font-bold">&#10003;</span>'
-          : s.status === 'running'
-            ? '<span class="text-amber-400 animate-spin inline-block">&#9696;</span>'
-            : s.status === 'failed'
-              ? '<span class="text-rose-400 font-bold">&times;</span>'
-              : '<span class="text-slate-600">&#9675;</span>';
-        const row = document.createElement('div');
-        row.className = `px-2 py-1 rounded bg-[#0d1117] border ${
-          s.status === 'running' ? 'border-amber-400/60 text-white' : s.status === 'failed' ? 'border-rose-500/60 text-rose-300' : 'border-[#262c36] text-slate-300'
-        } flex items-center justify-between gap-1.5`;
-        row.innerHTML = `
-          <div class="flex items-center gap-1.5 truncate">
-            ${icon}
-            <span class="truncate">${s.step_id}. ${s.title}</span>
-          </div>
-          <span class="text-[9px] text-slate-500 shrink-0">${s.time || ''}</span>
-        `;
-        box.appendChild(row);
-      });
-    }
-
-    // Direct Browser-to-Ollama or Gemini API fallback if FastAPI backend is not started yet
-    async function synthesizeDirectlyWithLocalOllamaOrGemini(userPrompt, visualImageB64 = '') {
-      const sysPrompt = (
-        "You are the J.A.R.V.I.S. Gemma 4 Autonomous Software Engineering Swarm. " +
-        "Return ONLY valid JSON with keys: " +
-        '{"project_name": "...", "muse_plan": {"project_name": "...", "execution_stages": []}, "index_html": "<!DOCTYPE html>...", "app_server_py": "...", "test_suite_py": "..."} ' +
-        "No markdown fences outside the JSON."
-      );
-      const fullPrompt = `${sysPrompt}\n\nBuild a complete, interactive dark-mode web application for: ${userPrompt}`;
-
-      // 1. Try local Ollama directly from browser
-      try {
-        const payload = {
-          model: state.brain1Model || state.preferredGemmaTag,
-          prompt: fullPrompt,
-          stream: false,
-          format: 'json'
-        };
-        if (visualImageB64) {
-          payload.images = [visualImageB64.split(',').pop()];
-        }
-        const r = await fetch(`${state.ollamaUrl}/api/generate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (r.ok) {
-          const d = await r.json();
-          const m = (d.response || '').match(/\{[\s\S]*\}/);
-          if (m) return JSON.parse(m[0]);
-        }
-      } catch (_) {}
-
-      // 2. Try Google Gemini Flash API if key is configured
-      if (state.geminiKey) {
-        try {
-          const parts = [{ text: fullPrompt }];
-          if (visualImageB64) {
-            parts.push({ inline_data: { mime_type: 'image/png', data: visualImageB64.split(',').pop() } });
-          }
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`;
-          const r = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts }],
-              generationConfig: { responseMimeType: 'application/json' }
-            })
-          });
-          if (r.ok) {
-            const d = await r.json();
-            const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            const m = txt.match(/\{[\s\S]*\}/);
-            if (m) return JSON.parse(m[0]);
-          }
-        } catch (_) {}
-      }
-
-      return null;
-    }
-
-    // Visual Browser Agent Cursor animation + real DOM click on the running iframe
-    async function runVisualBrowserAgentClickTest() {
-      const cursor = document.getElementById('visualAgentCursor');
-      const label = document.getElementById('visualAgentCursorLabel');
-      const iframe = document.getElementById('liveAppPreviewIframe');
-      if (!cursor || !iframe) return;
-
-      cursor.classList.remove('hidden');
-      cursor.style.top = '28%';
-      cursor.style.left = '30%';
-      label.textContent = 'Vision Agent: Inspecting DOM';
-      await sleep(380);
-
-      cursor.style.top = '65%';
-      cursor.style.left = '68%';
-      label.textContent = 'Vision Agent: Clicking Primary Button';
-      cursor.style.transform = 'scale(0.85)';
-      await sleep(180);
-      cursor.style.transform = 'scale(1)';
-
-      try {
-        const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
-        if (doc) {
-          const btn = doc.querySelector('button');
-          if (btn) btn.click();
-        }
-      } catch (_) {}
-
-      await sleep(400);
-      cursor.classList.add('hidden');
-    }
-
-    // Real Playwright + Gemma 4 Multimodal Vision Verification via Backend `/api/screenshot-verify`
-    async function captureScreenshotAndRunVisionQA(appTitle, portUrl, htmlContent) {
-      setAgentWorking('agent_vision_qa', true, 'Running Playwright & Gemma 4 Vision QA');
-      await runVisualBrowserAgentClickTest();
-
-      try {
-        const r = await fetch(`${state.backendUrl}/api/screenshot-verify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            url: portUrl,
-            html_content: htmlContent || '',
-            app_title: appTitle || 'Generated App',
-            model: state.brain1Model,
-            gemini_api_key: state.geminiKey
-          })
-        });
-        const d = await r.json();
-        if (d.ok && d.screenshot_base64) {
-          const dataUrl = `data:image/png;base64,${d.screenshot_base64}`;
-          document.getElementById('capturedScreenshotImg').src = dataUrl;
-          document.getElementById('capturedScreenshotImg').classList.remove('hidden');
-          document.getElementById('screenshotPlaceholderText').classList.add('hidden');
-          document.getElementById('downloadScreenshotLink').href = dataUrl;
-          document.getElementById('qaScoreLayout').textContent = 'PLAYWRIGHT PASS';
-          document.getElementById('qaScoreLayout').className = 'text-emerald-400 font-bold';
-          const errCount = (d.console_errors || []).length;
-          document.getElementById('qaScoreErrors').textContent = `${errCount} ERRORS`;
-          document.getElementById('qaScoreErrors').className = errCount === 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';
-          document.getElementById('gemmaVisionQaReport').textContent = d.vision_report || 'Verified by Playwright.';
-          pushA2AMessage('Playwright Vision QA', 'Gemma-4 Coordinator', d.vision_report || 'Screenshot captured & verified.', 'text-purple-300');
-        } else {
-          document.getElementById('gemmaVisionQaReport').textContent = d.error || 'Playwright screenshot unavailable (run main.py & playwright install chromium).';
-        }
-      } catch (err) {
-        document.getElementById('gemmaVisionQaReport').textContent = `Backend offline: start uvicorn main:app --port 8000 for Playwright screenshots.`;
-      } finally {
-        setAgentWorking('agent_vision_qa', false, 'Idle');
-      }
-    }
-
-    // ==========================================================================================
-    // REAL 5-STAGE AUTONOMOUS PIPELINE (NO HARDCODED TEMPLATES)
-    // ==========================================================================================
-    
-    function stopCurrentPipeline() {
-      state.isPipelineStopped = true;
-      state.isPipelineRunning = false;
-      const btnHeader = document.getElementById('btnHeaderStop');
-      if (btnHeader) btnHeader.classList.add('hidden');
-      const termEl = document.getElementById('sideTerminalOutput');
-      if (termEl) termEl.textContent += '\n\n[STOPPED] Execution halted by user via STOP option (Esc).';
-      pushA2AMessage('Gemma-4 Coordinator', 'All Agents', 'HALT: Emergency STOP trigger received.', 'text-rose-400');
-      state.memoryGraph.nodes.forEach(n => { n.status = 'idle'; });
-      renderCompactSwarm();
-      state.orbPulse = 1.0;
-      if (state.backendOnline) {
-        fetch(`${state.backendUrl}/api/stop`, { method: 'POST' }).catch(() => {});
-      }
-    }
-
-    async function runFullAutonomousPipeline(userPrompt, visualImageB64 = '') {
-      state.isPipelineStopped = false;
-      state.isPipelineRunning = true;
-      const btnHdrStop = document.getElementById('btnHeaderStop');
-      if (btnHdrStop) btnHdrStop.classList.remove('hidden');
-      const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
-      document.getElementById('breadcrumbRootLabel').textContent = targetDir.replace(/^[./\\]+/, '') || 'hackathon_app';
-      const termEl = document.getElementById('sideTerminalOutput');
-      const t0 = performance.now();
-      state.orbPulse = 2.6;
-      document.getElementById('selfCorrectionBanner').classList.add('hidden');
-
-      const steps = [
-        { step_id: 1, title: 'Meta Muse Plan (/api/swarm-generate)', status: 'running', time: '' },
-        { step_id: 2, title: '7-Agent Gemma 4 Code Synthesis', status: 'queued', time: '' },
-        { step_id: 3, title: 'Stream Generated Files into IDE', status: 'queued', time: '' },
-        { step_id: 4, title: 'AST + Ruff + Pytest Self-Heal', status: 'queued', time: '' },
-        { step_id: 5, title: 'Playwright & Gemma 4 Vision QA', status: 'queued', time: '' }
-      ];
-      renderTaskDag(steps);
-
-      setAgentWorking('agent_muse', true, 'Querying LLM...');
-      setAgentWorking('agent_coder', true, 'Synthesizing files...');
-      pushA2AMessage('Gemma-4 Coordinator', 'Meta Muse Architect', `Synthesizing application for: "${userPrompt}"`, 'text-amber-300');
-      termEl.textContent = `[SWARM GENERATE] Calling ${state.brain1Model} for "${userPrompt}"...\n`;
-
-      let filesList = [];
-      let projectTitle = userPrompt;
-
-      // 1. Call FastAPI Backend `/api/swarm-generate`
-      if (state.backendOnline) {
-        try {
-          const genRes = await fetch(`${state.backendUrl}/api/swarm-generate`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt: userPrompt,
-              target_directory: targetDir,
-              model: state.brain1Model,
-              gemini_api_key: state.geminiKey,
-              image_base64: visualImageB64
-            })
-          });
-          const genData = await genRes.json();
-          if (genData.ok && genData.files && genData.files.length > 0) {
-            filesList = genData.files;
-            projectTitle = (genData.spec && genData.spec.project_name) || userPrompt;
-          } else {
-            termEl.textContent += `[ERROR] ${genData.error || 'LLM did not return files.'}\n`;
-          }
-        } catch (err) {
-          termEl.textContent += `[BACKEND ERROR] ${err.message}\n`;
-        }
-      }
-
-      // 2. If backend was not running, try calling local Ollama (11434) or Gemini API directly from browser
-      if (filesList.length === 0) {
-        const directSpec = await synthesizeDirectlyWithLocalOllamaOrGemini(userPrompt, visualImageB64);
-        if (directSpec && directSpec.index_html) {
-          projectTitle = directSpec.project_name || userPrompt;
-          filesList = [
-            { relative_path: 'muse_plan.json', content: JSON.stringify(directSpec.muse_plan || { project_name: projectTitle }, null, 2) },
-            { relative_path: 'app_server.py', content: directSpec.app_server_py || '' },
-            { relative_path: 'test_suite.py', content: directSpec.test_suite_py || '' },
-            { relative_path: 'index.html', content: directSpec.index_html || '' }
-          ].filter(f => f.content);
-        }
-      }
-
-      setAgentWorking('agent_muse', false, 'Idle');
-      setAgentWorking('agent_coder', false, 'Idle');
-
-      if (filesList.length === 0) {
-        steps[0].status = 'failed';
-        renderTaskDag(steps);
-        termEl.textContent +=
-          `\n[ACTION REQUIRED] No active LLM responded.\n` +
-          `1. Start FastAPI backend: uvicorn main:app --reload --host 127.0.0.1 --port 8000\n` +
-          `2. Ensure Ollama is running (ollama serve && ollama pull gemma4:latest) OR add your Gemini API Key in Settings (⚙).`;
-        state.orbPulse = 1.0;
-        return;
-      }
-
-      steps[0].status = 'completed';
-      steps[0].time = `${Math.round(performance.now() - t0)}ms`;
-      steps[1].status = 'completed';
-      steps[1].time = `${filesList.length} files`;
-      steps[2].status = 'running';
-      renderTaskDag(steps);
-
-      // STEP 3: Stream real LLM-generated files into the IDE Editor
-      state.mountedFiles = {};
-      for (const fobj of filesList) {
-        const fname = fobj.relative_path;
-        const content = fobj.content || '';
-        state.mountedFiles[fname] = {
-          content,
-          lines: content.split('\n').length,
-          status: 'ok'
-        };
-        state.selectedFile = fname;
-        renderIdeFiles();
-        await streamCodeToEditor(fname, content, state.brain1Model);
-      }
-
-      if (state.mountedDirHandle) {
-        await writeFilesToMountedBrowserDirectory(filesList);
-      }
-
-      steps[2].status = 'completed';
-      steps[2].time = `${Math.round(performance.now() - t0)}ms`;
-      steps[3].status = 'running';
-      renderTaskDag(steps);
-
-      // STEP 4: Call `/api/build-and-test-app` for real disk write, AST + Ruff + Pytest + LLM Self-Healing, and port 8090 server launch
-      setAgentWorking('agent_critic', true, 'Running AST, Ruff & Pytest...');
-      setAgentWorking('agent_runner', true, 'Starting :8090 server...');
-      let localUrl = 'http://127.0.0.1:8090/index.html';
-
-      if (state.backendOnline) {
-        try {
-          const bRes = await fetch(`${state.backendUrl}/api/build-and-test-app`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              instruction: userPrompt,
-              target_directory: targetDir,
-              files: filesList,
-              model: state.brain1Model,
-              gemini_api_key: state.geminiKey
-            })
-          });
-          const bData = await bRes.json();
-          if (bData.terminal_log) {
-            termEl.textContent = bData.terminal_log;
-          }
-          if (bData.local_url) {
-            localUrl = bData.local_url;
-          }
-          if (bData.sha256_receipts) {
-            const firstHash = Object.values(bData.sha256_receipts)[0] || 'VERIFIED';
-            document.getElementById('shaReceiptBadge').textContent = `SHA-256: ${firstHash}`;
-            document.getElementById('shaReceiptBadge').className = 'text-emerald-400';
-          }
-          if (bData.self_healed) {
-            document.getElementById('selfCorrectionBanner').classList.remove('hidden');
-            document.getElementById('selfCorrectionText').textContent = `[O2 Self-Healing] Critic Agent automatically repaired code via ${state.brain1Model}`;
-          }
-          // Update editor with any self-healed file content returned by backend
-          if (bData.files && Array.isArray(bData.files)) {
-            bData.files.forEach(f => {
-              if (state.mountedFiles[f.relative_path]) {
-                state.mountedFiles[f.relative_path].content = f.content;
-                state.mountedFiles[f.relative_path].lines = f.content.split('\n').length;
-              }
-            });
-            selectIdeFile(state.selectedFile);
-          }
-          document.getElementById('localServerPortBadge').textContent = ':8090 LIVE';
-          document.getElementById('localServerPortBadge').className = 'px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
-          document.getElementById('browserStatusDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-          document.getElementById('footerServerLabel').textContent = 'Port: 8090 (LIVE)';
-        } catch (err) {
-          termEl.textContent += `\n[BUILD ERROR] ${err.message}`;
-        }
-      }
-
-      // Render live HTML in the embedded browser preview iframe
-      const htmlFileObj = filesList.find(f => f.relative_path.endsWith('.html'));
-      if (state.backendOnline) {
-        document.getElementById('liveAppPreviewIframe').src = `${localUrl}?t=${Date.now()}`;
-      } else if (htmlFileObj) {
-        if (state.lastBuiltHtmlBlobUrl) URL.revokeObjectURL(state.lastBuiltHtmlBlobUrl);
-        const blob = new Blob([htmlFileObj.content], { type: 'text/html' });
-        state.lastBuiltHtmlBlobUrl = URL.createObjectURL(blob);
-        document.getElementById('liveAppPreviewIframe').src = state.lastBuiltHtmlBlobUrl;
-      }
-      document.getElementById('liveBrowserUrlBar').value = localUrl;
-
-      setAgentWorking('agent_critic', false, 'Idle');
-      setAgentWorking('agent_runner', false, 'Idle');
-      steps[3].status = 'completed';
-      steps[3].time = `${Math.round(performance.now() - t0)}ms`;
-      steps[4].status = 'running';
-      renderTaskDag(steps);
-
-      // STEP 5: Real Playwright Screenshot & Gemma 4 Vision QA
-      await captureScreenshotAndRunVisionQA(projectTitle, localUrl, htmlFileObj ? htmlFileObj.content : '');
-      steps[4].status = 'completed';
-      steps[4].time = `${Math.round(performance.now() - t0)}ms`;
-      renderTaskDag(steps);
-
-      const totalMs = Math.round(performance.now() - t0);
-      document.getElementById('latencyPill').textContent = `${totalMs}ms Total`;
-      speakText(`Completed ${projectTitle} in ${totalMs} milliseconds.`);
-      state.orbPulse = 1.0;
-      state.isPipelineRunning = false;
-      const btnHdrStopEnd = document.getElementById('btnHeaderStop');
-      if (btnHdrStopEnd) btnHdrStopEnd.classList.add('hidden');
-    }
-
-    // Scan existing workspace directory on disk via `/api/inspect-dir`
-    async function scanExistingWorkspaceDir() {
-      const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
-      const termEl = document.getElementById('sideTerminalOutput');
-      try {
-        const r = await fetch(`${state.backendUrl}/api/inspect-dir`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ instruction: 'scan', target_directory: targetDir })
-        });
-        const d = await r.json();
-        if (d.ok && Array.isArray(d.files)) {
-          state.mountedFiles = {};
-          d.files.forEach(f => {
-            state.mountedFiles[f.path] = {
-              content: f.full_content || '',
-              lines: f.lines || 0,
-              status: 'ok'
-            };
-          });
-          if (d.detected_mistakes) {
-            d.detected_mistakes.forEach(m => {
-              if (state.mountedFiles[m.file]) {
-                state.mountedFiles[m.file].status = 'bug';
-                state.mountedFiles[m.file].bugLine = m.line;
-              }
-            });
-          }
-          const keys = Object.keys(state.mountedFiles);
-          renderIdeFiles();
-          if (keys.length > 0) selectIdeFile(keys[0]);
-          termEl.textContent = `[WORKSPACE SCAN] Loaded ${keys.length} files from ${targetDir} (${(d.detected_mistakes || []).length} syntax issues).`;
-        }
-      } catch (err) {
-        termEl.textContent = `[SCAN ERROR] Ensure FastAPI backend is running on ${state.backendUrl}: ${err.message}`;
-      }
-    }
-
-    async function speakText(text) {
-      document.getElementById('liveJarvisTranscript').textContent = text;
-      // 1. Try Neural Edge-TTS via Backend (ultra-realistic J.A.R.V.I.S. speech, no API key needed)
-      if (state.backendOnline) {
-        try {
-          const r = await fetch(`${state.backendUrl}/api/convert/tts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text.slice(0, 480), voice: 'en-GB-RyanNeural' })
-          });
-          if (r.ok) {
-            const d = await r.json();
-            if (d.audio_base64) {
-              const audio = new Audio(`data:audio/mp3;base64,${d.audio_base64}`);
-              await audio.play();
-              return;
-            }
-          }
-        } catch (_) {}
-      }
-      if (state.sarvamKey) {
-        try {
-          setAgentWorking('agent_sarvam', true, 'Sarvam TTS...');
-          const r = await fetch('https://api.sarvam.ai/text-to-speech', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'api-subscription-key': state.sarvamKey },
-            body: JSON.stringify({
-              inputs: [text.slice(0, 480)],
-              target_language_code: state.sarvamLang || 'en-IN',
-              speaker: 'meera',
-              model: 'bulbul:v3'
-            })
-          });
-          if (r.ok) {
-            const d = await r.json();
-            if (d.audios && d.audios[0]) {
-              new Audio(`data:audio/wav;base64,${d.audios[0]}`).play();
-              setAgentWorking('agent_sarvam', false, 'Idle');
-              return;
-            }
-          }
-        } catch (_) {
-          setAgentWorking('agent_sarvam', false, 'Idle');
-        }
-      }
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text.slice(0, 480));
-        u.lang = state.sarvamLang || 'en-IN';
-        u.rate = 1.08;
-        window.speechSynthesis.speak(u);
-      }
-    }
-
-    async function executeCommand(rawCmd) {
-      const cmd = (rawCmd || document.getElementById('mainCommandInput').value).trim();
-      if (!cmd) return;
-
-      const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
-
-      // 1. Autonomous Computer-Use Dispatcher (State-aware Windows tools, YouTube, Netflix, Gmail, Bookings)
-      const isComputerUse = /calc|calculator|youtube|netflix|gmail|restaurant|dining|movie\s*ticket|bookmyshow|notepad|blender/.test(lower) &&
-                            !/build|create\s+(?:an?\s+)?(?:web\s*)?app|code|repo/.test(lower);
-      const isQuickOpen = /^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|play|book|perform|calculate)\s+/.test(lower);
-
-      if (isComputerUse || isQuickOpen) {
-        const t0 = performance.now();
-        try {
-          const r = await fetch(`${state.backendUrl}/api/open-app`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: cmd })
-          });
-          const d = await r.json();
-          if (d.ok && (d.speech || d.action)) {
-            const ms = Math.round(performance.now() - t0);
-            document.getElementById('latencyPill').textContent = `${ms}ms OS Fast-Path`;
-            pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Action: ${d.message || d.action} (${ms}ms)`, 'text-emerald-300');
-            const termEl = document.getElementById('sideTerminalOutput');
-            if (termEl) termEl.textContent += `\n[COMPUTER USE AGENT] ${d.message || d.action}\n`;
-            speakText(d.speech || `Executed ${cmd} in ${ms} milliseconds.`);
-            return;
-          }
-        } catch (err) {
-          console.warn('Computer-use API error:', err);
-        }
-      }
-
-      // 2. Full Autonomous Swarm Synthesis (WebOS, Startup SaaS, Web Apps, Swarms)
-      const simpleOpen = lower.match(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start)\s+(.+)$/);
-      const isComplex = / and |write|code|create|build|fix|mistake|bug|install|app|test|screenshot|triage|radar|dashboard|kanban|physics|sim/.test(lower);
-
-      if (simpleOpen && !isComplex) {
-        const target = cleanTargetName(simpleOpen[1]);
-        const t0 = performance.now();
-        try {
-          const r = await fetch(`${state.backendUrl}/api/open-app`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: target })
-          });
-          const d = await r.json();
-          const ms = Math.round(performance.now() - t0);
-          document.getElementById('latencyPill').textContent = `${ms}ms Fast-Path`;
-          pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Fast-Path: launched '${target}' (${ms}ms)`, 'text-emerald-300');
-          speakText(d.ok ? `Launched ${target} in ${ms}ms.` : `Error launching ${target}: ${d.error}`);
-        } catch (err) {
-          document.getElementById('sideTerminalOutput').textContent = `[FAST-PATH ERROR] Start backend (uvicorn main:app --port 8000) to spawn native OS app '${target}'.`;
-        }
-        return;
-      }
-
-      await runFullAutonomousPipeline(cmd);
-    }
-
-    function initVisualSketchpad() {
-      const cv = document.getElementById('uiSketchCanvas');
-      if (!cv) return;
-      const ctx = cv.getContext('2d');
-      let drawing = false;
-
-      ctx.fillStyle = '#090d13';
-      ctx.fillRect(0, 0, cv.width, cv.height);
-
-      cv.addEventListener('mousedown', (e) => {
-        drawing = true;
-        const r = cv.getBoundingClientRect();
-        ctx.beginPath();
-        ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
-      });
-      cv.addEventListener('mousemove', (e) => {
-        if (!drawing) return;
-        const r = cv.getBoundingClientRect();
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 2.5;
-        ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
-        ctx.stroke();
-      });
-      window.addEventListener('mouseup', () => { drawing = false; });
-
-      document.getElementById('btnClearSketchCanvas').addEventListener('click', () => {
-        ctx.fillStyle = '#090d13';
-        ctx.fillRect(0, 0, cv.width, cv.height);
-      });
-
-      document.getElementById('inputUploadVisualImg').addEventListener('change', (e) => {
-        const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const img = new Image();
-          img.onload = () => {
-            ctx.fillStyle = '#090d13';
-            ctx.fillRect(0, 0, cv.width, cv.height);
-            ctx.drawImage(img, 0, 0, cv.width, cv.height);
-          };
-          img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-
-      document.getElementById('btnConvertSketchToApp').addEventListener('click', async () => {
-        const promptText = document.getElementById('sketchPromptInput').value.trim() || 'Build an interactive web application matching this visual layout';
-        const b64 = cv.toDataURL('image/png');
-        document.getElementById('sketchModal').classList.add('hidden');
-        document.getElementById('mainCommandInput').value = promptText;
-        await runFullAutonomousPipeline(promptText, b64);
-      });
-    }
-
-    function initCrimson3DCore() {
-      const container = document.getElementById('crimsonOrbContainer');
-      const canvas = document.getElementById('crimsonOrbCanvas');
-      if (!container || !canvas || typeof THREE === 'undefined') return;
-
-      const width = container.clientWidth || 280;
-      const height = container.clientHeight || 128;
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-      camera.position.set(0, 0, 5.2);
-
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-
-      const core = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(1.15, 2),
-        new THREE.MeshBasicMaterial({ color: 0xe11d48, wireframe: true, transparent: true, opacity: 0.65 })
-      );
-      scene.add(core);
-
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(1.65, 0.02, 12, 90),
-        new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 })
-      );
-      ring.rotation.x = 1.1;
-      scene.add(ring);
-
-      let t = 0;
-      function animate() {
-        requestAnimationFrame(animate);
-        t += 0.02 * state.orbPulse;
-        const s = 1 + Math.sin(t * 3) * 0.07 * state.orbPulse;
-        core.scale.set(s, s, s);
-        core.rotation.y += 0.01 * state.orbPulse;
-        ring.rotation.z += 0.015 * state.orbPulse;
-        renderer.render(scene, camera);
-      }
+      window.addEventListener('resize', onWindowResize);
       animate();
     }
 
-    let pulseOffset = 0;
-    let draggedNode = null;
-
-    function autoSpreadGraphNodes() {
-      const canvas = document.getElementById('memoryGraphCanvas');
-      const w = (canvas && canvas.width) ? canvas.width : 720;
-      const h = (canvas && canvas.height) ? canvas.height : 256;
-      const cx = w / 2, cy = h / 2;
-      state.memoryGraph.nodes.forEach((n, idx) => {
-        if (n.id === 'agent_coleader') { n.x = cx; n.y = cy; }
-        else {
-          const angle = (idx / Math.max(1, state.memoryGraph.nodes.length - 1)) * Math.PI * 2;
-          n.x = cx + Math.cos(angle) * 210;
-          n.y = cy + Math.sin(angle) * 85;
-        }
-      });
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function initMemoryGraphCanvas() {
-      const canvas = document.getElementById('memoryGraphCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      canvas.width = 760;
-      canvas.height = 256;
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const t = clock.getElapsedTime();
 
-      canvas.addEventListener('mousedown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-        for (const n of state.memoryGraph.nodes) {
-          if (Math.hypot(mx - n.x, my - n.y) <= 20) { draggedNode = n; break; }
-        }
-      });
-      window.addEventListener('mousemove', (e) => {
-        if (!draggedNode) return;
-        const rect = canvas.getBoundingClientRect();
-        draggedNode.x = e.clientX - rect.left;
-        draggedNode.y = e.clientY - rect.top;
-      });
-      window.addEventListener('mouseup', () => { draggedNode = null; });
-
-      function draw() {
-        requestAnimationFrame(draw);
-        pulseOffset = (pulseOffset + 0.018) % 1;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const map = {};
-        state.memoryGraph.nodes.forEach(n => { map[n.id] = n; });
-
-        state.memoryGraph.edges.forEach(e => {
-          const s = map[e.source], t = map[e.target];
-          if (!s || !t) return;
-          ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(t.x, t.y);
-          ctx.strokeStyle = e.active ? '#38bdf8' : 'rgba(148, 163, 184, 0.25)';
-          ctx.lineWidth = e.active ? 2 : 1.2;
-          ctx.stroke();
-          const px = s.x + (t.x - s.x) * pulseOffset, py = s.y + (t.y - s.y) * pulseOffset;
-          ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI * 2);
-          ctx.fillStyle = '#38bdf8'; ctx.fill();
-        });
-
-        state.memoryGraph.nodes.forEach(n => {
-          ctx.beginPath(); ctx.arc(n.x, n.y, 13, 0, Math.PI * 2);
-          ctx.fillStyle = n.status === 'working' ? '#f59e0b' : '#e11d48';
-          ctx.fill();
-          ctx.strokeStyle = '#ffffff'; ctx.stroke();
-          ctx.fillStyle = '#e6edf3';
-          ctx.font = 'bold 10px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText(n.label, n.x, n.y + 25);
-        });
+      // Idle Rotation
+      if (jarvisCore) {
+        jarvisCore.rotation.y = t * 0.28 * state.spherePulse;
+        jarvisCore.rotation.x = Math.sin(t * 0.15) * 0.2;
+        
+        // Audio reactive breathing scale
+        const targetScale = 1.0 + Math.sin(t * 3.0) * 0.04 * state.spherePulse;
+        jarvisCore.scale.set(targetScale, targetScale, targetScale);
       }
-      draw();
-    }
 
-    async function probeLiveConnections() {
-      const badge = document.getElementById('liveConnectionBadge');
-      const footer = document.getElementById('activeModelFooter');
-      const dot = document.getElementById('sidebarConnDot');
-
-      try {
-        const r = await fetch(`${state.backendUrl}/api/health`);
-        if (r.ok) {
-          const d = await r.json();
-          state.backendOnline = true;
-          state.brain1Model = d.brain1_model || state.preferredGemmaTag;
-          badge.textContent = `BACKEND ONLINE: ${state.brain1Model}`;
-          badge.className = 'px-2 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[10px]';
-          footer.textContent = `Backend: Online | Model: ${state.brain1Model} | Playwright: ${d.playwright_ready ? 'Ready' : 'Not Installed'}`;
-          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
-          return;
-        }
-      } catch (_) { state.backendOnline = false; }
-
-      try {
-        const r2 = await fetch(`${state.ollamaUrl}/api/tags`);
-        if (r2.ok) {
-          const d2 = await r2.json();
-          const models = (d2.models || []).map(m => m.name);
-          if (models.length > 0) {
-            state.ollamaOnline = true;
-            state.brain1Model = models.find(m => m.toLowerCase().includes('gemma4')) || models.find(m => m.toLowerCase().includes('gemma')) || models[0];
-            badge.textContent = `DIRECT OLLAMA: ${state.brain1Model}`;
-            badge.className = 'px-2 py-0.5 rounded bg-sky-950/90 border border-sky-500/40 text-sky-300 text-[10px]';
-            footer.textContent = `Direct Ollama: ${state.brain1Model} (Start main.py for Playwright/Pytest)`;
-            dot.className = 'w-2 h-2 rounded-full bg-sky-400 animate-pulse';
-            return;
-          }
-        }
-      } catch (_) { state.ollamaOnline = false; }
-
-      badge.textContent = 'OFFLINE (Run uvicorn main:app)';
-      badge.className = 'px-2 py-0.5 rounded bg-rose-950/80 border border-rose-500/40 text-rose-300 text-[10px]';
-      footer.textContent = 'Backend Offline — Start: uvicorn main:app --reload --port 8000';
-      dot.className = 'w-2 h-2 rounded-full bg-rose-500';
-    }
-
-    async function mountLocalFolderInBrowser() {
-      if (!('showDirectoryPicker' in window)) {
-        alert('Use Chrome or Edge to mount a local folder.');
-        return;
+      if (orbitalRing1) {
+        orbitalRing1.rotation.z = t * 0.4 * state.spherePulse;
+        orbitalRing1.rotation.y = t * 0.18;
       }
-      try {
-        const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        state.mountedDirHandle = handle;
-        document.getElementById('mountedDirLabel').textContent = handle.name;
-        document.getElementById('explorerFolderTitle').textContent = handle.name.toUpperCase();
-        document.getElementById('targetDirInput').value = handle.name;
-      } catch (_) {}
-    }
-
-    async function writeFilesToMountedBrowserDirectory(filesToWrite) {
-      if (!state.mountedDirHandle || !filesToWrite) return;
-      for (const fobj of filesToWrite) {
-        const rel = (fobj.relative_path || '').replace(/^[/\\]+/, '');
-        if (!rel) continue;
-        const fh = await state.mountedDirHandle.getFileHandle(rel.split('/').pop(), { create: true });
-        const w = await fh.createWritable();
-        await w.write(fobj.content || '');
-        await w.close();
+      if (orbitalRing2) {
+        orbitalRing2.rotation.x = t * 0.3 * state.spherePulse;
+        orbitalRing2.rotation.z = -t * 0.25;
       }
+      if (orbitalRing3) {
+        orbitalRing3.rotation.y = -t * 0.35 * state.spherePulse;
+        orbitalRing3.rotation.x = t * 0.2;
+      }
+      if (particles) {
+        particles.rotation.y = -t * 0.08 * state.spherePulse;
+      }
+
+      renderer.render(scene, camera);
     }
 
+    // -------------------------------------------------------------
+    // 2. AUDIO & VOICE SYNTHESIS (RyanNeural / British AI Voice)
+    // -------------------------------------------------------------
+    function speakText(text) {
+      if (!text) return;
+      document.getElementById('speechSubtitleText').textContent = `"${text}"`;
+      logHud(`[J.A.R.V.I.S. VOICE] ${text}`);
+
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1.05;
+      utter.pitch = 0.98;
+
+      // Select British or male voice for authentic Jarvis persona
+      const voices = window.speechSynthesis.getVoices();
+      const jarvisVoice = voices.find(v => v.name.includes('George') || v.name.includes('Ryan') || v.name.includes('Natural') || v.lang.startsWith('en-GB') || v.name.includes('David'));
+      if (jarvisVoice) utter.voice = jarvisVoice;
+
+      utter.onstart = () => {
+        state.isSpeaking = true;
+        state.spherePulse = 2.4;
+        document.getElementById('soundwaveBars').classList.remove('opacity-30');
+      };
+      utter.onend = () => {
+        state.isSpeaking = false;
+        state.spherePulse = 1.0;
+        document.getElementById('soundwaveBars').classList.add('opacity-30');
+      };
+      utter.onerror = () => {
+        state.isSpeaking = false;
+        state.spherePulse = 1.0;
+      };
+
+      window.speechSynthesis.speak(utter);
+    }
+
+    // -------------------------------------------------------------
+    // 3. VOICE RECOGNITION (MIC)
+    // -------------------------------------------------------------
     function startVoiceInput() {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) { alert('Use Chrome or Edge for voice input.'); return; }
+      if (!SpeechRec) {
+        alert('Voice recognition requires Chrome or Edge browser.');
+        return;
+      }
       const rec = new SpeechRec();
-      rec.lang = state.sarvamLang || 'en-IN';
+      rec.lang = 'en-US';
       rec.onstart = () => {
+        state.isListening = true;
+        state.spherePulse = 2.0;
         document.getElementById('micLabel').textContent = 'Listening...';
-        setAgentWorking('agent_sarvam', true, 'Listening...');
-        state.orbPulse = 2.8;
+        document.getElementById('jarvisStateBadge').textContent = '• LISTENING TO DIRECTIVE •';
+        document.getElementById('jarvisStateBadge').className = 'orbitron text-xs tracking-widest text-rose-400 uppercase glow-text-crimson';
       };
       rec.onresult = (e) => {
         const transcript = e.results[0][0].transcript;
         document.getElementById('mainCommandInput').value = transcript;
-        pushA2AMessage('Sarvam Voice Bridge', 'Gemma-4 Coordinator', `Spoken (${rec.lang}): "${transcript}"`, 'text-purple-300');
+        logHud(`[USER SPOKEN] "${transcript}"`);
         executeCommand(transcript);
       };
       rec.onend = () => {
+        state.isListening = false;
+        state.spherePulse = 1.0;
         document.getElementById('micLabel').textContent = 'Speak';
-        setAgentWorking('agent_sarvam', false, 'Idle');
-        state.orbPulse = 1.0;
+        document.getElementById('jarvisStateBadge').textContent = '• J.A.R.V.I.S. SYSTEM ONLINE •';
+        document.getElementById('jarvisStateBadge').className = 'orbitron text-xs tracking-widest text-cyan-400 uppercase glow-text-cyan';
       };
       rec.start();
     }
 
-    async function toggleAstraVision() {
-      const box = document.getElementById('astraOverlayBox');
-      const vid = document.getElementById('astraVideoFeed');
-      if (!box.classList.contains('hidden')) {
-        if (vid.srcObject) { vid.srcObject.getTracks().forEach(t => t.stop()); vid.srcObject = null; }
-        box.classList.add('hidden');
-        return;
-      }
-      box.classList.remove('hidden');
-      try {
-        const stream = await (navigator.mediaDevices.getDisplayMedia
-          ? navigator.mediaDevices.getDisplayMedia({ video: true })
-          : navigator.mediaDevices.getUserMedia({ video: true }));
-        vid.srcObject = stream;
-      } catch (_) {}
+    // -------------------------------------------------------------
+    // 4. MAIN COMMAND DISPATCHER (ZERO HARDCODING -> GEMMA 4)
+    // -------------------------------------------------------------
+    function renderMediaOverlay(watchUrl, embedUrl, query) {
+      const existing = document.getElementById('jarvisMediaOverlay');
+      if (existing) existing.remove();
+
+      const box = document.createElement('div');
+      box.id = 'jarvisMediaOverlay';
+      box.className = 'fixed bottom-24 right-6 z-30 w-80 md:w-96 bg-black/90 border border-cyan-400 rounded-2xl p-3 shadow-[0_0_50px_rgba(0,240,255,0.4)] backdrop-blur-xl transition-all';
+      box.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+            <span class="orbitron text-[10px] text-red-400 font-bold tracking-wider">LIVE YOUTUBE PLAYBACK</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="${watchUrl}" target="_blank" class="text-[10px] mono text-cyan-400 hover:text-white underline">Full Tab &nearr;</a>
+            <button onclick="document.getElementById('jarvisMediaOverlay').remove()" class="text-sm text-slate-400 hover:text-white">&times;</button>
+          </div>
+        </div>
+        <iframe src="${embedUrl}" class="w-full h-44 rounded-xl border border-cyan-500/30" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <p class="text-[10px] mono text-cyan-300 mt-2 truncate font-medium">🎵 Playing: ${query}</p>
+      `;
+      document.body.appendChild(box);
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initCrimson3DCore();
-      initMemoryGraphCanvas();
-      initVisualSketchpad();
-      renderCompactSwarm();
-      probeLiveConnections();
+    function renderGmailOverlay(to, subject, body, composeUrl) {
+      const existing = document.getElementById('jarvisGmailOverlay');
+      if (existing) existing.remove();
 
-      document.getElementById('btnExecuteCommand').addEventListener('click', () => executeCommand());
-      document.getElementById('btnStopPipeline')?.addEventListener('click', stopCurrentPipeline);
-      document.getElementById('btnHeaderStop')?.addEventListener('click', stopCurrentPipeline);
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') stopCurrentPipeline();
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-          e.preventDefault();
-          saveCurrentFileToDisk();
-        }
-      });
-      document.getElementById('mainCommandInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') executeCommand();
-      });
+      const box = document.createElement('div');
+      box.id = 'jarvisGmailOverlay';
+      box.className = 'fixed bottom-24 right-6 z-30 w-80 md:w-96 bg-black/90 border border-teal-400 rounded-2xl p-4 shadow-[0_0_50px_rgba(20,184,166,0.4)] backdrop-blur-xl transition-all';
+      box.innerHTML = `
+        <div class="flex items-center justify-between mb-2 border-b border-teal-500/30 pb-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse"></span>
+            <span class="orbitron text-[10px] text-teal-400 font-bold tracking-wider">GMAIL DISPATCH READY</span>
+          </div>
+          <button onclick="document.getElementById('jarvisGmailOverlay').remove()" class="text-sm text-slate-400 hover:text-white">&times;</button>
+        </div>
+        <div class="space-y-1.5 text-[11px] mono text-slate-300">
+          <div><strong class="text-teal-400">To:</strong> ${to}</div>
+          <div><strong class="text-teal-400">Subject:</strong> ${subject}</div>
+          <div class="p-2.5 rounded-lg bg-slate-900/90 border border-slate-700/60 text-[10px] max-h-28 overflow-y-auto text-slate-200 whitespace-pre-wrap leading-relaxed">${body}</div>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-2 border-t border-teal-500/30">
+          <a href="${composeUrl}" target="_blank" class="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white font-bold text-[10px] orbitron flex items-center gap-1 shadow-lg shadow-teal-950/50">
+            <span>OPEN GMAIL</span> &rarr;
+          </a>
+          <span class="text-[9px] mono text-slate-400">Review & Send</span>
+        </div>
+      `;
+      document.body.appendChild(box);
+    }
 
-      const openSketchFn = () => document.getElementById('sketchModal').classList.remove('hidden');
-      document.getElementById('btnOpenSketchModal').addEventListener('click', openSketchFn);
-      document.getElementById('actBtnSketch').addEventListener('click', openSketchFn);
-      document.getElementById('btnCloseSketchModal').addEventListener('click', () => {
-        document.getElementById('sketchModal').classList.add('hidden');
-      });
+    async function executeCommand(rawCmd, isUserClick = false) {
+      const cmd = (rawCmd || document.getElementById('mainCommandInput').value).trim();
+      if (!cmd) return;
 
-      document.getElementById('btnRunVisualBrowserAgent').addEventListener('click', runVisualBrowserAgentClickTest);
-      document.getElementById('btnInspectExistingDir').addEventListener('click', scanExistingWorkspaceDir);
-      document.getElementById('actBtnExplorer').addEventListener('click', scanExistingWorkspaceDir);
+      // Pre-open tab synchronously on user click/Enter to bypass Chrome popup blockers
+      let preOpenedTab = null;
+      const isWebDirective = /youtube|kalyani|song|play|netflix|gmail|email|mail|browse|search|movie|restaurant|book|download|brave|chrome|http/i.test(cmd);
+      if (isUserClick && isWebDirective) {
+        try {
+          preOpenedTab = window.open('about:blank', '_blank');
+        } catch (_) {}
+      }
 
-      document.getElementById('btnHeaderRunPipeline').addEventListener('click', () => {
-        const p = document.getElementById('mainCommandInput').value.trim();
-        if (!p) {
-          document.getElementById('mainCommandInput').focus();
-          return;
-        }
-        runFullAutonomousPipeline(p);
-      });
+      const t0 = performance.now();
+      state.spherePulse = 3.2;
+      document.getElementById('jarvisStateBadge').textContent = '• GEMMA 4 REASONING & EXECUTING •';
+      document.getElementById('jarvisStateBadge').className = 'orbitron text-xs tracking-widest text-amber-300 uppercase';
+      document.getElementById('jarvisStateDetail').textContent = `Processing directive: "${cmd}"...`;
+      logHud(`\n[DIRECTIVE] "${cmd}"`);
 
-      document.querySelectorAll('.quick-cmd').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const cmd = btn.getAttribute('data-cmd');
-          document.getElementById('mainCommandInput').value = cmd;
-          executeCommand(cmd);
+      try {
+        const r = await fetch(`${state.backendUrl}/api/open-app`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instruction: cmd })
         });
+        const d = await r.json();
+        const ms = Math.round(performance.now() - t0);
+
+        document.getElementById('latencyPill').textContent = `${ms}ms EXECUTED`;
+        state.spherePulse = 1.0;
+        document.getElementById('jarvisStateBadge').textContent = '• J.A.R.V.I.S. SYSTEM ONLINE •';
+        document.getElementById('jarvisStateBadge').className = 'orbitron text-xs tracking-widest text-cyan-400 uppercase glow-text-cyan';
+        document.getElementById('jarvisStateDetail').textContent = `Directive completed in ${ms} milliseconds.`;
+
+        if (d.ok) {
+          logHud(`[GEMMA 4 ACTION] ${d.action || 'SUCCESS'}`);
+          if (d.thought) logHud(`[THOUGHT] ${d.thought}`);
+          if (d.message) logHud(`[TELEMETRY] ${d.message}`);
+
+          // Speak voice response
+          speakText(d.speech || `Completed directive ${cmd}.`);
+
+          // 1. If URL returned, route to preOpenedTab or open new tab
+          if (d.url) {
+            if (preOpenedTab && !preOpenedTab.closed) {
+              preOpenedTab.location.href = d.url;
+            } else {
+              try {
+                window.open(d.url, '_blank');
+              } catch (_) {}
+            }
+          } else if (preOpenedTab && !preOpenedTab.closed) {
+            preOpenedTab.close();
+          }
+
+          // 2. Specialized Holographic In-UI Overlays
+          if (d.action === 'youtube_live_playback' && d.embed_url) {
+            renderMediaOverlay(d.url, d.embed_url, cmd);
+          } else if (d.action === 'gmail_draft_created') {
+            renderGmailOverlay(d.to, d.subject, d.body, d.url);
+          }
+        } else {
+          if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+          logHud(`[ERROR] ${d.error || 'Execution failed'}`);
+          speakText(`I encountered an issue executing that command, sir.`);
+        }
+      } catch (err) {
+        if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+        state.spherePulse = 1.0;
+        logHud(`[COMM ERROR] Could not reach backend: ${err.message}`);
+        speakText(`Backend communication offline. Ensure FastAPI is running on port 8000.`);
+      }
+    }
+
+    function logHud(msg) {
+      const out = document.getElementById('hudTerminalOutput');
+      if (out) {
+        out.textContent += `\n${msg}`;
+        out.scrollTop = out.scrollHeight;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // 5. DOM EVENTS & QUICK DIRECTIVE CHIPS
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      initJarvisSphere();
+
+      document.getElementById('btnExecuteCommand').addEventListener('click', () => executeCommand(null, true));
+      document.getElementById('mainCommandInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') executeCommand(null, true);
       });
 
       document.getElementById('btnVoiceMic').addEventListener('click', startVoiceInput);
-      document.getElementById('actBtnVoice').addEventListener('click', startVoiceInput);
-      document.getElementById('btnPickLocalDir').addEventListener('click', mountLocalFolderInBrowser);
-      document.getElementById('btnAstraVision').addEventListener('click', toggleAstraVision);
-      document.getElementById('btnCloseAstra').addEventListener('click', toggleAstraVision);
 
-      document.getElementById('btnCaptureAstraFrame').addEventListener('click', async () => {
-        const vid = document.getElementById('astraVideoFeed');
-        const c = document.createElement('canvas');
-        c.width = vid.videoWidth || 640;
-        c.height = vid.videoHeight || 360;
-        c.getContext('2d').drawImage(vid, 0, 0, c.width, c.height);
-        const b64 = c.toDataURL('image/png');
-        const promptText = document.getElementById('mainCommandInput').value.trim() || 'Build an interactive web application from this camera frame';
-        await runFullAutonomousPipeline(promptText, b64);
-      });
-
-      document.getElementById('btnToggleRawEdit').addEventListener('click', () => {
-        const pre = document.getElementById('sideLiveCodeViewport');
-        const ta = document.getElementById('studioCodeEditor');
-        if (ta.classList.contains('hidden')) {
-          ta.classList.remove('hidden');
-          pre.classList.add('hidden');
-        } else {
-          ta.classList.add('hidden');
-          pre.classList.remove('hidden');
-        }
-      });
-
-      
-      const saveCurrentFileToDisk = async () => {
-        if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
-        const updated = document.getElementById('studioCodeEditor').value;
-        state.mountedFiles[state.selectedFile].content = updated;
-        state.mountedFiles[state.selectedFile].lines = updated.split('\n').length;
-        selectIdeFile(state.selectedFile);
-        if (state.mountedDirHandle) {
-          await writeFilesToMountedBrowserDirectory([{ relative_path: state.selectedFile, content: updated }]);
-        }
-        if (state.backendOnline) {
-          const files = Object.keys(state.mountedFiles).map(k => ({ relative_path: k, content: state.mountedFiles[k].content }));
-          fetch(`${state.backendUrl}/api/build-and-test-app`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: 'Save file edit', target_directory: document.getElementById('targetDirInput').value.trim() || './hackathon_app', files })
-          }).catch(() => {});
-        }
-        speakText(`Saved ${state.selectedFile} to workspace.`);
-      };
-
-      const exportCurrentDocToPdf = async () => {
-        const text = document.getElementById('studioCodeEditor').value || 'J.A.R.V.I.S. Project Spec';
-        const title = state.selectedFile || 'Project Spec';
-        try {
-          const r = await fetch(`${state.backendUrl}/api/convert/pdf`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, content: text, target_path: './hackathon_app/document.pdf' })
-          });
-          const d = await r.json();
-          if (d.ok && d.base64_pdf) {
-            const link = document.createElement('a');
-            link.href = `data:application/pdf;base64,${d.base64_pdf}`;
-            link.download = `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
-            link.click();
-            speakText(`Exported publication PDF in ${d.latency_ms} milliseconds.`);
-          }
-        } catch (err) {
-          alert('PDF conversion requires backend running on port 8000: ' + err);
-        }
-      };
-
-      document.getElementById('btnSaveDiskFile')?.addEventListener('click', saveCurrentFileToDisk);
-      document.getElementById('btnExportPdf')?.addEventListener('click', exportCurrentDocToPdf);
-
-      // replaced:
-      const _ignore = (async () => {
-        if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
-        const updated = document.getElementById('studioCodeEditor').value;
-        state.mountedFiles[state.selectedFile].content = updated;
-        state.mountedFiles[state.selectedFile].lines = updated.split('\n').length;
-        selectIdeFile(state.selectedFile);
-
-        const allFiles = Object.entries(state.mountedFiles).map(([k, v]) => ({ relative_path: k, content: v.content }));
-        if (state.mountedDirHandle) {
-          await writeFilesToMountedBrowserDirectory(allFiles);
-        }
-        if (state.backendOnline) {
-          const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
-          const r = await fetch(`${state.backendUrl}/api/build-and-test-app`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              instruction: `Save and test ${state.selectedFile}`,
-              target_directory: targetDir,
-              files: allFiles,
-              model: state.brain1Model,
-              gemini_api_key: state.geminiKey
-            })
-          });
-          const d = await r.json();
-          if (d.terminal_log) document.getElementById('sideTerminalOutput').textContent = d.terminal_log;
-          if (d.local_url) document.getElementById('liveAppPreviewIframe').src = `${d.local_url}?t=${Date.now()}`;
-        }
-      });
-
-      document.getElementById('btnReloadPreview').addEventListener('click', () => {
-        const url = document.getElementById('liveBrowserUrlBar').value.trim();
-        if (url) document.getElementById('liveAppPreviewIframe').src = `${url}?t=${Date.now()}`;
-      });
-
-      document.getElementById('btnOpenInDesktopVsCode').addEventListener('click', async () => {
-        const targetDir = document.getElementById('targetDirInput').value.trim() || '.';
-        if (state.backendOnline) {
-          await fetch(`${state.backendUrl}/api/open-app`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: 'vscode', target_directory: targetDir })
-          });
-        }
-      });
-
-      document.getElementById('btnPopoutLocalApp').addEventListener('click', () => {
-        if (state.lastBuiltHtmlBlobUrl) window.open(state.lastBuiltHtmlBlobUrl, '_blank');
-        else window.open(document.getElementById('liveBrowserUrlBar').value, '_blank');
-      });
-
-      const retakeFn = async () => {
-        const title = document.getElementById('mainCommandInput').value.trim() || 'Localhost App';
-        const htmlObj = state.mountedFiles['index.html'];
-        await captureScreenshotAndRunVisionQA(title, document.getElementById('liveBrowserUrlBar').value, htmlObj ? htmlObj.content : '');
-      };
-      document.getElementById('btnRetakeScreenshot').addEventListener('click', retakeFn);
-      document.getElementById('actBtnScreenshot').addEventListener('click', retakeFn);
-
-      const openToolsFn = () => {
-        document.getElementById('toolsModal').classList.remove('hidden');
-        setTimeout(autoSpreadGraphNodes, 50);
-      };
-      document.getElementById('btnOpenToolsModal').addEventListener('click', openToolsFn);
-      document.getElementById('actBtnSwarmGraph').addEventListener('click', openToolsFn);
-      document.getElementById('btnCloseToolsModal').addEventListener('click', () => {
-        document.getElementById('toolsModal').classList.add('hidden');
-      });
-      document.getElementById('btnResetGraphLayout').addEventListener('click', autoSpreadGraphNodes);
-
-      document.getElementById('btnSpawnGraphAgent').addEventListener('click', () => {
-        const name = prompt('Enter Sub-Agent Name:', 'Security Audit Sub-Agent');
-        if (!name) return;
-        const id = `sub_${Date.now().toString().slice(-3)}`;
-        state.memoryGraph.nodes.push({ id, label: name, type: 'agent', status: 'working', current_task: 'Active specialist', x: 250 + Math.random() * 220, y: 80 + Math.random() * 100 });
-        state.memoryGraph.edges.push({ source: 'agent_coleader', target: id, relation: 'spawned', active: true });
-        renderCompactSwarm();
-      });
-
-      document.getElementById('btnInstallVscodeExt').addEventListener('click', async () => {
-        const ext = document.getElementById('inputVscodeExt').value.trim();
-        if (!ext || !state.backendOnline) return;
-        const r = await fetch(`${state.backendUrl}/api/install-vscode-ext`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instruction: ext })
+      document.querySelectorAll('.quick-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cmd = btn.getAttribute('data-cmd');
+          document.getElementById('mainCommandInput').value = cmd;
+          executeCommand(cmd, true);
         });
-        const d = await r.json();
-        document.getElementById('studioDiagnosticOutput').textContent = JSON.stringify(d, null, 2);
       });
 
-      document.getElementById('btnInstallOpenSourcePkg').addEventListener('click', async () => {
-        const pkg = document.getElementById('inputOpenSourcePkg').value.trim();
-        const mgr = document.getElementById('selectPkgManager').value;
-        if (!pkg || !state.backendOnline) return;
-        const r = await fetch(`${state.backendUrl}/api/install-tool`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instruction: pkg, manager: mgr })
-        });
-        const d = await r.json();
-        document.getElementById('studioDiagnosticOutput').textContent = JSON.stringify(d, null, 2);
+      document.getElementById('btnToggleHudLog').addEventListener('click', () => {
+        document.getElementById('floatingHudLog').classList.toggle('hidden');
       });
-
-      document.getElementById('btnOpenConfig').addEventListener('click', () => {
-        document.getElementById('configModal').classList.remove('hidden');
-      });
-      document.getElementById('btnCloseConfig').addEventListener('click', () => {
-        document.getElementById('configModal').classList.add('hidden');
-      });
-      document.getElementById('btnSaveConfig').addEventListener('click', () => {
-        state.backendUrl = document.getElementById('cfgBackendUrl').value.trim() || 'http://127.0.0.1:8000';
-        state.ollamaUrl = document.getElementById('cfgOllamaUrl').value.trim() || 'http://127.0.0.1:11434';
-        state.preferredGemmaTag = document.getElementById('cfgOllamaModel').value.trim() || 'gemma4:latest';
-        state.geminiKey = document.getElementById('cfgGeminiKey').value.trim();
-        state.sarvamKey = document.getElementById('cfgSarvamKey').value.trim();
-        state.sarvamLang = document.getElementById('cfgSarvamLang').value;
-        document.getElementById('sarvamHeaderBadge').textContent = `Track 3: Sarvam STT/TTS (${state.sarvamLang})`;
-        document.getElementById('configModal').classList.add('hidden');
-        probeLiveConnections();
+      document.getElementById('btnCloseHudLog').addEventListener('click', () => {
+        document.getElementById('floatingHudLog').classList.add('hidden');
       });
     });
   </script>

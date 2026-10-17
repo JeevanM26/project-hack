@@ -22,6 +22,7 @@ import subprocess
 import tempfile
 import time
 import urllib.parse
+import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -124,42 +125,135 @@ def activate_window_by_name(window_title: str) -> bool:
         return False
 
 
-def open_url_in_browser(url: str) -> bool:
-    """Launches URL in user's active browser and brings it to foreground."""
+def force_bring_to_foreground(hwnd: int) -> bool:
+    """Forces any desktop window to the foreground on Windows 11 bypassing lock."""
+    if not hwnd:
+        return False
+    try:
+        user32 = ctypes.windll.user32
+        kernel32 = ctypes.windll.kernel32
+        hdesk = user32.OpenDesktopW("default", 0, False, 0x1FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+
+        fg_hwnd = user32.GetForegroundWindow()
+        fg_thread = user32.GetWindowThreadProcessId(fg_hwnd, None)
+        cur_thread = kernel32.GetCurrentThreadId()
+
+        if fg_thread != cur_thread:
+            user32.AttachThreadInput(cur_thread, fg_thread, True)
+
+        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+        user32.SetForegroundWindow(hwnd)
+        user32.BringWindowToTop(hwnd)
+        user32.SwitchToThisWindow(hwnd, True)
+
+        if fg_thread != cur_thread:
+            user32.AttachThreadInput(cur_thread, fg_thread, False)
+        return True
+    except Exception as exc:
+        logger.warning(f"Could not force foreground for HWND {hwnd}: {exc}")
+        return False
+
+
+def bring_browser_to_foreground() -> bool:
+    """Locates any active browser window (Chrome, Brave, Edge) and raises it to foreground."""
     switch_to_default_desktop()
-    # 1. Primary: Windows ShellExecute opens in user's active default browser window on screen
+    found = False
     try:
-        import os
-        os.startfile(url)
-        return True
+        import win32gui
+        def enum_cb(h, _):
+            nonlocal found
+            if win32gui.IsWindowVisible(h):
+                t = win32gui.GetWindowText(h).lower()
+                if any(b in t for b in ["chrome", "brave", "edge", "youtube", "gmail", "mail", "google"]):
+                    if force_bring_to_foreground(h):
+                        found = True
+        win32gui.EnumWindows(enum_cb, None)
+    except Exception:
+        pass
+    return found
+
+
+def resolve_youtube_direct_play(query_or_url: str) -> Tuple[str, str, Optional[str]]:
+    """
+    Given a YouTube query or search URL, queries YouTube in ~200ms to extract the first real video ID.
+    Returns (watch_url_with_autoplay, embed_url, video_id).
+    """
+    clean = query_or_url
+    if "youtube.com" in query_or_url:
+        parsed = urllib.parse.urlparse(query_or_url)
+        params = urllib.parse.parse_qs(parsed.query)
+        if "search_query" in params:
+            clean = params["search_query"][0]
+        elif "v" in params:
+            vid = params["v"][0]
+            return (
+                f"https://www.youtube.com/watch?v={vid}&autoplay=1",
+                f"https://www.youtube.com/embed/{vid}?autoplay=1&enablejsapi=1",
+                vid,
+            )
+
+    clean = re.sub(r"^(?:open\s+)?(?:youtube\s+)?(?:and\s+)?(?:play\s+)?", "", clean, flags=re.IGNORECASE).strip()
+    search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(clean)}"
+    try:
+        req = urllib.request.Request(search_url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        html = urllib.request.urlopen(req, timeout=4).read().decode("utf-8", errors="ignore")
+        vids = re.findall(r"/watch\?v=([a-zA-Z0-9_-]{11})", html)
+        if vids:
+            vid = vids[0]
+            return (
+                f"https://www.youtube.com/watch?v={vid}&autoplay=1",
+                f"https://www.youtube.com/embed/{vid}?autoplay=1&enablejsapi=1",
+                vid,
+            )
+    except Exception as exc:
+        logger.warning(f"YouTube direct play resolution error: {exc}")
+
+    return search_url, "", None
+
+
+def open_url_in_browser(url: str) -> bool:
+    """Launches URL in user's active browser and brings it to the foreground immediately."""
+    switch_to_default_desktop()
+
+    # 1. Try launching via Google Chrome directly if available
+    launched = False
+    if os.path.exists(CHROME_PATH):
+        try:
+            subprocess.Popen([CHROME_PATH, url])
+            launched = True
+        except Exception:
+            pass
+
+    # 2. Try Brave if Chrome not used
+    if not launched and os.path.exists(BRAVE_PATH):
+        try:
+            subprocess.Popen([BRAVE_PATH, url])
+            launched = True
+        except Exception:
+            pass
+
+    # 3. Try Windows ShellExecute (opens default browser)
+    try:
+        import os as _os
+        _os.startfile(url)
+        launched = True
     except Exception:
         pass
 
-    # 2. Secondary: webbrowser with autoraise
-    try:
-        import webbrowser
-        webbrowser.open(url, new=2, autoraise=True)
-        return True
-    except Exception:
-        pass
+    # 4. Fallback to start command or webbrowser
+    if not launched:
+        try:
+            subprocess.Popen(f'start "" "{url}"', shell=True)
+            launched = True
+        except Exception:
+            pass
 
-    # 3. Tertiary: start command
-    try:
-        subprocess.Popen(f'start "" "{url}"', shell=True)
-        return True
-    except Exception:
-        pass
-
-    # 4. Fallback to browser binary
-    try:
-        browser_bin = get_best_browser()
-        if browser_bin and os.path.exists(browser_bin):
-            subprocess.Popen([browser_bin, url])
-            return True
-    except Exception:
-        pass
-
-    return False
+    # Sleep briefly to allow browser to open/process IPC, then force browser window to front
+    time.sleep(0.4)
+    bring_browser_to_foreground()
+    return launched
 
 
 def safe_eval_math(expr: str) -> Optional[float]:
@@ -456,8 +550,23 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 if em_match:
                     to_email = em_match.group(0)
 
-            subject = params.get("subject", "Update from J.A.R.V.I.S.")
-            body = params.get("body", "")
+            subject = params.get("subject", "").strip()
+            body = params.get("body", "").strip()
+
+            if not subject:
+                if "hackathon" in raw.lower():
+                    subject = "Congratulations on Winning the Hackathon!"
+                elif "congratulat" in raw.lower():
+                    subject = "Heartiest Congratulations & Best Wishes"
+                else:
+                    subject = "Update from J.A.R.V.I.S. Autonomous AI"
+
+            if not body:
+                name_rec = to_email.split("@")[0].capitalize() if to_email else "Sir"
+                if "hackathon" in raw.lower():
+                    body = f"Dear {name_rec},\n\nHeartiest congratulations on your outstanding victory at the Hackathon! Your dedication, innovation, and technical skill have created something truly remarkable.\n\nWarm regards,\nJ.A.R.V.I.S. Autonomous AI System"
+                else:
+                    body = f"Hello {name_rec},\n\nI hope this email finds you well. This is a follow-up regarding your request: '{raw}'.\n\nBest regards,\nJ.A.R.V.I.S."
 
             compose_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={urllib.parse.quote(to_email)}&su={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
             open_url_in_browser(compose_url)
@@ -483,20 +592,37 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
         # -------------------------------------------------------------
         if tool == "browser":
             target_url = params.get("url", "")
-            if not target_url:
+            embed_url = ""
+            video_id = None
+
+            # Specialized YouTube Live Video Autoplay Resolution
+            is_youtube = any(k in raw.lower() for k in ["youtube", "song", "play", "music", "video", "soundtrack"]) or "youtube.com" in (target_url or "").lower()
+            if is_youtube:
+                watch_url, embed_url, video_id = resolve_youtube_direct_play(raw if not target_url else target_url)
+                target_url = watch_url
+            elif not target_url:
                 target_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(raw)}"
             elif not target_url.startswith("http://") and not target_url.startswith("https://"):
                 target_url = "https://" + target_url
 
             open_url_in_browser(target_url)
             latency = round((time.perf_counter() - t0) * 1000, 1)
+
+            speech_text = speech
+            if is_youtube and not speech_text:
+                speech_text = "Opening YouTube and playing the requested song for you, sir."
+            elif not speech_text:
+                speech_text = f"Opened web browser for {target_url}."
+
             return {
                 "ok": True,
-                "action": "browser_navigation",
+                "action": "youtube_live_playback" if is_youtube else "browser_navigation",
                 "url": target_url,
-                "target": "Web Browser",
-                "speech": speech or f"Opened web browser for {target_url}.",
-                "message": f"[Gemma 4 ({model_used})] Formulated dynamic URL: {target_url}",
+                "embed_url": embed_url,
+                "video_id": video_id,
+                "target": "YouTube Live Player" if is_youtube else "Web Browser",
+                "speech": speech_text,
+                "message": f"[Gemma 4 ({model_used})] Formulated dynamic URL: {target_url}" + (f" (Autoplay Video ID: {video_id})" if video_id else ""),
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
@@ -658,6 +784,17 @@ print("Model '{model_name}' generated successfully.")
 
             # Launch real Blender with the generated Python script
             subprocess.Popen([BLENDER_EXE, "--python", str(script_path)])
+            time.sleep(0.6)
+            try:
+                import win32gui
+                def bl_cb(h, _):
+                    if win32gui.IsWindowVisible(h):
+                        t = win32gui.GetWindowText(h).lower()
+                        if "blender" in t:
+                            force_bring_to_foreground(h)
+                win32gui.EnumWindows(bl_cb, None)
+            except Exception:
+                pass
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
             return {
@@ -699,6 +836,18 @@ print("Model '{model_name}' generated successfully.")
                 action = f"{app_name}_spawned"
                 msg = f"Launched {win_title} on desktop."
 
+            time.sleep(0.4)
+            try:
+                import win32gui
+                def app_cb(h, _):
+                    if win32gui.IsWindowVisible(h):
+                        t = win32gui.GetWindowText(h).lower()
+                        if app_name in t or win_title.lower() in t:
+                            force_bring_to_foreground(h)
+                win32gui.EnumWindows(app_cb, None)
+            except Exception:
+                pass
+
             latency = round((time.perf_counter() - t0) * 1000, 1)
             return {
                 "ok": True,
@@ -736,6 +885,18 @@ print("Model '{model_name}' generated successfully.")
                 opened_in = "VS Code"
             else:
                 subprocess.Popen(["notepad.exe", str(file_path)])
+
+            time.sleep(0.5)
+            try:
+                import win32gui
+                def ide_cb(h, _):
+                    if win32gui.IsWindowVisible(h):
+                        t = win32gui.GetWindowText(h).lower()
+                        if "antigravity" in t or "code" in t or file_name.lower() in t:
+                            force_bring_to_foreground(h)
+                win32gui.EnumWindows(ide_cb, None)
+            except Exception:
+                pass
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
             return {

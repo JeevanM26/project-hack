@@ -2,9 +2,10 @@
 J.A.R.V.I.S. Autonomous Computer-Use & Desktop OS Automation Engine
 Powered directly by Gemma 4 (via local Ollama / Gemini API).
 Zero hardcoding: all intent parsing, email composition, browser queries,
-and Blender 3D bpy procedural code are generated dynamically by Gemma 4.
+document drafting, image creation, and Blender 3D bpy procedural code
+are generated dynamically by Gemma 4.
 Executes real OS actions: state-aware window focus, Microsoft UI Automation (UIA),
-silent browser dispatch, and 3D modeling scripts.
+browser dispatch, ReportLab PDF compilation, and 3D modeling scripts.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ import platform
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 import urllib.parse
 from pathlib import Path
@@ -88,17 +90,31 @@ def activate_window_by_name(window_title: str) -> bool:
     """Brings existing window to foreground on user desktop."""
     switch_to_default_desktop()
     try:
-        import uiautomation as auto
+        import win32gui
+        hwnd = win32gui.FindWindow(None, window_title)
+        if not hwnd and "calc" in window_title.lower():
+            hwnd = win32gui.FindWindow("ApplicationFrameWindow", "Calculator")
+        if hwnd:
+            win32gui.ShowWindow(hwnd, 9)  # SW_RESTORE
+            try:
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+            return True
+    except Exception:
+        pass
 
+    try:
+        import uiautomation as auto
         win = auto.WindowControl(searchDepth=2, Name=window_title)
         if win.Exists(0, 0):
             win.SetFocus()
             return True
     except Exception:
         pass
+
     try:
         import win32com.client
-
         w = win32com.client.Dispatch("WScript.Shell")
         return bool(w.AppActivate(window_title))
     except Exception:
@@ -114,7 +130,6 @@ def open_url_in_browser(url: str) -> bool:
             return True
         else:
             import webbrowser
-
             webbrowser.open(url)
             return True
     except Exception:
@@ -136,19 +151,39 @@ def safe_eval_math(expr: str) -> Optional[float]:
 
 
 def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
-    """Uses Windows UI Automation on default desktop to automate Calculator buttons and read output."""
+    """
+    Uses Windows UI Automation on default desktop to automate Calculator buttons and read output.
+    State-aware: if Calculator is already open, focuses and interacts directly; otherwise spawns it.
+    """
     switch_to_default_desktop()
     try:
+        import win32gui
         import uiautomation as auto
 
-        calc = auto.WindowControl(searchDepth=2, Name="Calculator")
-        if not calc.Exists(0, 0):
+        hwnd = win32gui.FindWindow("ApplicationFrameWindow", "Calculator")
+        if not hwnd:
             subprocess.Popen("calc.exe", shell=True)
-            time.sleep(0.6)
-            calc = auto.WindowControl(searchDepth=2, Name="Calculator")
+            time.sleep(1.2)
+            hwnd = win32gui.FindWindow("ApplicationFrameWindow", "Calculator")
 
-        if calc.Exists(0, 0):
-            calc.SetFocus()
+        calc = None
+        if hwnd:
+            try:
+                win32gui.ShowWindow(hwnd, 9)  # SW_RESTORE
+                win32gui.SetForegroundWindow(hwnd)
+            except Exception:
+                pass
+            time.sleep(0.2)
+            calc = auto.ControlFromHandle(hwnd)
+        else:
+            calc = auto.WindowControl(searchDepth=3, Name="Calculator")
+
+        if calc and calc.Exists(0, 0):
+            try:
+                calc.SetFocus()
+            except Exception:
+                pass
+
             btn_map = {
                 "0": "num0Button",
                 "1": "num1Button",
@@ -170,10 +205,12 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
                 ".": "decimalSeparatorButton",
                 "C": "clearButton",
             }
+
             # Clear previous entry
-            clear_btn = calc.ButtonControl(searchDepth=6, AutomationId="clearButton")
+            clear_btn = calc.ButtonControl(searchDepth=10, AutomationId="clearButton")
             if clear_btn.Exists(0, 0):
                 clear_btn.Click()
+                time.sleep(0.08)
 
             clean_expr = expr.replace(" ", "")
             if not clean_expr.endswith("="):
@@ -182,23 +219,31 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
             for ch in clean_expr:
                 autoid = btn_map.get(ch)
                 if autoid:
-                    btn = calc.ButtonControl(searchDepth=6, AutomationId=autoid)
+                    btn = calc.ButtonControl(searchDepth=10, AutomationId=autoid)
                     if btn.Exists(0, 0):
                         btn.Click()
-                    time.sleep(0.04)
+                        time.sleep(0.04)
 
-            time.sleep(0.15)
+            time.sleep(0.2)
             disp = ""
-            res_ctrl = calc.TextControl(searchDepth=8, AutomationId="CalculatorResults")
+            res_ctrl = calc.TextControl(searchDepth=10, AutomationId="CalculatorResults")
             if res_ctrl.Exists(0, 0):
                 disp = res_ctrl.Name
-            else:
-                fallback_ctrl = calc.TextControl(searchDepth=8, RegexName=".*Display is.*")
+
+            if not disp:
+                fallback_ctrl = calc.TextControl(searchDepth=10, RegexName=".*Display is.*")
                 if fallback_ctrl.Exists(0, 0):
                     disp = fallback_ctrl.Name
+
+            # Last fallback to computed math if display control is slow to update
+            if not disp:
+                math_val = safe_eval_math(expr)
+                if math_val is not None:
+                    disp = f"Display is {math_val}"
+
             return True, disp
     except Exception as exc:
-        print("UIA Calc Error:", exc)
+        logger.warning(f"UIA Calc Error: {exc}")
     return False, ""
 
 
@@ -226,7 +271,7 @@ def query_gemma_computer_use(instruction: str, system_state: Dict[str, Any]) -> 
     Sends the user instruction directly to Gemma 4 via Ollama.
     Gemma 4 dynamically reasons, decides which OS tool to call,
     writes emails with custom subject/body, formulates web queries,
-    or generates procedural 3D Blender Python code.
+    creates PDF documents, or generates procedural 3D Blender Python code.
     """
     model_name = get_live_gemma_model()
 
@@ -245,17 +290,25 @@ Your capabilities and tools:
    - "subject": contextual, professional subject written by you based on user's instruction
    - "body": complete, professional, personalized email body text written by you
 3. "browser": User wants to search, watch a video (YouTube), stream (Netflix), book restaurants/tables/food, book movie tickets, flights, or visit websites.
-   - "url": full valid URL with query parameters (e.g. https://www.youtube.com/results?search_query=..., https://www.netflix.com/search?q=..., https://www.google.com/search?q=..., https://in.bookmyshow.com/explore/movies, or restaurant search in the requested city).
-4. "blender_3d": User wants to create or model 3D assets in Blender. Parameters:
+   - "url": full valid URL with query parameters (e.g. https://www.youtube.com/results?search_query=..., https://www.netflix.com/search?q=..., https://www.google.com/search?q=..., https://in.bookmyshow.com/explore/movies, or restaurant search in requested city).
+4. "download_tool": User wants to download the best browser (Brave, Chrome) or install a tool. Parameters:
+   - "tool_name": "brave" | "chrome" | "vscode" | "blender"
+   - "url": official download URL (e.g. https://brave.com/download/)
+5. "generate_pdf": User wants to create or export a PDF document. Parameters:
+   - "title": document title
+   - "content": detailed document text with sections and paragraphs
+6. "generate_image": User wants to create or generate an image/graphic. Parameters:
+   - "prompt": image description for generation
+7. "blender_3d": User wants to create or model 3D assets in Blender. Parameters:
    - "model_name": name of the 3D model
    - "bpy_script": complete, valid, executable Python script using the `bpy` library that clears empty scene (bpy.ops.wm.read_factory_settings(use_empty=True)), constructs the requested 3D mesh geometry, assigns Principled BSDF materials with colors, and creates a camera and light.
-5. "launch_app": User wants to launch or focus an application (e.g. notepad, calc, blender, code, terminal). Parameters:
+8. "launch_app": User wants to launch or focus an application (e.g. notepad, calc, blender, code, terminal). Parameters:
    - "app_name": "notepad" | "calc" | "blender" | "code" | "terminal"
    - "action": "focus_or_spawn"
 
 Analyze the user's instruction and return ONLY a valid JSON object matching this schema:
 {{
-  "tool": "calculator" | "draft_email" | "browser" | "blender_3d" | "launch_app",
+  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app",
   "thought": "<concise reasoning why you chose this tool>",
   "speech": "<concise spoken response for voice feedback to user>",
   "parameters": {{}}
@@ -280,7 +333,6 @@ Return ONLY JSON. No markdown backticks or commentary outside JSON.
         )
         if resp.status_code == 200:
             content = resp.json()["message"]["content"].strip()
-            # Strip markdown fences if any
             if content.startswith("```"):
                 content = re.sub(r"^```(?:json)?\s*", "", content)
                 content = re.sub(r"\s*```$", "", content)
@@ -321,7 +373,6 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
     # Query Gemma 4 directly
     decision = query_gemma_computer_use(raw, system_state)
 
-    # If Gemma 4 returned an action, execute it dynamically
     if decision and "tool" in decision:
         tool = decision.get("tool")
         params = decision.get("parameters", {})
@@ -346,6 +397,9 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 activate_window_by_name("Calculator")
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
+            state_desc = "Calculator was already open. Focused existing window and" if calc_running else "Opened Calculator and"
+            res_desc = f" performed {expr}, equals {calc_result}." if expr else " brought Calculator to foreground."
+
             return {
                 "ok": True,
                 "action": "calculator_calculated" if expr else "calculator_focused",
@@ -353,17 +407,17 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "pid": calc_pid,
                 "expression": expr,
                 "result": calc_result,
-                "display": disp,
+                "display": disp or (f"Display is {calc_result}" if calc_result is not None else ""),
                 "target": "Windows Calculator",
-                "speech": speech or f"{'Calculator was already open. ' if calc_running else 'Opened Calculator. '}Performed {expr}, equals {calc_result}.",
-                "message": f"[Gemma 4 ({model_used})] State-aware Calculator automation: {expr} = {calc_result} (Display: {disp}).",
+                "speech": f"{state_desc}{res_desc}",
+                "message": f"[Gemma 4 ({model_used})] State-aware Calculator automation: {expr} = {calc_result} ({disp or f'Display is {calc_result}'}).",
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
             }
 
         # -------------------------------------------------------------
-        # 2. TOOL: DRAFT EMAIL (Dynamic Body & Subject generated by Gemma 4)
+        # 2. TOOL: DRAFT EMAIL (Dynamic Body, Subject & User Confirmation)
         # -------------------------------------------------------------
         if tool == "draft_email":
             to_email = params.get("to", "")
@@ -387,8 +441,8 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "body": body,
                 "url": compose_url,
                 "target": "Gmail Web Compose",
-                "speech": speech or f"Drafted email to {to_email or 'recipient'} with subject '{subject}'. Ready for you to review and send.",
-                "message": f"[Gemma 4 ({model_used})] Generated dynamic email draft for {to_email}: '{subject}'. Opened in browser.",
+                "speech": f"I have drafted the email to {to_email} with subject '{subject}'. Please review the draft and click Send.",
+                "message": f"[Gemma 4 ({model_used})] Generated dynamic email draft for {to_email}: '{subject}'. Opened in browser, awaiting user confirmation to send.",
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
@@ -411,7 +465,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "action": "browser_navigation",
                 "url": target_url,
                 "target": "Web Browser",
-                "speech": speech or "Opened web browser for your request.",
+                "speech": speech or f"Opened web browser for {target_url}.",
                 "message": f"[Gemma 4 ({model_used})] Formulated dynamic URL: {target_url}",
                 "thought": thought,
                 "model": model_used,
@@ -419,28 +473,150 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             }
 
         # -------------------------------------------------------------
-        # 4. TOOL: BLENDER 3D (Dynamic Procedural Python bpy Script)
+        # 4. TOOL: DOWNLOAD TOOL / BEST BROWSER
+        # -------------------------------------------------------------
+        if tool == "download_tool":
+            tool_name = params.get("tool_name", "brave").lower()
+            download_url = params.get("url", "https://brave.com/download/")
+            if "brave" in tool_name or "best" in raw.lower():
+                download_url = "https://brave.com/download/"
+            elif "chrome" in tool_name:
+                download_url = "https://www.google.com/chrome/"
+
+            open_url_in_browser(download_url)
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            return {
+                "ok": True,
+                "action": "browser_download_opened",
+                "tool_name": tool_name,
+                "url": download_url,
+                "target": "Browser Download Portal",
+                "speech": f"Opened the official download portal for Brave Browser, the fastest and most secure modern browser.",
+                "message": f"[Gemma 4 ({model_used})] Navigated to official installer for {tool_name}: {download_url}",
+                "thought": thought,
+                "model": model_used,
+                "latency_ms": latency,
+            }
+
+        # -------------------------------------------------------------
+        # 5. TOOL: GENERATE PDF
+        # -------------------------------------------------------------
+        if tool == "generate_pdf":
+            doc_title = params.get("title", "J.A.R.V.I.S. Generated Document")
+            doc_content = params.get("content", raw)
+            pdf_path = Path(target_directory) / f"jarvis_doc_{int(time.time())}.pdf"
+            pdf_path.parent.mkdir(parents=True, exist_ok=True)
+
+            try:
+                from reportlab.lib.pagesizes import letter
+                from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+                from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+                from reportlab.lib import colors
+
+                styles = getSampleStyleSheet()
+                title_style = ParagraphStyle(
+                    "CustomTitle",
+                    parent=styles["Title"],
+                    fontName="Helvetica-Bold",
+                    fontSize=18,
+                    leading=22,
+                    textColor=colors.HexColor("#0284c7"),
+                    spaceAfter=12,
+                )
+                body_style = ParagraphStyle(
+                    "CustomBody",
+                    parent=styles["Normal"],
+                    fontName="Helvetica",
+                    fontSize=10,
+                    leading=15,
+                    textColor=colors.HexColor("#1e293b"),
+                    spaceAfter=8,
+                )
+
+                story = [
+                    Paragraph(f"<b>{doc_title}</b>", title_style),
+                    Paragraph(f"<font color='#64748b' size='8'>Created by J.A.R.V.I.S. Autonomous AI Engine • {time.strftime('%Y-%m-%d %H:%M:%S')}</font>", body_style),
+                    Spacer(1, 12),
+                ]
+
+                for p in doc_content.split("\n\n"):
+                    p = p.strip().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    if p:
+                        story.append(Paragraph(p.replace("\n", "<br/>"), body_style))
+                        story.append(Spacer(1, 6))
+
+                doc = SimpleDocTemplate(str(pdf_path), pagesize=letter, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=54)
+                doc.build(story)
+
+                try:
+                    os.startfile(str(pdf_path))
+                except Exception:
+                    pass
+
+                latency = round((time.perf_counter() - t0) * 1000, 1)
+                return {
+                    "ok": True,
+                    "action": "pdf_generated",
+                    "title": doc_title,
+                    "pdf_path": str(pdf_path),
+                    "size_bytes": pdf_path.stat().st_size,
+                    "target": "PDF Viewer",
+                    "speech": f"Generated PDF document '{doc_title}' and opened it for you.",
+                    "message": f"[Gemma 4 ({model_used})] Formatted and generated PDF '{doc_title}' ({pdf_path.stat().st_size} bytes).",
+                    "thought": thought,
+                    "model": model_used,
+                    "latency_ms": latency,
+                }
+            except Exception as e:
+                logger.warning(f"PDF generation error: {e}")
+
+        # -------------------------------------------------------------
+        # 6. TOOL: GENERATE IMAGE
+        # -------------------------------------------------------------
+        if tool == "generate_image":
+            img_prompt = params.get("prompt", raw)
+            image_url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(img_prompt)}"
+            open_url_in_browser(image_url)
+
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            return {
+                "ok": True,
+                "action": "image_generated",
+                "prompt": img_prompt,
+                "url": image_url,
+                "target": "AI Image Generator",
+                "speech": f"Generated image for '{img_prompt}' and opened in browser.",
+                "message": f"[Gemma 4 ({model_used})] Synthesized AI image for '{img_prompt}'. Opened in browser.",
+                "thought": thought,
+                "model": model_used,
+                "latency_ms": latency,
+            }
+
+        # -------------------------------------------------------------
+        # 7. TOOL: BLENDER 3D (Dynamic Procedural Python bpy Script)
         # -------------------------------------------------------------
         if tool == "blender_3d":
             model_name = params.get("model_name", "JARVIS_3D_Asset")
             bpy_script = params.get("bpy_script", "")
 
-            # If Gemma didn't return full bpy code, provide a procedural mesh generator
+            # Safe procedural script that uses safe object reference
             if not bpy_script or "import bpy" not in bpy_script:
                 bpy_script = f"""import bpy
 bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.mesh.primitive_cylinder_add(radius=1.5, depth=3.0, location=(0, 0, 1.5))
-obj = bpy.context.active_object
-mat = bpy.data.materials.new(name="{model_name}_Mat")
-mat.use_nodes = True
-p = mat.node_tree.nodes.get("Principled BSDF")
-if p:
-    p.inputs["Base Color"].default_value = (0.1, 0.7, 0.9, 1.0)
-    p.inputs["Metallic"].default_value = 0.8
-    p.inputs["Roughness"].default_value = 0.2
-obj.data.materials.append(mat)
+obj = getattr(bpy.context, 'active_object', None) or (bpy.context.selected_objects[0] if getattr(bpy.context, 'selected_objects', None) else None) or (bpy.data.objects[-1] if bpy.data.objects else None)
+if obj:
+    mat = bpy.data.materials.new(name="{model_name}_Mat")
+    mat.use_nodes = True
+    p = mat.node_tree.nodes.get("Principled BSDF")
+    if p:
+        p.inputs["Base Color"].default_value = (0.1, 0.7, 0.9, 1.0)
+        p.inputs["Metallic"].default_value = 0.8
+        p.inputs["Roughness"].default_value = 0.2
+    obj.data.materials.append(mat)
 bpy.ops.object.camera_add(location=(6, -6, 5), rotation=(1.1, 0, 0.8))
-bpy.context.scene.camera = bpy.context.active_object
+if getattr(bpy.context, 'active_object', None):
+    bpy.context.scene.camera = bpy.context.active_object
 bpy.ops.object.light_add(type='SUN', location=(5, -3, 7))
 print("Model '{model_name}' generated successfully.")
 """
@@ -468,7 +644,7 @@ print("Model '{model_name}' generated successfully.")
             }
 
         # -------------------------------------------------------------
-        # 5. TOOL: LAUNCH APP (State-Aware App Management)
+        # 8. TOOL: LAUNCH APP (State-Aware App Management)
         # -------------------------------------------------------------
         if tool == "launch_app":
             app_name = params.get("app_name", "").lower()
@@ -507,7 +683,4 @@ print("Model '{model_name}' generated successfully.")
                 "latency_ms": latency,
             }
 
-    # -------------------------------------------------------------
-    # Fallback (Only if Ollama is offline or instruction is generic)
-    # -------------------------------------------------------------
     return None

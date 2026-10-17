@@ -1312,10 +1312,10 @@
 
       const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
 
-      // 1. Autonomous Computer-Use Dispatcher (Gemma 4 OS Engine: Calculator, YouTube, Netflix, Gmail, Bookings, Blender 3D)
-      const isComputerUse = /calc|calculator|youtube|netflix|gmail|email|mail|restaurant|dining|sushi|food|movie|ticket|bookmyshow|notepad|blender|brave|chrome|browser|play\s+|draft\s+|send\s+an?\s+email/.test(lower) &&
+      // 1. Autonomous Computer-Use Dispatcher (Gemma 4 OS Engine: Calculator, YouTube, Netflix, Gmail, Bookings, Blender 3D, PDF, Image, Browser Download)
+      const isComputerUse = /calc|calculator|youtube|netflix|gmail|email|mail|restaurant|dining|sushi|food|movie|ticket|bookmyshow|notepad|blender|brave|chrome|browser|download|pdf|generate\s+image|create\s+image|play\s+|draft\s+|send\s+an?\s+email/.test(lower) &&
                             !/build|create\s+(?:an?\s+)?(?:web\s*)?(?:app|game|saas|os|platform|dashboard)|clone|repo/.test(lower);
-      const isQuickOpen = /^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|play|book|perform|calculate|find|search)\s+/.test(lower);
+      const isQuickOpen = /^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|play|book|perform|calculate|find|search|download|create\s+pdf|generate\s+image)\s+/.test(lower);
 
       if (isComputerUse || isQuickOpen) {
         const t0 = performance.now();

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. ANTIGRAVITY AI IDE — Real Gemma 4 Multi-Agent Swarm, Live Code Stream &amp; Playwright Vision Backend</title>
+  <title>J.A.R.V.I.S. ANTIGRAVITY AI IDE &mdash; Real Gemma 4 Multi-Agent Swarm, Live Code Stream &amp; Playwright Vision Backend</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -451,20 +451,20 @@
           <button type="button" data-cmd="Build an app for startup" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-cyan-500/40 text-cyan-300 truncate text-left" title="Modern SaaS Startup Platform with Hero, Demo & Pricing">
             &#128640; 7. Startup SaaS Platform
           </button>
-          <button type="button" data-cmd="Model a 3D metallic torus in Blender" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-sky-500/40 text-sky-200 truncate text-left" title="Blender 5.2.2 3D Modeling Pipeline">
-            &#127912; 8. Blender 3D: Torus
+          <button type="button" data-cmd="Model a 3D golden trophy in Blender" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-sky-500/40 text-sky-200 truncate text-left" title="Gemma 4 Procedural 3D Blender Modeling">
+            &#127912; 8. Blender 3D (Gemma 4)
           </button>
-          <button type="button" data-cmd="open gmail and draft email to investors" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-teal-500/40 text-teal-300 truncate text-left" title="Drafts email in Gmail and requests user review">
-            &#128231; 9. Gmail: Investor Update
+          <button type="button" data-cmd="draft an email to mjeevan665@gmail.com about our hackathon project completion and invite them to the demo" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-teal-500/40 text-teal-300 truncate text-left" title="Gemma 4 Dynamic Email Composition">
+            &#128231; 9. Gmail: AI Dynamic Draft
           </button>
-          <button type="button" data-cmd="open youtube and play lofi hip hop" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-red-500/40 text-red-300 truncate text-left" title="Deep-link YouTube video stream">
-            &#127916; 10. YouTube: Play Lo-Fi
+          <button type="button" data-cmd="open youtube and play interstellar soundtrack" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-red-500/40 text-red-300 truncate text-left" title="Gemma 4 Dynamic YouTube Search & Play">
+            &#127916; 10. YouTube: AI Search & Play
           </button>
-          <button type="button" data-cmd="open netflix and play movies" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-rose-600/40 text-rose-300 truncate text-left" title="Netflix Streaming Search">
-            &#127871; 11. Netflix: Stream Movies
+          <button type="button" data-cmd="open netflix and search for sci-fi movies" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-rose-600/40 text-rose-300 truncate text-left" title="Gemma 4 Dynamic Netflix Streaming Search">
+            &#127871; 11. Netflix: AI Stream Search
           </button>
-          <button type="button" data-cmd="book a table at restaurant in Bengaluru" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Restaurant & Dining Reservation Radar">
-            &#127869; 12. Book Restaurant Radar
+          <button type="button" data-cmd="find best sushi restaurants in Tokyo" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Gemma 4 Dynamic Dining & Table Reservations">
+            &#127869; 12. Book Dining & Events
           </button>
         </div>
       </div>
@@ -1312,10 +1312,10 @@
 
       const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
 
-      // 1. Autonomous Computer-Use Dispatcher (State-aware Windows tools, YouTube, Netflix, Gmail, Bookings)
-      const isComputerUse = /calc|calculator|youtube|netflix|gmail|restaurant|dining|movie\s*ticket|bookmyshow|notepad|blender/.test(lower) &&
-                            !/build|create\s+(?:an?\s+)?(?:web\s*)?app|code|repo/.test(lower);
-      const isQuickOpen = /^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|play|book|perform|calculate)\s+/.test(lower);
+      // 1. Autonomous Computer-Use Dispatcher (Gemma 4 OS Engine: Calculator, YouTube, Netflix, Gmail, Bookings, Blender 3D, PDF, Image, Browser Download)
+      const isComputerUse = /calc|calculator|youtube|netflix|gmail|email|mail|restaurant|dining|sushi|food|movie|ticket|bookmyshow|notepad|blender|brave|chrome|browser|download|pdf|generate\s+image|create\s+image|play\s+|draft\s+|send\s+an?\s+email/.test(lower) &&
+                            !/build|create\s+(?:an?\s+)?(?:web\s*)?(?:app|game|saas|os|platform|dashboard)|clone|repo/.test(lower);
+      const isQuickOpen = /^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|play|book|perform|calculate|find|search|download|create\s+pdf|generate\s+image)\s+/.test(lower);
 
       if (isComputerUse || isQuickOpen) {
         const t0 = performance.now();

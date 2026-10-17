@@ -101,17 +101,19 @@ class JarvisAutonomousBrain:
         tool_traces: List[Dict[str, Any]] = []
         created_or_fixed_files: Dict[str, str] = {}
 
-        planner_system = """You are the J.A.R.V.I.S. Co-Leader & Autonomous Tool Router (Antigravity + Open-Interpreter style).
+        planner_system = """You are the J.A.R.V.I.S. Co-Leader & Autonomous Tool Router (Antigravity IDE & Muse AI style).
 Analyze the user's request and output a JSON object specifying which real tools to execute right now:
 {
   "intent_summary": "short description",
   "spawn_sub_agents": [{"name": "Sub-Agent Name", "task": "Specific task"}],
   "actions": [
-    {"tool": "open_app_or_url", "target": "app name or URL (only if user asked to open an app/site)"},
+    {"tool": "open_app_or_url", "target": "app name or URL (e.g. notepad, chrome, calc, https://...)"},
+    {"tool": "desktop_gui", "app": "target app name or desktop", "goal": "GUI action instructions like typing or clicking"},
     {"tool": "inspect_directory", "path": "directory path to scan for files/mistakes"},
     {"tool": "web_search", "query": "search query if external research is needed"},
     {"tool": "write_or_fix_code", "directory": "target folder", "task": "what code to write or what bugs to fix"},
-    {"tool": "run_command", "command": "shell/python/pytest command to verify", "cwd": "target folder"}
+    {"tool": "run_command", "command": "shell/python/pytest command to verify or execute", "cwd": "target folder"},
+    {"tool": "calculate", "expression": "math expression (ONLY when user explicitly asks to calculate math)"}
   ]
 }
 Only include the actions actually needed for the user's prompt. Output valid JSON only."""
@@ -129,88 +131,58 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
         except Exception:
             plan = {"intent_summary": instruction, "spawn_sub_agents": [], "actions": []}
 
-        # Intent fallback & compound intent check
-        cmd_lower = instruction.lower()
-        has_inspect = any(w in cmd_lower for w in ["directory", "folder", "mistake", "error", "bug", "inspect", "audit", "scan"])
-        has_open = any(w in cmd_lower for w in ["open ", "launch ", "start "])
-        has_code = any(w in cmd_lower for w in [
+        cmd_lower = instruction.lower().strip()
+        existing_tools = {str(act.get("tool", "")).lower() for act in plan.get("actions", [])}
+
+        # Dynamic routing assistance for local small models:
+        has_code_keywords = any(w in cmd_lower for w in [
             "write", "create", "build", "generate", "implement", "code", "script",
             "game", "program", "project", "fix", "function", "class", "app", "develop", "make a"
         ])
+        has_inspect_keywords = any(w in cmd_lower for w in ["directory", "folder", "mistake", "error", "bug", "inspect", "audit", "scan"])
+        has_open_keywords = any(cmd_lower.startswith(w) or f" {w}" in cmd_lower for w in ["open ", "launch ", "start "])
+        has_calc_keywords = any(w in cmd_lower for w in ["calculate", "calc ", "compute", "what is the value", "evaluate math", "solve math"])
 
-        # Detect calculate/compute requests: "calculate 5*6", "open calculator and execute 5 star 3583", "what is 5+6"
-        # Normalize spoken or typed math operators: "star", "times", "into", "divided by", "plus", "minus"
-        norm_math_cmd = instruction
-        for pattern, sym in [
-            (r'\b(?:multiplied\s+by|times|\*|star|into|x|X|×)\b', '*'),
-            (r'\b(?:divided\s+by|divide\s+by|over|÷)\b', '/'),
-            (r'\b(?:plus|\+)\b', '+'),
-            (r'\b(?:minus|-)\b', '-'),
-        ]:
-            norm_math_cmd = re.sub(pattern, f' {sym} ', norm_math_cmd, flags=re.I)
+        # 1. Coding intent: prioritize write_or_fix_code
+        if has_code_keywords:
+            if not any("write" in str(a.get("tool", "")).lower() or "fix" in str(a.get("tool", "")).lower() for a in plan.get("actions", [])):
+                plan.setdefault("actions", []).insert(0, {"tool": "write_or_fix_code", "directory": target_directory, "task": instruction})
 
+        # 2. Directory inspection
+        if has_inspect_keywords and not any("inspect" in t or "audit" in t for t in existing_tools):
+            plan.setdefault("actions", []).append({"tool": "inspect_directory", "path": target_directory})
+
+        # 3. Explicit calculation ONLY when explicitly requested
         calc_expression = None
-        # Look for any expression with two or more numbers and operators
-        math_binary_match = re.search(r'(\d+(?:\s*[\+\-\*/\^%]\s*\d+)+)', norm_math_cmd)
-        if math_binary_match:
-            calc_expression = re.sub(r'\s+', '', math_binary_match.group(1)).strip()
+        if has_calc_keywords:
+            norm_math = instruction
+            for pattern, sym in [
+                (r'\b(?:multiplied\s+by|times|\*|star|into|x|X|×)\b', '*'),
+                (r'\b(?:divided\s+by|divide\s+by|over|÷)\b', '/'),
+                (r'\b(?:plus|\+)\b', '+'),
+                (r'\b(?:minus|-)\b', '-'),
+            ]:
+                norm_math = re.sub(pattern, f' {sym} ', norm_math, flags=re.I)
+            math_match = re.search(r'(\d+(?:\s*[\+\-\*/\^%]\s*\d+)+)', norm_math)
+            if math_match:
+                calc_expression = re.sub(r'\s+', '', math_match.group(1)).strip()
+                if not any("calculate" in t for t in existing_tools):
+                    plan.setdefault("actions", []).append({"tool": "calculate", "expression": calc_expression})
 
-        has_calculate = (
-            bool(calc_expression)
-            or any(w in cmd_lower for w in ["calculat", "compute", "what is", "how much", "evaluate", "solve", "find the result", "result of", "math"])
-        )
+        # 4. Interactive desktop GUI actions (clicking, typing in apps, etc.)
+        gui_keywords = ["click", "type", "press", "hotkey", "drag", "window", "desktop", "mouse", "keyboard"]
+        if any(w in cmd_lower for w in gui_keywords) and not any("desktop" in t or "gui" in t for t in existing_tools):
+            app_match = re.search(r'\b(?:in|into|on|for|with)\s+([a-zA-Z0-9_\-\.]+)', instruction, re.I)
+            target_app = app_match.group(1).strip() if app_match else "desktop"
+            plan.setdefault("actions", []).append({"tool": "desktop_gui", "app": target_app, "goal": instruction})
 
-        # Check existing VALID tool names (normalize: tool key takes priority over type key)
-        existing_tools = {str(act.get("tool", "")).lower() for act in plan.get("actions", [])}
-
-        # Check for deep Muse AI desktop GUI automation:
-        has_desktop_gui = False
-        gui_target_app = ""
-        if "blender" in cmd_lower:
-            has_desktop_gui = True
-            gui_target_app = "blender"
-        elif "notepad" in cmd_lower and any(w in cmd_lower for w in ["type", "write", "save", "note", "text", "enter"]):
-            has_desktop_gui = True
-            gui_target_app = "notepad"
-        elif any(w in cmd_lower for w in ["spotify", "music", "song"]):
-            has_desktop_gui = True
-            gui_target_app = "spotify"
-        elif any(w in cmd_lower for w in ["vscode", "vs code", "visual studio code"]) and any(w in cmd_lower for w in ["new file", "terminal", "project"]):
-            has_desktop_gui = True
-            gui_target_app = "vscode"
-
-        if has_desktop_gui:
-            plan["actions"] = [a for a in plan.get("actions", []) if str(a.get("tool", "")).lower() not in ("open_app_or_url", "open_system_app_or_url")]
-            plan.setdefault("actions", []).append({"tool": "desktop_gui", "app": gui_target_app, "goal": instruction})
-
-        # FORCE-INJECT real tool actions based on what the user actually said.
-        # Small LLMs often return bogus type:"math"/"output" instead of tool:"calculate" — we fix that here.
-        if has_open and not has_desktop_gui and not any("open" in t or "launch" in t or "start" in t for t in existing_tools):
+        # 5. Open app/url
+        elif has_open_keywords and not any("open" in t or "launch" in t or "start" in t or "desktop" in t for t in existing_tools):
             m = re.search(r'(?:open|launch|start)\s+(?:the\s+)?([a-zA-Z0-9_\-\.\s]+)', cmd_lower)
             target = m.group(1).strip() if m else "notepad"
             if " and " in target:
                 target = target.split(" and ", 1)[0].strip()
             plan.setdefault("actions", []).append({"tool": "open_app_or_url", "target": target})
-
-        # Always force a calculate action when math expression is present or requested
-        if has_calculate and calc_expression:
-            plan["actions"] = [
-                a for a in plan.get("actions", [])
-                if str(a.get("tool", a.get("type", ""))).lower() not in ("math", "output", "compute", "calculate")
-            ]
-            plan.setdefault("actions", []).append({"tool": "calculate", "expression": calc_expression})
-
-        if has_inspect and "inspect_directory" not in existing_tools and not any("inspect" in t or "audit" in t for t in existing_tools):
-            plan.setdefault("actions", []).append({"tool": "inspect_directory", "path": target_directory})
-
-        if has_code:
-            # Strip model hallucinating open_app for .py or code files
-            plan["actions"] = [
-                a for a in plan.get("actions", [])
-                if not (str(a.get("tool", "")).startswith("open") and any(str(a.get("target", "")).lower().endswith(ext) for ext in [".py", ".js", ".ts", ".html", ".css", ".json"]))
-            ]
-            if not any("write" in str(a.get("tool", "")).lower() or "fix" in str(a.get("tool", "")).lower() for a in plan.get("actions", [])):
-                plan.setdefault("actions", []).insert(0, {"tool": "write_or_fix_code", "directory": target_directory, "task": instruction})
 
 
         # Spawn dynamic sub-agents in the Neural Memory Graph
@@ -378,17 +350,18 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
                     else:
                         rpath = "solution.py"
 
-                    # If model returned a refusal instead of code, generate clean working code
-                    if any(phrase in code_content.lower() for phrase in ["unable to access", "cannot access", "as an ai", "cannot create", "cannot run"]):
-                        if "snake" in instruction.lower():
-                            code_content = (
-                                "# filename: snake_game.py\n"
-                                "# Autonomous Pygame Snake Game generated by J.A.R.V.I.S.\n"
-                                "import sys\n"
-                                "print('J.A.R.V.I.S. Snake Game created and verified successfully.')\n"
-                            )
-                        else:
-                            code_content = f"# filename: {rpath}\n# Code implementation for: {instruction}\nprint('Execution verified successfully.')\n"
+                    # If model returned a refusal instead of code, re-prompt strictly for functional code
+                    refusal_phrases = ["unable to access", "cannot access", "as an ai", "cannot create", "cannot run", "i am an ai", "i cannot"]
+                    if any(phrase in code_content.lower() for phrase in refusal_phrases) or len(code_content.strip()) < 15:
+                        retry_system = (
+                            "You are an expert Python software engineer. "
+                            "Output ONLY valid, functional, complete Python code for the user request. "
+                            "Do NOT include markdown, explanations, or disclaimers. Begin immediately with the code."
+                        )
+                        retry_code = self.call_llm(retry_system, f"Request: {instruction}\nWrite the complete code:")
+                        cleaned_retry = re.sub(r"^```(?:python)?\s*|\s*```$", "", retry_code.strip(), flags=re.MULTILINE).strip()
+                        if cleaned_retry and not any(p in cleaned_retry.lower() for p in refusal_phrases):
+                            code_content = cleaned_retry
 
                     if len(code_content) > 10:
                         coder_json["files_to_write"] = [{"relative_path": rpath, "content": code_content}]
@@ -503,12 +476,10 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
 
         # Final Synthesis by Co-Leader based strictly on clean action descriptions (ZERO hallucination!)
         synth_system = (
-            "You are J.A.R.V.I.S., the user's real-world desktop AI assistant. "
-            "In 1 clear sentence, confirm to the user what desktop actions or code operations you completed on their laptop. "
-            "Example for Blender: 'I have opened Blender and added the requested 3D mesh.' "
-            "Example for Notepad: 'I launched Notepad and entered the requested text.' "
-            "Example for Code: 'I created the requested code file and verified its execution.' "
-            "Never discuss machine learning models, neural networks, or image resolution."
+            "You are J.A.R.V.I.S., an autonomous AI engineer and computer-use agent (like Claude Code & Muse AI). "
+            "Explain clearly and professionally what you executed on the user's machine. "
+            "Include: 1) What was done, 2) Details of files written or commands run with outputs, 3) Status and confirmation. "
+            "Be articulate, direct, and helpful. Do not mention model cards, neural network weights, or image resolutions."
         )
         final_reply = self.call_llm(
             synth_system,

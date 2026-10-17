@@ -505,7 +505,26 @@ def control_desktop_gui(app_name: str, goal: str = "", actions: Optional[List[Di
                 force_foreground_window(target_hwnd)
                 steps.append(f"Foregrounded: {new_wins[0]['title']}")
 
-        # 2. PERFORM APPLICATION-SPECIFIC OPERATIONS (MUSE AI DEEP ACTIONS)
+        # 2. PERFORM APPLICATION / GUI OPERATIONS DYNAMICALLY FOR ANY APPLICATION
+        # Generic text typing for ANY app
+        text_match = re.search(r'(?:type|write|text)\s+["\']?([^"\']+)["\']?', goal, re.IGNORECASE)
+        to_type = text_match.group(1).strip() if text_match else ""
+        if not to_type and any(k in goal_lower for k in ["type ", "write "]):
+            to_type = re.sub(r'^(?:open\s+[a-zA-Z0-9_\-]+\s+and\s+)?(?:type|write)\s+', '', goal, flags=re.I).strip()
+
+        if to_type and not any(k in app_lower for k in ["code", "vscode", "blender"]):
+            time.sleep(0.3)
+            pyautogui.typewrite(to_type[:500], interval=0.02)
+            steps.append(f"Typed text into {app_name}: {to_type[:60]}")
+
+        # Generic hotkeys & common keys
+        if any(k in goal_lower for k in ["save", "ctrl+s", "ctrl + s"]):
+            pyautogui.hotkey('ctrl', 's')
+            steps.append("Sent Ctrl+S (Save)")
+        if any(k in goal_lower for k in ["press enter", "hit enter"]):
+            pyautogui.press('enter')
+            steps.append("Pressed Enter")
+
         if "blender" in app_lower:
             pyautogui.press('escape')
             time.sleep(0.3)
@@ -537,34 +556,12 @@ def control_desktop_gui(app_name: str, goal: str = "", actions: Optional[List[Di
                 pyautogui.press('down')
                 pyautogui.press('enter')
                 steps.append("Executed Blender Add Mesh -> Cylinder")
-            elif any(k in goal_lower for k in ["monkey", "suzanne"]):
-                pyautogui.hotkey('shift', 'a')
-                time.sleep(0.3)
-                pyautogui.press('enter')
-                time.sleep(0.2)
-                for _ in range(8):
-                    pyautogui.press('down')
-                pyautogui.press('enter')
-                steps.append("Executed Blender Add Mesh -> Monkey")
             elif any(k in goal_lower for k in ["render"]):
                 pyautogui.press('f12')
                 steps.append("Triggered Blender Render (F12)")
             elif any(k in goal_lower for k in ["edit mode", "toggle mode"]):
                 pyautogui.press('tab')
                 steps.append("Toggled Edit/Object Mode (Tab)")
-
-        elif "notepad" in app_lower:
-            text_match = re.search(r'(?:type|write|text)\s+["\']?([^"\']+)["\']?', goal, re.IGNORECASE)
-            to_type = text_match.group(1).strip() if text_match else ""
-            if not to_type and ("write" in goal_lower or "type" in goal_lower):
-                to_type = re.sub(r'^(?:open\s+notepad\s+and\s+)?(?:type|write)\s+', '', goal, flags=re.I).strip()
-            if to_type:
-                time.sleep(0.3)
-                pyautogui.typewrite(to_type[:500], interval=0.02)
-                steps.append(f"Typed text into Notepad: {to_type[:60]}")
-            if "save" in goal_lower:
-                pyautogui.hotkey('ctrl', 's')
-                steps.append("Sent Ctrl+S (Save)")
 
         elif "calc" in app_lower:
             norm_math_cmd = goal

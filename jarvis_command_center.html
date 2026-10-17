@@ -106,39 +106,46 @@
   <!-- ====================================================================================== -->
   <!-- MAIN STAGE: 1. ANTIGRAVITY IDE VIEW (3 COLUMNS: EXPLORER | MONACO | CLAUDE CODE & SCREEN) -->
   <!-- ====================================================================================== -->
-  <main id="viewIde" class="flex-1 min-h-0 w-full px-3 py-1.5 flex flex-col gap-1.5 overflow-hidden">
+  <!-- ====================================================================================== -->
+  <!-- MAIN STAGE: 1. ANTIGRAVITY IDE VIEW (SPACIOUS CODE STUDIO + CLAUDE CODE STREAM)        -->
+  <!-- ====================================================================================== -->
+  <main id="viewIde" class="flex-1 min-h-0 w-full px-3 py-2 flex flex-col gap-2 overflow-hidden">
     <!-- Top Action Bar for IDE -->
-    <div class="h-9 flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1 rounded-xl bg-black/70 border border-red-950/80 text-xs mono">
-      <div class="flex items-center gap-2 flex-wrap">
-        <span class="text-red-400 font-bold">Workspace:</span>
-        <input id="inputWorkspaceDir" type="text" value="." class="bg-black/90 border border-red-900/60 rounded px-2 py-0.5 text-xs mono text-red-100 focus:outline-none focus:border-red-500 w-40 sm:w-60" placeholder="Directory path (. for root)">
+    <div class="h-9 flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1 rounded-xl bg-black/80 border border-red-950/80 text-xs mono">
+      <div class="flex items-center gap-2">
+        <button id="btnToggleSidebar" type="button" class="px-2.5 py-0.5 rounded bg-red-950/70 hover:bg-red-900 border border-red-500/40 text-red-200 transition flex items-center gap-1.5 font-bold">
+          <span>📁</span> Explorer (<span id="fileTreeCountBadge">0</span>)
+        </button>
+        <span class="text-red-400 font-bold hidden sm:inline">Dir:</span>
+        <input id="inputWorkspaceDir" type="text" value="." class="bg-black/90 border border-red-900/60 rounded px-2 py-0.5 text-xs mono text-red-100 focus:outline-none focus:border-red-500 w-36 sm:w-52" placeholder="Directory path (. for root)">
         <button id="btnRefreshWorkspace" type="button" class="px-2 py-0.5 rounded bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
-          &#8635; Reload Tree
+          &#8635; Reload
         </button>
       </div>
 
       <div class="flex items-center gap-2">
-        <span id="activeFileIndicator" class="text-red-300/80 font-bold truncate max-w-xs">welcome.py</span>
+        <span class="text-red-400/80 font-bold hidden sm:inline">Active:</span>
+        <span id="activeFileIndicator" class="text-red-100 font-bold bg-red-950/60 px-2 py-0.5 rounded border border-red-500/30 truncate max-w-xs">welcome.py</span>
         <button id="btnSaveFileDisk" type="button" class="px-2.5 py-0.5 rounded bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 font-bold transition flex items-center gap-1">
           <span>&#128190;</span> Save
         </button>
-        <button id="btnRunCurrentFile" type="button" class="px-2.5 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition flex items-center gap-1 shadow-[0_0_10px_#ff1e27]">
+        <button id="btnRunCurrentFile" type="button" class="px-3 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition flex items-center gap-1 shadow-[0_0_12px_#ff1e27]">
           <span>&#9654;</span> Run Code
         </button>
       </div>
     </div>
 
-    <!-- 3-Column IDE Workspace Grid -->
-    <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2 overflow-hidden">
+    <!-- IDE Workspace Layout: Left Sidebar + Center Monaco/Terminal + Right Claude Code Stream -->
+    <div class="flex-1 min-h-0 flex gap-2.5 overflow-hidden">
       
-      <!-- COLUMN 1: WORKSPACE FILE EXPLORER & AST ISSUE AUDITOR (3 COLS) -->
-      <section class="lg:col-span-3 h-full flex flex-col crimson-panel rounded-xl p-2.5 overflow-hidden">
-        <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950/80 pb-1.5 mb-1">
+      <!-- COLUMN 1: WORKSPACE FILE EXPLORER (COLLAPSIBLE SIDEBAR) -->
+      <aside id="ideSidebar" class="w-56 flex-shrink-0 h-full flex flex-col crimson-panel rounded-xl p-2.5 overflow-hidden transition-all duration-200">
+        <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950/80 pb-1.5 mb-1.5">
           <div class="flex items-center gap-1.5">
             <span class="text-red-500 font-bold">&#128194;</span>
-            <span class="font-hud text-xs font-bold text-red-400 tracking-wider">PROJECT EXPLORER</span>
+            <span class="font-hud text-xs font-bold text-red-400 tracking-wider">FILES</span>
           </div>
-          <span id="fileTreeCountBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-red-950/60 border border-red-500/30 text-red-300">0 files</span>
+          <span class="text-[10px] mono text-red-400/60">Workspace</span>
         </div>
 
         <!-- Interactive File Tree -->
@@ -147,83 +154,83 @@
         </div>
 
         <!-- Detected AST Issues / Mistakes Card -->
-        <div class="flex-shrink-0 border-t border-red-950/80 pt-1.5 mt-1 flex flex-col gap-1 max-h-36 overflow-hidden">
+        <div id="bugsSummaryCard" class="hidden flex-shrink-0 border-t border-red-950/80 pt-1.5 mt-1 flex flex-col gap-1 max-h-32 overflow-hidden">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-amber-400 mono flex items-center gap-1">
-              <span>&#9888;</span> Detected AST Bugs
+            <span class="text-[10px] font-bold text-amber-400 mono flex items-center gap-1">
+              <span>&#9888;</span> AST Bugs
             </span>
-            <span id="detectedBugsCount" class="text-[10px] mono text-amber-300">0 issues</span>
+            <span id="detectedBugsCount" class="text-[10px] mono text-amber-300">0</span>
           </div>
-          <div id="detectedBugsList" class="custom-scroll overflow-y-auto space-y-1 text-[11px] mono flex-1 pr-1">
-            <div class="text-red-300/50 italic text-[10px]">No AST syntax errors found. Run "Audit Mistakes" to scan.</div>
+          <div id="detectedBugsList" class="custom-scroll overflow-y-auto space-y-1 text-[10px] mono flex-1 pr-1"></div>
+        </div>
+      </aside>
+
+      <!-- COLUMN 2: MONACO CODE EDITOR + INTEGRATED TERMINAL (CENTER STAGE) -->
+      <section class="flex-1 min-w-0 h-full flex flex-col gap-2 overflow-hidden">
+        
+        <!-- Editor Box (Spacious!) -->
+        <div class="flex-1 min-h-0 flex flex-col crimson-panel rounded-xl overflow-hidden">
+          <!-- Editor Tabs Bar -->
+          <div id="editorTabsBar" class="flex-shrink-0 flex items-center justify-between px-3 py-1.5 bg-black/90 border-b border-red-950/80 text-xs mono">
+            <div class="flex items-center gap-2">
+              <span class="text-red-500 font-bold">&#128196;</span>
+              <span id="tabTitlePrimary" class="text-red-100 font-bold">welcome.py</span>
+            </div>
+            <div class="flex items-center gap-3 text-[10px] mono text-red-400">
+              <span id="cursorStatus">Ln 1, Col 1</span>
+              <span id="charCountStatus">0 chars</span>
+              <span id="editorLanguageStatus" class="px-1.5 py-0.5 rounded bg-red-950/80 border border-red-500/30 text-red-300">PYTHON</span>
+            </div>
+          </div>
+
+          <!-- Monaco Editor Canvas -->
+          <div id="monacoWrapper" class="flex-1 min-h-0 relative bg-[#060102]">
+            <div id="monacoEditorContainer" class="absolute inset-0 w-full h-full"></div>
+            <!-- Fallback Textarea -->
+            <textarea id="fallbackEditor" class="hidden absolute inset-0 w-full h-full bg-[#060102] text-red-100 p-3 text-xs mono resize-none focus:outline-none"></textarea>
           </div>
         </div>
+
+        <!-- Integrated Terminal Console (Clean, Full-Width Console) -->
+        <div id="ideTerminalPanel" class="h-36 flex-shrink-0 flex flex-col crimson-panel rounded-xl overflow-hidden">
+          <div class="flex-shrink-0 px-3 py-1 bg-black/95 border-b border-red-950/80 flex items-center justify-between text-xs mono">
+            <div class="flex items-center gap-2 text-red-400 font-bold">
+              <span>&#9889;</span>
+              <span>TERMINAL OUTPUT</span>
+            </div>
+            <button id="btnClearTerminal" type="button" class="text-[10px] text-red-400/80 hover:text-white px-2 py-0.5 rounded bg-red-950/60 border border-red-900/50">
+              Clear
+            </button>
+          </div>
+          <pre id="terminalOutputBox" class="flex-1 p-2.5 text-xs mono text-red-200 overflow-y-auto custom-scroll selection:bg-red-800 leading-relaxed font-mono">Ready for execution...</pre>
+        </div>
+
       </section>
 
-      <!-- COLUMN 2: MONACO CODE EDITOR (5 COLS) -->
-      <section class="lg:col-span-5 h-full flex flex-col crimson-panel rounded-xl overflow-hidden">
-        <!-- Editor Tabs Bar -->
-        <div id="editorTabsBar" class="flex-shrink-0 flex items-center gap-1 px-2 pt-1.5 bg-black/80 border-b border-red-950/80 overflow-x-auto custom-scroll text-xs mono">
-          <div class="tab-item active flex items-center gap-2 px-3 py-1 rounded-t bg-[#0d0204] border-t border-x border-red-500/50 text-red-200">
-            <span>&#128196;</span>
-            <span id="tabTitlePrimary">welcome.py</span>
-          </div>
-        </div>
-
-        <!-- Monaco Editor Container -->
-        <div id="monacoWrapper" class="flex-1 min-h-0 relative bg-[#060102]">
-          <div id="monacoEditorContainer" class="absolute inset-0 w-full h-full"></div>
-          <!-- Fallback Textarea -->
-          <textarea id="fallbackEditor" class="hidden absolute inset-0 w-full h-full bg-[#060102] text-red-100 p-3 text-xs mono resize-none focus:outline-none"></textarea>
-        </div>
-
-        <!-- Editor Status Bar -->
-        <div class="flex-shrink-0 px-3 py-1 bg-black/90 border-t border-red-950/70 flex items-center justify-between text-[10px] mono text-red-400">
-          <div class="flex items-center gap-3">
-            <span id="cursorStatus">Ln 1, Col 1</span>
-            <span id="charCountStatus">0 chars</span>
-          </div>
-          <div class="flex items-center gap-3">
-            <span id="editorLanguageStatus">Python</span>
-            <span>UTF-8</span>
-          </div>
-        </div>
-      </section>
-
-      <!-- COLUMN 3: CLAUDE CODE LIVE EXECUTION STREAM & LIVE SCREEN VIEWPORT (4 COLS) -->
-      <section class="lg:col-span-4 h-full flex flex-col crimson-panel rounded-xl p-2.5 overflow-hidden">
+      <!-- COLUMN 3: CLAUDE CODE LIVE EXECUTION STREAM & LIVE SCREEN VIEWPORT (380px) -->
+      <aside class="w-96 flex-shrink-0 h-full flex flex-col crimson-panel rounded-xl p-3 overflow-hidden">
         <!-- Header with Tabs for Stream vs Live Desktop Screen -->
-        <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950/80 pb-1.5 mb-1">
+        <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950/80 pb-2 mb-2">
           <div class="flex items-center gap-2">
             <button id="btnTabClaudeStream" type="button" class="text-xs font-bold text-red-400 border-b-2 border-red-500 pb-0.5 mono">
-              Claude Code Execution
+              Claude Code Stream
             </button>
             <button id="btnTabScreenViewport" type="button" class="text-xs font-semibold text-red-300/60 hover:text-red-200 pb-0.5 mono">
-              Live Desktop Viewport
+              Desktop Screen
             </button>
           </div>
-          <span id="agentExecutionStatusBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300">
+          <span id="agentExecutionStatusBadge" class="text-[10px] mono px-2.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">
             Agent: Ready
           </span>
         </div>
 
         <!-- Content Area 1: Claude Code Step-by-Step Execution Stream -->
-        <div id="claudeStreamContainer" class="flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
-          <!-- Step Cards List -->
+        <div id="claudeStreamContainer" class="flex-1 min-h-0 flex flex-col overflow-hidden">
           <div id="stepCardsList" class="flex-1 min-h-0 custom-scroll overflow-y-auto space-y-2 pr-1">
-            <div class="p-2.5 rounded-lg bg-black/60 border border-red-950 text-xs mono text-red-300/70">
-              <span class="text-red-400 font-bold">J.A.R.V.I.S. Autonomous Agent Engine Ready</span><br>
-              Type any command below (e.g. "Work in directory and find mistakes", "Open Blender and add a cube", "Write a Snake game in Pygame"). Every step, file write, terminal stdout, and GUI action will stream here in real time.
+            <div class="p-3 rounded-xl bg-black/60 border border-red-950 text-xs mono text-red-300/80 leading-relaxed">
+              <div class="text-red-400 font-bold mb-1">J.A.R.V.I.S. Autonomous Agent Ready</div>
+              Give any project or coding command below (e.g. "Build a Snake game in Pygame and run it", "Write a prime number finder", "Audit directory"). Every file creation, terminal execution, and GUI operation streams here in real time.
             </div>
-          </div>
-
-          <!-- Integrated Terminal Output Console -->
-          <div class="flex-shrink-0 h-32 rounded-lg bg-black border border-red-950 flex flex-col overflow-hidden">
-            <div class="px-2.5 py-0.5 bg-zinc-950 border-b border-red-950 flex items-center justify-between text-[10px] mono text-red-400">
-              <span>Terminal Output / Shell Stdout</span>
-              <button id="btnClearTerminal" type="button" class="text-red-400/70 hover:text-red-300">Clear</button>
-            </div>
-            <pre id="terminalOutputBox" class="flex-1 p-2 text-[10px] mono text-red-200 overflow-y-auto custom-scroll selection:bg-red-800">Ready for command execution...</pre>
           </div>
         </div>
 
@@ -237,13 +244,13 @@
           </div>
           <div class="flex-shrink-0 flex items-center justify-between text-[10px] mono text-red-400 pt-1">
             <span id="screenResolutionBadge">Resolution: 2560x1600</span>
-            <button id="btnCaptureFreshFrame" type="button" class="px-2 py-0.5 rounded bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
+            <button id="btnCaptureFreshFrame" type="button" class="px-2.5 py-1 rounded bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
               &#128248; Capture Frame
             </button>
           </div>
         </div>
 
-      </section>
+      </aside>
 
     </div>
   </main>
@@ -342,21 +349,21 @@
     <div class="max-w-7xl mx-auto flex flex-col gap-1.5">
       <!-- Quick Prompt Suggestion Chips -->
       <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-0.5 text-[11px] mono">
-        <span class="text-red-400/80 font-bold shrink-0">Quick Prompts:</span>
-        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Blender and add a 3D mesh cube">
-          🧊 Open Blender &amp; add cube
-        </button>
-        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Work in directory . and find the mistakes">
-          🔍 Find mistakes in directory
-        </button>
-        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Notepad and type 'J.A.R.V.I.S. Antigravity IDE is operational'">
-          📝 Open Notepad &amp; type notes
-        </button>
-        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Write a complete Snake game in Pygame and run it">
+        <span class="text-red-400/80 font-bold shrink-0">Quick Actions:</span>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Write a complete Snake game in Pygame with scoring and start it">
           🎮 Snake Game in Pygame
         </button>
-        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Calculator and calculate 125 * 8">
-          🧮 Calculator 125 * 8
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Work in directory . and find the mistakes">
+          🔍 Find Mistakes in Directory
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Write a Python script to find prime numbers up to 100 and run it">
+          ⚡ Prime Number Finder
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Notepad and type 'J.A.R.V.I.S. Antigravity IDE is operational'">
+          📝 Open Notepad &amp; Type Notes
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Blender and add a 3D mesh cube">
+          🧊 Open Blender &amp; Add Mesh
         </button>
       </div>
 
@@ -1335,6 +1342,14 @@
       elements.btnToggleVoiceMic.addEventListener('click', toggleVoiceRecognition);
 
       // IDE File Action Buttons
+      const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+      const ideSidebar = document.getElementById('ideSidebar');
+      if (btnToggleSidebar && ideSidebar) {
+        btnToggleSidebar.addEventListener('click', () => {
+          ideSidebar.classList.toggle('hidden');
+          setTimeout(() => window.monacoEditor?.layout(), 100);
+        });
+      }
       elements.btnRefreshWorkspace.addEventListener('click', fetchWorkspaceFiles);
       elements.inputWorkspaceDir.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') fetchWorkspaceFiles();

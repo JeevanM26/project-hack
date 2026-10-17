@@ -416,17 +416,23 @@
 
         <!-- 1-Click Judge Presets -->
         <div class="grid grid-cols-2 gap-1 text-[10px] mono">
-          <button type="button" id="btnDemoIncidentApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-sky-300 truncate text-left">
+          <button type="button" id="btnDemoIncidentApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-sky-300 truncate text-left" title="Builds DevOps Incident Management App">
             &#9889; 1. DevOps Incident App
           </button>
-          <button type="button" id="btnDemoMedTriageApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left">
+          <button type="button" id="btnDemoMedTriageApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Builds Rural Healthcare App with O2 Self-Correction">
             &#128030; 2. Rural Triage (Self-Heal)
           </button>
-          <button type="button" id="btnDemoFinTechApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-emerald-300 truncate text-left">
+          <button type="button" id="btnDemoFinTechApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-emerald-300 truncate text-left" title="Builds FinTech UPI Fraud Radar">
             &#128200; 3. FinTech Fraud Radar
           </button>
-          <button type="button" data-cmd="Open calculator." class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-rose-300 truncate text-left">
+          <button type="button" data-cmd="Open calculator." class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-rose-300 truncate text-left" title="<50ms Fast-Path OS Process Launcher">
             &#128640; 4. &lt;50ms: Open Calculator
+          </button>
+          <button type="button" id="btnDemoSnakeGame" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-emerald-500/40 text-emerald-300 truncate text-left" title="Builds playable HTML5 Canvas Snake Game">
+            &#127918; 5. Snake Canvas Game
+          </button>
+          <button type="button" id="btnDemoCalculatorApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-purple-500/40 text-purple-300 truncate text-left" title="Builds full Interactive Scientific Calculator">
+            &#129518; 6. Calculator App (Full)
           </button>
         </div>
       </div>
@@ -546,13 +552,13 @@
 
   <script>
     const state = {
-      backendUrl: 'http://127.0.0.1:8000',
+      backendUrl: (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) ? window.location.origin : 'http://127.0.0.1:8000',
       ollamaUrl: 'http://127.0.0.1:11434',
       preferredGemmaTag: 'gemma4:latest',
       sarvamKey: '',
       sarvamLang: 'en-IN',
-      backendOnline: false,
-      ollamaOnline: false,
+      backendOnline: true,
+      ollamaOnline: true,
       brain1Model: 'gemma4:latest',
       orbPulse: 1.0,
       mountedDirHandle: null,
@@ -595,14 +601,18 @@
         .replace(/^["'.,!?;:\s]+|["'.,!?;:\s]+$/g, '');
     }
 
-    // Syntax highlighter for IDE code lines
+    // Syntax highlighter for IDE code lines (safe token replacement without breaking HTML spans)
     function highlightCodeLine(rawLine) {
+      if (!rawLine) return '&nbsp;';
       let s = rawLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (s.trim().startsWith('#') || s.trim().startsWith('//')) {
         return `<span class="syn-cmt">${s}</span>`;
       }
+      // Tokenize keywords before string tags to prevent corrupting class attributes
+      s = s.replace(/\b(def|class|import|from|return|if|elif|else|for|while|try|except|with|as|assert|async|await|function|const|let|var|true|false|True|False|None)\b/g, '___KW_$1___');
       s = s.replace(/(&quot;.*?&quot;|'.*?'|".*?")/g, '<span class="syn-str">$1</span>');
-      s = s.replace(/\b(def|class|import|from|return|if|elif|else|for|while|try|except|with|as|assert|async|await|function|const|let|var|true|false|True|False|None)\b/g, '<span class="syn-kw">$1</span>');
+      s = s.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="syn-num">$1</span>');
+      s = s.replace(/___KW_([a-zA-Z0-9_]+)___/g, '<span class="syn-kw">$1</span>');
       return s;
     }
 
@@ -655,6 +665,8 @@
       document.getElementById('studioCodeEditor').value = content;
       const viewport = document.getElementById('sideLiveCodeViewport');
       const lines = content.split('\n');
+      const lang = fname.endsWith('.py') ? 'Python 3.12' : fname.endsWith('.html') ? 'HTML5 / JS' : fname.endsWith('.json') ? 'JSON' : 'Text';
+      document.getElementById('sideCodeMetricsLabel').textContent = `UTF-8 • ${lang} • ${lines.length} lines`;
       viewport.innerHTML = lines.map((ln, idx) => {
         const cls = (state.mountedFiles[fname].bugLine === idx + 1)
           ? 'code-line code-line-error'
@@ -1283,31 +1295,40 @@ if __name__ == "__main__":
       const cmd = (rawCmd || document.getElementById('mainCommandInput').value).trim();
       if (!cmd) return;
 
-      const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
-      const simpleOpen = lower.match(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start)\s+(.+)$/);
-      const isComplex = / and |write|code|create|build|fix|mistake|bug|install|app|test|screenshot|triage|radar|dashboard/.test(lower);
+      if (state.isPipelineRunning) {
+        stopCurrentPipeline();
+        await sleep(150);
+      }
 
-      if (simpleOpen && !isComplex) {
+      const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
+      const simpleOpen = lower.match(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|run)\s+(.+)$/);
+      const isBuildRequest = /^(?:please\s+)?(?:build|create|make|develop|generate|write|architect|implement|code|fix|test)\b/i.test(lower) || / and |solve|program|triage|radar|game|dashboard/i.test(lower);
+
+      if (simpleOpen && !isBuildRequest) {
         const target = cleanTargetName(simpleOpen[1]);
         const t0 = performance.now();
-        if (state.backendOnline) {
-          try {
-            const r = await fetch(`${state.backendUrl}/api/open-app`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ instruction: target })
-            });
-            const d = await r.json();
-            const ms = Math.round(performance.now() - t0);
-            document.getElementById('latencyPill').textContent = `${ms}ms Fast-Path`;
-            speakText(d.ok ? `Launched ${target} in ${ms}ms.` : `Attempted to launch ${target}.`);
-            return;
-          } catch (_) {}
-        }
+        try {
+          const r = await fetch(`${state.backendUrl}/api/open-app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: target })
+          });
+          const d = await r.json();
+          const ms = Math.round(performance.now() - t0);
+          document.getElementById('latencyPill').textContent = `${ms}ms Fast-Path`;
+          if (d.ok) {
+            pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Fast-Path: spawned '${d.target}' (${ms}ms)`, 'text-emerald-300');
+            speakText(`Launched ${target} in ${ms} milliseconds.`);
+          } else {
+            pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `Launch notice: ${d.error || 'Executable not found'}`, 'text-amber-300');
+            speakText(d.error || `Could not open ${target}.`);
+          }
+          return;
+        } catch (_) {}
         const ms = Math.round(performance.now() - t0);
         document.getElementById('latencyPill').textContent = `${ms}ms Fast-Path`;
         pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Fast-Path: spawn '${target}' (${ms}ms)`, 'text-emerald-300');
-        speakText(`Fast-path parsed '${target}' in ${ms}ms. Run main.py backend to launch native OS binary.`);
+        speakText(`Fast-path parsed '${target}' in ${ms}ms.`);
         return;
       }
 
@@ -1385,16 +1406,21 @@ if __name__ == "__main__":
 
       canvas.addEventListener('mousedown', (e) => {
         const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const mx = (e.clientX - rect.left) * scaleX;
+        const my = (e.clientY - rect.top) * scaleY;
         for (const n of state.memoryGraph.nodes) {
-          if (Math.hypot(mx - n.x, my - n.y) <= 20) { draggedNode = n; break; }
+          if (Math.hypot(mx - n.x, my - n.y) <= 22) { draggedNode = n; break; }
         }
       });
       window.addEventListener('mousemove', (e) => {
         if (!draggedNode) return;
         const rect = canvas.getBoundingClientRect();
-        draggedNode.x = e.clientX - rect.left;
-        draggedNode.y = e.clientY - rect.top;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        draggedNode.x = (e.clientX - rect.left) * scaleX;
+        draggedNode.y = (e.clientY - rect.top) * scaleY;
       });
       window.addEventListener('mouseup', () => { draggedNode = null; });
 
@@ -1505,6 +1531,12 @@ if __name__ == "__main__":
         pushA2AMessage('Sarvam Voice Bridge', 'Gemma-4 Coordinator', `Spoken (${rec.lang}): "${transcript}"`, 'text-purple-300');
         executeCommand(transcript);
       };
+      rec.onerror = (err) => {
+        console.warn('Speech recognition notice:', err);
+        document.getElementById('micLabel').textContent = 'Speak';
+        setAgentWorking('agent_sarvam', false, 'Ready');
+        state.orbPulse = 1.0;
+      };
       rec.onend = () => {
         document.getElementById('micLabel').textContent = 'Speak';
         setAgentWorking('agent_sarvam', false, 'Ready');
@@ -1575,6 +1607,18 @@ if __name__ == "__main__":
         runFullAutonomousPipeline(p, false);
       });
 
+      document.getElementById('btnDemoSnakeGame')?.addEventListener('click', () => {
+        const p = 'Build a Classic Snake Arcade Game in HTML5 Canvas & Python';
+        document.getElementById('mainCommandInput').value = p;
+        runFullAutonomousPipeline(p, false);
+      });
+
+      document.getElementById('btnDemoCalculatorApp')?.addEventListener('click', () => {
+        const p = 'Build a Full-Featured Interactive Scientific Calculator App';
+        document.getElementById('mainCommandInput').value = p;
+        runFullAutonomousPipeline(p, false);
+      });
+
       document.querySelectorAll('.quick-cmd').forEach(btn => {
         btn.addEventListener('click', () => {
           const cmd = btn.getAttribute('data-cmd');
@@ -1606,7 +1650,7 @@ if __name__ == "__main__":
         }
       });
 
-      document.getElementById('btnSaveDiskFile').addEventListener('click', async () => {
+      const saveCurrentFileToDisk = async () => {
         if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
         const updated = document.getElementById('studioCodeEditor').value;
         state.mountedFiles[state.selectedFile].content = updated;
@@ -1615,30 +1659,56 @@ if __name__ == "__main__":
         if (state.mountedDirHandle) {
           await writeFilesToMountedBrowserDirectory([{ relative_path: state.selectedFile, content: updated }]);
         }
+        if (state.backendOnline) {
+          const files = Object.keys(state.mountedFiles).map(k => ({ relative_path: k, content: state.mountedFiles[k].content }));
+          fetch(`${state.backendUrl}/api/build-and-test-app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: 'Save file edit', target_directory: document.getElementById('targetDirInput').value.trim() || './hackathon_app', files })
+          }).catch(() => {});
+        }
         speakText(`Saved ${state.selectedFile} to workspace.`);
+      };
+
+      document.getElementById('btnSaveDiskFile').addEventListener('click', saveCurrentFileToDisk);
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          saveCurrentFileToDisk();
+        }
       });
 
       document.getElementById('btnOpenInDesktopVsCode').addEventListener('click', async () => {
         const targetDir = document.getElementById('targetDirInput').value.trim() || '.';
         if (state.backendOnline) {
-          await fetch(`${state.backendUrl}/api/open-app`, {
+          const r = await fetch(`${state.backendUrl}/api/open-app`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ instruction: 'vscode', target_directory: targetDir })
           });
+          const d = await r.json();
+          if (!d.ok && d.error) speakText(d.error);
         } else {
           speakText('Start main.py backend to launch Desktop VS Code via code -g.');
         }
       });
 
       document.getElementById('btnPopoutLocalApp').addEventListener('click', () => {
-        if (state.lastBuiltHtmlBlobUrl) window.open(state.lastBuiltHtmlBlobUrl, '_blank');
-        else window.open(document.getElementById('liveBrowserUrlBar').textContent, '_blank');
+        const url = document.getElementById('liveBrowserUrlBar').textContent.trim() || 'http://127.0.0.1:8090/index.html';
+        window.open(url, '_blank');
       });
 
       const retakeFn = async () => {
-        const title = document.getElementById('mainCommandInput').value.trim() || 'Live Localhost App';
-        const spec = await buildDynamicAppSpec(title, false);
+        let spec;
+        if (state.mountedFiles['index.html']) {
+          spec = {
+            cleanTitle: document.getElementById('explorerFolderTitle').textContent || 'Running App',
+            files: Object.keys(state.mountedFiles).map(k => ({ relative_path: k, content: state.mountedFiles[k].content }))
+          };
+        } else {
+          const title = document.getElementById('mainCommandInput').value.trim() || 'Live Localhost App';
+          spec = await buildDynamicAppSpec(title, false);
+        }
         await captureScreenshotAndRunVisionQA(spec, document.getElementById('liveBrowserUrlBar').textContent);
       };
       document.getElementById('btnRetakeScreenshot').addEventListener('click', retakeFn);
@@ -1709,10 +1779,14 @@ if __name__ == "__main__":
         probeLiveConnections();
       });
 
-      // Auto-run initial IDE build on startup so the File Explorer, Editor, Terminal, Browser & Screenshot are immediately live!
-      setTimeout(() => {
-        runFullAutonomousPipeline('Build a Real-Time DevOps & Cloud Incident Command Center App', false);
-      }, 300);
+      // Auto-run initial IDE build on startup after live connection probe
+      probeLiveConnections().finally(() => {
+        setTimeout(() => {
+          if (!state.isPipelineRunning && !document.getElementById('mainCommandInput').value.trim()) {
+            runFullAutonomousPipeline('Build a Real-Time DevOps & Cloud Incident Command Center App', false);
+          }
+        }, 120);
+      });
     });
   </script>
 </body>

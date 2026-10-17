@@ -69,8 +69,7 @@ CALC_KEY_MAP = {
 
 
 def _build_calc_helper_script(expression: str, result_json_path: str) -> str:
-    """Build Python code that opens Calculator and types the expression."""
-    # Normalize expression for keystrokes
+    """Build Python code that opens Calculator and types the expression via pyautogui."""
     normalized = expression.strip()
     normalized = re.sub(r'[×xX]', '*', normalized)
     normalized = re.sub(r'÷', '/', normalized)
@@ -78,37 +77,29 @@ def _build_calc_helper_script(expression: str, result_json_path: str) -> str:
     normalized = re.sub(r'\s+', '', normalized)
 
     return f"""
-import pyautogui, subprocess, time, json, sys, os, re
+import pyautogui, subprocess, time, json, sys, os
 
 pyautogui.FAILSAFE = False
-pyautogui.PAUSE = 0.05
+pyautogui.PAUSE = 0.06
 
 result = {{"ok": False, "expression": {json.dumps(expression)}, "steps": []}}
 
 try:
-    # 1. Launch/focus Calculator
     subprocess.Popen(['calc.exe'])
-    time.sleep(2.2)
+    time.sleep(2.5)
     result["steps"].append("Launched Windows Calculator")
 
-    # 2. Press Escape to clear
     pyautogui.press('escape')
-    time.sleep(0.2)
-    pyautogui.hotkey('ctrl', 'shift', 'd')  # switch to Standard mode if needed
     time.sleep(0.3)
-    pyautogui.press('escape')
     result["steps"].append("Cleared previous state")
 
-    # 3. Type expression keystroke by keystroke
     expr = {json.dumps(normalized)}
     clicked = []
     i = 0
     while i < len(expr):
         ch = expr[i]
-        # Handle multi-char: ** -> press ^ once in calculator
         if ch == '*' and i + 1 < len(expr) and expr[i+1] == '*':
-            # Power: Calculator uses ^ for power, but let's just compute it
-            pyautogui.press('*')  
+            pyautogui.press('*')
             i += 2
             clicked.append('**')
             continue
@@ -123,16 +114,14 @@ try:
         elif ch == '/':
             pyautogui.press('/')
         elif ch == '(':
-            pyautogui.hotkey('shift', '9')  # ( key
+            pyautogui.hotkey('shift', '9')
         elif ch == ')':
-            pyautogui.hotkey('shift', '0')  # ) key
+            pyautogui.hotkey('shift', '0')
         clicked.append(ch)
-        time.sleep(0.07)
+        time.sleep(0.08)
         i += 1
 
     result["steps"].append(f"Typed: {{''.join(clicked)}}")
-
-    # 4. Press Enter to evaluate
     pyautogui.press('enter')
     time.sleep(0.5)
     result["steps"].append("Pressed Enter/Equals")
@@ -142,10 +131,166 @@ try:
 except Exception as e:
     result["error"] = str(e)
 
-# Write result JSON
 with open({json.dumps(result_json_path)}, 'w') as f:
     json.dump(result, f)
 """
+
+
+def _type_into_calculator_via_powershell(expression: str) -> Dict[str, Any]:
+    """
+    PRIMARY method: PowerShell AppActivate + SendKeys.
+    Works regardless of which process context the caller is in — no window isolation issues.
+    """
+    normalized = re.sub(r'[×xX]', '*', expression.strip())
+    normalized = re.sub(r'÷', '/', normalized)
+    normalized = re.sub(r'\s+', '', normalized)
+
+    # Build SendKeys-safe string
+    sendkeys_map = {'+': '{+}', '^': '{^}', '%': '{%}', '~': '{~}',
+                    '(': '{(}', ')': '{))', '[': '{[}', ']': '{]}',
+                    '{': '{{}', '}': '{}}'}
+    sendkeys_str = ""
+    for ch in normalized:
+        sendkeys_str += sendkeys_map.get(ch, ch)
+    sendkeys_str += "~"  # ~ = ENTER
+
+    ps_script = f"""
+Add-Type -AssemblyName Microsoft.VisualBasic
+Add-Type -AssemblyName System.Windows.Forms
+Start-Process calc.exe
+Start-Sleep -Milliseconds 2800
+$activated = $false
+for ($i = 0; $i -lt 15; $i++) {{
+    try {{
+        [Microsoft.VisualBasic.Interaction]::AppActivate('Calculator')
+        $activated = $true
+        break
+    }} catch {{
+        Start-Sleep -Milliseconds 300
+    }}
+}}
+if ($activated) {{
+    Start-Sleep -Milliseconds 700
+    [System.Windows.Forms.SendKeys]::SendWait('{{ESCAPE}}')
+    Start-Sleep -Milliseconds 200
+    [System.Windows.Forms.SendKeys]::SendWait({json.dumps(sendkeys_str)})
+    Start-Sleep -Milliseconds 600
+    Write-Output "OK:{normalized}"
+}} else {{
+    Write-Output "FAIL:NoWindow"
+}}
+"""
+
+    try:
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+            capture_output=True, text=True, timeout=20
+        )
+        out = r.stdout.strip()
+        if out.startswith("OK:"):
+            return {"ok": True, "method": "powershell_sendkeys", "typed": normalized}
+        else:
+            return {"ok": False, "method": "powershell_sendkeys", "error": out or r.stderr[:300]}
+    except Exception as e:
+        return {"ok": False, "method": "powershell_sendkeys", "error": str(e)}
+
+
+def _type_into_calculator_via_pyautogui(expression: str, result_json_path: str) -> Dict[str, Any]:
+    """
+    FALLBACK: spawn helper WITHOUT CREATE_NO_WINDOW so it has full desktop access.
+    The original bug was using CREATE_NO_WINDOW which isolated the subprocess from the GUI session.
+    """
+    helper_code = _build_calc_helper_script(expression, result_json_path)
+    helper_file = os.path.join(tempfile.gettempdir(), f"jarvis_calc_gui_{int(time.time())}.py")
+    try:
+        with open(helper_file, 'w', encoding='utf-8') as f:
+            f.write(helper_code)
+        # *** CRITICAL: NO CREATE_NO_WINDOW FLAG — subprocess must have interactive desktop access ***
+        proc = subprocess.Popen([sys.executable, helper_file])
+        proc.wait(timeout=15)
+        if os.path.exists(result_json_path):
+            with open(result_json_path, 'r') as f:
+                return json.load(f)
+        return {"ok": False, "error": "Helper produced no output file"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+    finally:
+        for p in [helper_file, result_json_path]:
+            try:
+                os.unlink(p)
+            except Exception:
+                pass
+
+
+def _type_into_calculator_direct(expression: str) -> Dict[str, Any]:
+    """
+    Open Calculator and type expression DIRECTLY using pyautogui in-process.
+    pyautogui.press() uses Win32 SendInput which sends to the current foreground window
+    on the real desktop — no window enumeration needed, works from any process context.
+    """
+    if not PYAUTOGUI_OK:
+        return {"ok": False, "error": "pyautogui not installed"}
+
+    normalized = re.sub(r'[×xX]', '*', expression.strip())
+    normalized = re.sub(r'÷', '/', normalized)
+    normalized = re.sub(r'\^', '**', normalized)
+    normalized = re.sub(r'\s+', '', normalized)
+
+    steps = []
+    try:
+        # Launch Calculator — it will come to the foreground automatically
+        subprocess.Popen(['calc.exe'])
+        steps.append("Launched Windows Calculator")
+        # Wait long enough for Calculator to fully render and be in foreground
+        time.sleep(3.0)
+
+        # Clear any previous calculation
+        pyautogui.press('escape')
+        time.sleep(0.3)
+        steps.append("Cleared previous state")
+
+        # Type the expression character by character into the foreground window
+        clicked = []
+        i = 0
+        while i < len(normalized):
+            ch = normalized[i]
+            if ch == '*' and i + 1 < len(normalized) and normalized[i+1] == '*':
+                # ** (power) — just use * twice since calc doesn't have ^
+                pyautogui.press('*')
+                time.sleep(0.08)
+                i += 2
+                clicked.append('**')
+                continue
+            if ch in '0123456789.':
+                pyautogui.press(ch)
+            elif ch == '+':
+                pyautogui.press('+')
+            elif ch == '-':
+                pyautogui.press('-')
+            elif ch == '*':
+                pyautogui.press('*')
+            elif ch == '/':
+                pyautogui.press('/')
+            elif ch == '(':
+                pyautogui.hotkey('shift', '9')
+            elif ch == ')':
+                pyautogui.hotkey('shift', '0')
+            clicked.append(ch)
+            time.sleep(0.09)
+            i += 1
+
+        expr_typed = ''.join(clicked)
+        steps.append(f"Typed: {expr_typed}")
+
+        # Press Enter to evaluate
+        pyautogui.press('enter')
+        time.sleep(0.5)
+        steps.append("Pressed Enter — result shown in Calculator display")
+
+        return {"ok": True, "method": "pyautogui_direct", "typed": expr_typed, "steps": steps}
+
+    except Exception as e:
+        return {"ok": False, "method": "pyautogui_direct", "error": str(e), "steps": steps}
 
 
 def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
@@ -159,37 +304,21 @@ def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
     if action_type == "calculate":
         expression = action.get("expression") or action.get("query", "0")
 
-        # Step 1: Always compute mathematically via Python (100% accurate)
+        # Step 1: Python math — always 100% correct (instant)
         math_result = safe_eval_math(expression)
 
-        # Step 2: Also visually operate Windows Calculator in background subprocess
-        result_json = os.path.join(tempfile.gettempdir(), f"jarvis_calc_{int(time.time())}.json")
-        helper_code = _build_calc_helper_script(expression, result_json)
+        # Step 2: Type into Calculator DIRECTLY via pyautogui in-process
+        # pyautogui.SendInput goes to the foreground window — no subprocess, no isolation issues
+        gui_result = _type_into_calculator_direct(expression)
 
-        helper_file = os.path.join(tempfile.gettempdir(), f"jarvis_calc_helper_{int(time.time())}.py")
-        try:
-            with open(helper_file, 'w', encoding='utf-8') as f:
-                f.write(helper_code)
+        # Step 3: PowerShell AppActivate fallback if pyautogui failed for some reason
+        if not gui_result.get("ok"):
+            logger.warning(f"Direct pyautogui failed ({gui_result.get('error')}) — trying PowerShell fallback")
+            gui_result = _type_into_calculator_via_powershell(expression)
 
-            # Launch helper in separate process (has GUI access as child of user process)
-            proc = subprocess.Popen(
-                [sys.executable, helper_file],
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == 'win32' else 0
-            )
-            proc.wait(timeout=12)
-
-            gui_result = {}
-            if os.path.exists(result_json):
-                with open(result_json, 'r') as f:
-                    gui_result = json.load(f)
-        except Exception as e:
-            gui_result = {"ok": False, "error": str(e)}
-        finally:
-            for p in [helper_file, result_json]:
-                try:
-                    os.unlink(p)
-                except Exception:
-                    pass
+        steps = gui_result.get("steps", [])
+        if not steps and gui_result.get("typed"):
+            steps = [f"Typed {gui_result['typed']}"]
 
         return {
             "ok": True,
@@ -197,8 +326,9 @@ def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
             "expression": expression,
             "result": math_result.get("result_str", "error"),
             "python_computed_result": math_result.get("result_str"),
-            "calculator_gui_steps": gui_result.get("steps", []),
+            "calculator_gui_steps": steps,
             "gui_ok": gui_result.get("ok", False),
+            "gui_method": gui_result.get("method", "unknown"),
         }
 
     # ── TYPE IN APP ───────────────────────────────────────────────────────────

@@ -123,18 +123,27 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
         has_open = any(w in cmd_lower for w in ["open ", "launch ", "start "])
         has_code = any(w in cmd_lower for w in ["write code", "fix code", "write a", "code for", "create code", "implement", "fix it", "fix them", "fix this", "fix the", "and fix", "write python", "python code", "write a python"])
 
-        # Detect calculate/compute requests: "calculate 5*6", "open calculator and compute", "what is 5+6"
-        has_calculate = any(w in cmd_lower for w in ["calculat", "compute", "what is", "how much", "evaluate", "solve", "find the result", "result of"])
-        # Extract math expression — greedy match allowing spaces around operators
+        # Detect calculate/compute requests: "calculate 5*6", "open calculator and execute 5 star 3583", "what is 5+6"
+        # Normalize spoken or typed math operators: "star", "times", "into", "divided by", "plus", "minus"
+        norm_math_cmd = instruction
+        for pattern, sym in [
+            (r'\b(?:multiplied\s+by|times|\*|star|into|x|X|×)\b', '*'),
+            (r'\b(?:divided\s+by|divide\s+by|over|÷)\b', '/'),
+            (r'\b(?:plus|\+)\b', '+'),
+            (r'\b(?:minus|-)\b', '-'),
+        ]:
+            norm_math_cmd = re.sub(pattern, f' {sym} ', norm_math_cmd, flags=re.I)
+
         calc_expression = None
-        math_match = re.search(
-            r'(?:calculate|compute|evaluate|solve|find the result of|what is|result of|how much is)[:\s]+([0-9][0-9\s\+\-\*/\.\(\)\^×÷%]*)',
-            instruction, re.I
+        # Look for any expression with two or more numbers and operators
+        math_binary_match = re.search(r'(\d+(?:\s*[\+\-\*/\^%]\s*\d+)+)', norm_math_cmd)
+        if math_binary_match:
+            calc_expression = re.sub(r'\s+', '', math_binary_match.group(1)).strip()
+
+        has_calculate = (
+            bool(calc_expression)
+            or any(w in cmd_lower for w in ["calculat", "compute", "what is", "how much", "evaluate", "solve", "find the result", "result of", "math"])
         )
-        if not math_match:
-            math_match = re.search(r'(\d[\d\s\+\-\*/\.\(\)\^×÷%]+\d)', instruction)
-        if math_match:
-            calc_expression = math_match.group(1).strip()
 
         # Check existing VALID tool names (normalize: tool key takes priority over type key)
         existing_tools = {str(act.get("tool", "")).lower() for act in plan.get("actions", [])}
@@ -148,8 +157,7 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
                 target = target.split(" and ", 1)[0].strip()
             plan.setdefault("actions", []).append({"tool": "open_app_or_url", "target": target})
 
-        # Always force a calculate action when user says "calculate ..." with an expression,
-        # regardless of what the LLM planner emitted (it may emit type:"math" which we'd miss)
+        # Always force a calculate action when math expression is present or requested
         if has_calculate and calc_expression:
             # Remove any bogus math/output/type actions the model put in
             plan["actions"] = [
@@ -157,6 +165,7 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
                 if str(a.get("tool", a.get("type", ""))).lower() not in ("math", "output", "compute", "calculate")
             ]
             plan.setdefault("actions", []).append({"tool": "calculate", "expression": calc_expression})
+
 
         if has_inspect and "inspect_directory" not in existing_tools and not any("inspect" in t or "audit" in t for t in existing_tools):
             plan.setdefault("actions", []).append({"tool": "inspect_directory", "path": target_directory})

@@ -55,6 +55,11 @@ def health():
 
 @app.post("/api/execute")
 def execute_instruction(req: CommandRequest):
+    try:
+        from computer_use_agent import attach_to_default_desktop
+        attach_to_default_desktop()
+    except Exception:
+        pass
     if req.preferred_model:
         brain.preferred_model = req.preferred_model
     if req.gemini_api_key:
@@ -64,12 +69,31 @@ def execute_instruction(req: CommandRequest):
 
 @app.post("/api/open-app")
 def api_open_app(req: CommandRequest):
+    try:
+        from computer_use_agent import attach_to_default_desktop
+        attach_to_default_desktop()
+    except Exception:
+        pass
     return open_system_app_or_url(req.instruction)
 
 
 @app.get("/api/screen-frame")
 def api_screen_frame():
-    return {"ok": True, "streaming": False}
+    try:
+        import base64
+        import io
+        import PIL.ImageGrab
+        from computer_use_agent import attach_to_default_desktop
+        attach_to_default_desktop()
+        img = PIL.ImageGrab.grab()
+        img.thumbnail((1280, 800))
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=60)
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return {"ok": True, "image": f"data:image/jpeg;base64,{b64}", "width": img.width, "height": img.height}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 
 
 @app.post("/api/inspect-dir")

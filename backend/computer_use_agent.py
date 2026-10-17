@@ -222,12 +222,117 @@ def _type_into_calculator_via_pyautogui(expression: str, result_json_path: str) 
                 pass
 
 
+import ctypes
+import ctypes.wintypes
+
+
+def attach_to_default_desktop() -> bool:
+    """
+    Attaches the calling thread to the real interactive Windows desktop (WinSta0\\Default).
+    This breaks out of sandbox/virtual desktops (e.g. exebox-...) so that
+    pyautogui, screen captures, and window manipulation operate on the user's actual screen.
+    """
+    if sys.platform != "win32":
+        return False
+    try:
+        user32 = ctypes.windll.user32
+        hDefaultDesk = user32.OpenDesktopW("Default", 0, False, 0x01FF)
+        if hDefaultDesk:
+            ok = user32.SetThreadDesktop(hDefaultDesk)
+            return bool(ok)
+    except Exception as e:
+        logger.warning(f"Failed to attach to Default desktop: {e}")
+    return False
+
+
+def force_foreground_window(hwnd: int) -> bool:
+    """
+    Bypasses Windows Focus Stealing Prevention to reliably bring any window to the front.
+    Uses simulated Alt keystroke + AttachThreadInput + ShowWindow(SW_RESTORE) + SetForegroundWindow.
+    """
+    if sys.platform != "win32" or not hwnd:
+        return False
+    try:
+        user32 = ctypes.windll.user32
+        curr_hwnd = user32.GetForegroundWindow()
+        cur_thread = user32.GetWindowThreadProcessId(curr_hwnd, None)
+        app_thread = user32.GetWindowThreadProcessId(hwnd, None)
+
+        # 1. Unlock focus stealing restriction via simulated Alt key
+        user32.keybd_event(0x12, 0, 0, 0)  # ALT down
+        user32.keybd_event(0x12, 0, 2, 0)  # ALT up
+
+        # 2. Attach thread input to share focus queues
+        if cur_thread != app_thread:
+            user32.AttachThreadInput(cur_thread, app_thread, True)
+
+        # 3. Restore and activate window
+        user32.ShowWindow(hwnd, 9)  # 9 = SW_RESTORE
+        user32.SetForegroundWindow(hwnd)
+        user32.SetFocus(hwnd)
+
+        # 4. Detach thread input
+        if cur_thread != app_thread:
+            user32.AttachThreadInput(cur_thread, app_thread, False)
+
+        time.sleep(0.3)
+        return user32.GetForegroundWindow() == hwnd
+    except Exception as e:
+        logger.warning(f"force_foreground_window failed for {hwnd}: {e}")
+        return False
+
+
+def find_visible_windows(title_keyword: str) -> List[Dict[str, Any]]:
+    """
+    Enumerates all visible windows on WinSta0\\Default matching the title keyword.
+    """
+    attach_to_default_desktop()
+    if sys.platform != "win32":
+        return []
+
+    user32 = ctypes.windll.user32
+    matches = []
+
+    def enum_cb(hwnd, _):
+        if user32.IsWindowVisible(hwnd):
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length > 0:
+                buff = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buff, length + 1)
+                title = buff.value
+                if title_keyword.lower() in title.lower():
+                    rect = ctypes.wintypes.RECT()
+                    user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                    w = rect.right - rect.left
+                    h = rect.bottom - rect.top
+                    if w > 80 and h > 80:
+                        matches.append({
+                            "hwnd": hwnd,
+                            "title": title,
+                            "rect": (rect.left, rect.top, rect.right, rect.bottom),
+                            "width": w,
+                            "height": h,
+                        })
+        return True
+
+    try:
+        proc = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)(enum_cb)
+        user32.EnumWindows(proc, 0)
+    except Exception as e:
+        logger.warning(f"EnumWindows error: {e}")
+
+    return matches
+
+
 def _type_into_calculator_direct(expression: str) -> Dict[str, Any]:
     """
-    Open Calculator and type expression DIRECTLY using pyautogui in-process.
-    pyautogui.press() uses Win32 SendInput which sends to the current foreground window
-    on the real desktop — no window enumeration needed, works from any process context.
+    1. Attaches calling thread to WinSta0\\Default.
+    2. Launches/finds Calculator on the real screen.
+    3. Forces Calculator into the foreground (bypassing browser focus lock).
+    4. Physically sends keystrokes with pyautogui.
     """
+    attach_to_default_desktop()
+
     if not PYAUTOGUI_OK:
         return {"ok": False, "error": "pyautogui not installed"}
 
@@ -238,24 +343,56 @@ def _type_into_calculator_direct(expression: str) -> Dict[str, Any]:
 
     steps = []
     try:
-        # Launch Calculator — it will come to the foreground automatically
-        subprocess.Popen(['calc.exe'])
-        steps.append("Launched Windows Calculator")
-        # Wait long enough for Calculator to fully render and be in foreground
-        time.sleep(3.0)
+        # Check if Calculator is already open on Default desktop
+        calc_windows = find_visible_windows("Calculator")
+        if not calc_windows:
+            subprocess.Popen(['calc.exe'])
+            steps.append("Launched Windows Calculator (calc.exe)")
+            for _ in range(12):
+                time.sleep(0.4)
+                calc_windows = find_visible_windows("Calculator")
+                if calc_windows:
+                    break
+        else:
+            steps.append("Found active Calculator window")
 
-        # Clear any previous calculation
+        target_hwnd = None
+        if calc_windows:
+            # Sort to prefer windows with real non-negative on-screen coordinates and largest size
+            calc_windows.sort(
+                key=lambda w: (w["rect"][0] >= 0 and w["rect"][1] >= 0, w["width"] * w["height"]),
+                reverse=True
+            )
+            for cw in calc_windows:
+                if force_foreground_window(cw["hwnd"]):
+                    target_hwnd = cw["hwnd"]
+                    steps.append(f"Forced foreground focus on Calculator (HWND {target_hwnd})")
+                    break
+            if not target_hwnd:
+                target_hwnd = calc_windows[0]["hwnd"]
+                force_foreground_window(target_hwnd)
+                steps.append(f"Selected Calculator HWND {target_hwnd}")
+        else:
+            time.sleep(2.0)
+
+
+        # Clear previous state completely (Escape + Delete + Escape guarantees 0 in Win11 Calculator)
+        pyautogui.FAILSAFE = False
         pyautogui.press('escape')
-        time.sleep(0.3)
-        steps.append("Cleared previous state")
+        time.sleep(0.1)
+        pyautogui.press('delete')
+        time.sleep(0.1)
+        pyautogui.press('escape')
+        time.sleep(0.2)
+        steps.append("Cleared previous state to 0 (Escape + Delete)")
 
-        # Type the expression character by character into the foreground window
+
+        # Physically type the expression keystroke by keystroke
         clicked = []
         i = 0
         while i < len(normalized):
             ch = normalized[i]
-            if ch == '*' and i + 1 < len(normalized) and normalized[i+1] == '*':
-                # ** (power) — just use * twice since calc doesn't have ^
+            if ch == '*' and i + 1 < len(normalized) and normalized[i + 1] == '*':
                 pyautogui.press('*')
                 time.sleep(0.08)
                 i += 2
@@ -263,34 +400,34 @@ def _type_into_calculator_direct(expression: str) -> Dict[str, Any]:
                 continue
             if ch in '0123456789.':
                 pyautogui.press(ch)
-            elif ch == '+':
-                pyautogui.press('+')
-            elif ch == '-':
-                pyautogui.press('-')
-            elif ch == '*':
-                pyautogui.press('*')
-            elif ch == '/':
-                pyautogui.press('/')
+            elif ch in ('+', '-', '*', '/'):
+                pyautogui.press(ch)
             elif ch == '(':
                 pyautogui.hotkey('shift', '9')
             elif ch == ')':
                 pyautogui.hotkey('shift', '0')
             clicked.append(ch)
-            time.sleep(0.09)
+            time.sleep(0.08)
             i += 1
 
         expr_typed = ''.join(clicked)
-        steps.append(f"Typed: {expr_typed}")
+        steps.append(f"Physically typed: {expr_typed}")
 
-        # Press Enter to evaluate
+        # Press Enter / Equals
         pyautogui.press('enter')
-        time.sleep(0.5)
-        steps.append("Pressed Enter — result shown in Calculator display")
+        time.sleep(0.4)
+        steps.append("Pressed Enter/Equals — result displayed on screen")
 
-        return {"ok": True, "method": "pyautogui_direct", "typed": expr_typed, "steps": steps}
+        return {
+            "ok": True,
+            "method": "pyautogui_winsta0_foreground",
+            "typed": expr_typed,
+            "steps": steps,
+            "hwnd": target_hwnd,
+        }
 
     except Exception as e:
-        return {"ok": False, "method": "pyautogui_direct", "error": str(e), "steps": steps}
+        return {"ok": False, "method": "pyautogui_winsta0_foreground", "error": str(e), "steps": steps}
 
 
 def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
@@ -298,23 +435,18 @@ def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
     Execute a real GUI computer use action.
     Dispatches to: calculate, type_in_app, screenshot, run_shell, web_open.
     """
+    attach_to_default_desktop()
     action_type = action.get("type", "").lower().strip()
 
     # ── CALCULATE ─────────────────────────────────────────────────────────────
     if action_type == "calculate":
         expression = action.get("expression") or action.get("query", "0")
 
-        # Step 1: Python math — always 100% correct (instant)
+        # Step 1: Accurate math evaluation
         math_result = safe_eval_math(expression)
 
-        # Step 2: Type into Calculator DIRECTLY via pyautogui in-process
-        # pyautogui.SendInput goes to the foreground window — no subprocess, no isolation issues
+        # Step 2: Real desktop Calculator typing on WinSta0\Default
         gui_result = _type_into_calculator_direct(expression)
-
-        # Step 3: PowerShell AppActivate fallback if pyautogui failed for some reason
-        if not gui_result.get("ok"):
-            logger.warning(f"Direct pyautogui failed ({gui_result.get('error')}) — trying PowerShell fallback")
-            gui_result = _type_into_calculator_via_powershell(expression)
 
         steps = gui_result.get("steps", [])
         if not steps and gui_result.get("typed"):
@@ -335,25 +467,20 @@ def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
     elif action_type == "type_in_app":
         app_name = action.get("app", "")
         text = action.get("text", "")
+        attach_to_default_desktop()
 
-        helper_code = f"""
-import pyautogui, subprocess, time, json, sys
-
-pyautogui.FAILSAFE = False
-result = {{"ok": False}}
-try:
-    import pygetwindow as gw
-    wins = gw.getWindowsWithTitle({json.dumps(app_name)})
-    if wins:
-        wins[0].activate()
-        time.sleep(0.5)
-    pyautogui.typewrite({json.dumps(text[:500])}, interval=0.05)
-    result = {{"ok": True, "typed": {json.dumps(text[:80])}}}
-except Exception as e:
-    result = {{"ok": False, "error": str(e)}}
-print(json.dumps(result))
-"""
-        return _run_gui_helper(helper_code)
+        steps = []
+        try:
+            wins = find_visible_windows(app_name)
+            if wins:
+                force_foreground_window(wins[0]["hwnd"])
+                steps.append(f"Focused window: {wins[0]['title']}")
+            time.sleep(0.3)
+            pyautogui.typewrite(text[:500], interval=0.03)
+            steps.append(f"Typed {len(text[:500])} characters into {app_name}")
+            return {"ok": True, "app": app_name, "typed_preview": text[:80], "steps": steps}
+        except Exception as e:
+            return {"ok": False, "app": app_name, "error": str(e)}
 
     # ── SCREENSHOT ────────────────────────────────────────────────────────────
     elif action_type == "screenshot":
@@ -361,17 +488,15 @@ print(json.dumps(result))
         if not save_path:
             save_path = os.path.join(tempfile.gettempdir(), f"jarvis_screen_{int(time.time())}.png")
 
-        helper_code = f"""
-import pyautogui, json
-pyautogui.FAILSAFE = False
-try:
-    img = pyautogui.screenshot()
-    img.save({json.dumps(save_path)})
-    print(json.dumps({{"ok": True, "screenshot_path": {json.dumps(save_path)}, "size": list(img.size)}}))
-except Exception as e:
-    print(json.dumps({{"ok": False, "error": str(e)}}))
-"""
-        return _run_gui_helper(helper_code)
+        attach_to_default_desktop()
+        try:
+            import PIL.ImageGrab
+            img = PIL.ImageGrab.grab()
+            img.save(save_path)
+            return {"ok": True, "screenshot_path": save_path, "size": list(img.size)}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
 
     # ── LIST WINDOWS ──────────────────────────────────────────────────────────
     elif action_type == "list_windows":

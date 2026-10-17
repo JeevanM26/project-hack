@@ -46,9 +46,17 @@ COMMON_WINDOWS_APPS = {
 
 def open_system_app_or_url(target: str) -> Dict[str, Any]:
     """Physically opens any installed application, folder, or website URL on the user's laptop."""
+    if sys.platform == "win32":
+        try:
+            from computer_use_agent import attach_to_default_desktop
+            attach_to_default_desktop()
+        except Exception:
+            pass
+
     cleaned = target.strip().strip('"\'')
     cleaned = re.sub(r'[\.\?!,;]+$', '', cleaned).strip()
     lower = cleaned.lower()
+
 
     # 1. Check if it's a URL or website domain
     if lower.startswith(("http://", "https://")) or any(

@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 import requests
 from typing import Dict, Any, List, Optional
 from duckduckgo_search import DDGS
@@ -12,6 +13,7 @@ from os_and_dir_tools import (
     write_file_to_disk,
     run_terminal_command,
 )
+from computer_use_agent import execute_computer_use, safe_eval_math
 
 
 class JarvisAutonomousBrain:
@@ -117,22 +119,50 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
 
         # Intent fallback & compound intent check
         cmd_lower = instruction.lower()
-        existing_tools = {str(act.get("tool", "")).lower() for act in plan.get("actions", [])}
         has_inspect = any(w in cmd_lower for w in ["directory", "folder", "mistake", "error", "bug", "inspect", "audit", "scan"])
         has_open = any(w in cmd_lower for w in ["open ", "launch ", "start "])
-        has_code = any(w in cmd_lower for w in ["write code", "fix code", "write a", "code for", "create code", "implement", "fix it", "fix them", "fix this", "fix the", "and fix"])
+        has_code = any(w in cmd_lower for w in ["write code", "fix code", "write a", "code for", "create code", "implement", "fix it", "fix them", "fix this", "fix the", "and fix", "write python", "python code", "write a python"])
 
+        # Detect calculate/compute requests: "calculate 5*6", "open calculator and compute", "what is 5+6"
+        has_calculate = any(w in cmd_lower for w in ["calculat", "compute", "what is", "how much", "evaluate", "solve", "find the result", "result of"])
+        # Extract math expression — greedy match allowing spaces around operators
+        calc_expression = None
+        math_match = re.search(
+            r'(?:calculate|compute|evaluate|solve|find the result of|what is|result of|how much is)[:\s]+([0-9][0-9\s\+\-\*/\.\(\)\^×÷%]*)',
+            instruction, re.I
+        )
+        if not math_match:
+            math_match = re.search(r'(\d[\d\s\+\-\*/\.\(\)\^×÷%]+\d)', instruction)
+        if math_match:
+            calc_expression = math_match.group(1).strip()
+
+        # Check existing VALID tool names (normalize: tool key takes priority over type key)
+        existing_tools = {str(act.get("tool", "")).lower() for act in plan.get("actions", [])}
+
+        # FORCE-INJECT real tool actions based on what the user actually said.
+        # Small LLMs often return bogus type:"math"/"output" instead of tool:"calculate" — we fix that here.
         if has_open and not any("open" in t or "launch" in t or "start" in t for t in existing_tools):
             m = re.search(r'(?:open|launch|start)\s+(?:the\s+)?([a-zA-Z0-9_\-\.\s]+)', cmd_lower)
             target = m.group(1).strip() if m else "notepad"
-            # Separate compound if 'and' is present
             if " and " in target:
                 target = target.split(" and ", 1)[0].strip()
             plan.setdefault("actions", []).append({"tool": "open_app_or_url", "target": target})
-        if has_inspect and not any("inspect" in t or "audit" in t or "scan" in t or "dir" in t for t in existing_tools):
+
+        # Always force a calculate action when user says "calculate ..." with an expression,
+        # regardless of what the LLM planner emitted (it may emit type:"math" which we'd miss)
+        if has_calculate and calc_expression:
+            # Remove any bogus math/output/type actions the model put in
+            plan["actions"] = [
+                a for a in plan.get("actions", [])
+                if str(a.get("tool", a.get("type", ""))).lower() not in ("math", "output", "compute", "calculate")
+            ]
+            plan.setdefault("actions", []).append({"tool": "calculate", "expression": calc_expression})
+
+        if has_inspect and "inspect_directory" not in existing_tools and not any("inspect" in t or "audit" in t for t in existing_tools):
             plan.setdefault("actions", []).append({"tool": "inspect_directory", "path": target_directory})
         if has_code and not any("write" in t or "fix" in t for t in existing_tools):
             plan.setdefault("actions", []).append({"tool": "write_or_fix_code", "directory": target_directory, "task": instruction})
+
 
         # Spawn dynamic sub-agents in the Neural Memory Graph
         for sa in plan.get("spawn_sub_agents", []):
@@ -144,7 +174,9 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
             raw_tool = str(act.get("tool", "")).lower().replace("-", "_").strip()
 
             # Normalize tool name
-            if raw_tool.startswith("open") or raw_tool.startswith("launch") or raw_tool.startswith("start"):
+            if raw_tool in ("calculate", "compute", "evaluate", "math") or any(k in raw_tool for k in ["calculat", "comput", "evaluat"]):
+                tname = "calculate"
+            elif raw_tool.startswith("open") or raw_tool.startswith("launch") or raw_tool.startswith("start"):
                 tname = "open_app_or_url"
                 if not act.get("target"):
                     if "_" in raw_tool and raw_tool not in {"open_app", "open_app_or_url", "open_application"}:
@@ -163,7 +195,14 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
             else:
                 tname = raw_tool
 
-            if tname == "open_app_or_url":
+            if tname == "calculate":
+                expr = act.get("expression") or calc_expression or "0"
+                self.graph.set_agent_task("agent_os_operator", "working", f"Computing: {expr}", "mem_system")
+                calc_res = execute_computer_use({"type": "calculate", "expression": expr})
+                tool_traces.append({"tool": "calculate", "input": expr, "result": calc_res})
+                self.graph.set_agent_task("agent_os_operator", "idle", f"Result: {calc_res.get('result')}")
+
+            elif tname == "open_app_or_url":
                 target = act.get("target", "")
                 self.graph.set_agent_task("agent_os_operator", "working", f"Launching: {target}", "mem_system")
                 res = open_system_app_or_url(target)
@@ -292,22 +331,33 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
                             created_or_fixed_files[rpath] = fcontent
                             self.graph.upsert_memory_fact("mem_workspace", f"Wrote {rpath}", f"{len(fcontent)} bytes", "agent_coder")
 
-                # Verification run
-                vcmd = coder_json.get("verification_command")
-                if not vcmd or vcmd.startswith("shell/"):
-                    if any(w in instruction.lower() for w in ["verify", "test", "run", "check"]) and created_or_fixed_files:
-                        first_file = list(created_or_fixed_files.keys())[0]
-                        vcmd = f"python {first_file}"
+                # Verification run — always run with the actual file that was written to disk
+                vcmd = coder_json.get("verification_command", "")
+                # Normalize python3 → python on Windows
+                if sys.platform == "win32":
+                    vcmd = re.sub(r'^python3\b', 'python', vcmd)
+                # Override with actual written filename if model gave wrong/generic command
+                if successful_writes > 0:
+                    actual_file = list(created_or_fixed_files.keys())[0]
+                    # Always prefer running the actual file that was written
+                    if not vcmd or vcmd.startswith("shell/") or vcmd.startswith("python/") or "or " in vcmd:
+                        # Auto-run if the user asked to write AND run, or for verification
+                        if any(w in instruction.lower() for w in ["run", "test", "verify", "check", "execute", "write and run", "and run"]):
+                            vcmd = f"python {actual_file}"
+                        else:
+                            vcmd = ""  # Don't auto-run if user only asked to write
+                    elif re.match(r'python\s+\S+\.py', vcmd):
+                        # Model specified a .py file to run — use the actual written file instead
+                        vcmd = f"python {actual_file}"
+
 
                 if vcmd and successful_writes > 0:
-                    if " or " in vcmd:
-                        vcmd = vcmd.split(" or ")[0].strip()
-                    if not vcmd.startswith("shell/"):
-                        self.graph.set_agent_task("agent_coder", "working", f"Verifying: {vcmd}", "mem_workspace")
-                        cmd_res = run_terminal_command(vcmd, cwd=work_dir)
-                        tool_traces.append({"tool": "run_terminal_command", "input": vcmd, "result": cmd_res})
+                    self.graph.set_agent_task("agent_coder", "working", f"Verifying: {vcmd}", "mem_workspace")
+                    cmd_res = run_terminal_command(vcmd, cwd=work_dir)
+                    tool_traces.append({"tool": "run_terminal_command", "input": vcmd, "result": cmd_res})
 
                 self.graph.set_agent_task("agent_coder", "idle", f"Wrote {len(created_or_fixed_files)} files")
+
 
             elif tname == "run_command":
                 cmd = act.get("command", "")
@@ -350,7 +400,14 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
             for t in tool_traces:
                 tool_n = t.get("tool")
                 res = t.get("result", {})
-                if tool_n == "open_system_app_or_url" and res.get("ok"):
+                if tool_n == "calculate":
+                    expr = t.get("input", "")
+                    result_val = res.get("result") or res.get("python_computed_result")
+                    if result_val:
+                        trace_summaries.append(f"Computed {expr} = {result_val}")
+                        if res.get("gui_ok"):
+                            trace_summaries.append("also typed the expression into Windows Calculator")
+                elif tool_n == "open_system_app_or_url" and res.get("ok"):
                     trace_summaries.append(f"Launched {res.get('target', 'application')} on your system")
                 elif tool_n == "inspect_directory_and_find_mistakes" and res.get("ok"):
                     trace_summaries.append(f"Audited {res.get('file_count', 0)} files in {res.get('directory', 'directory')}")
@@ -358,6 +415,10 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
                     trace_summaries.append(f"Wrote {res.get('relative_path')} ({res.get('bytes_written')} bytes)")
                 elif tool_n == "run_terminal_command":
                     trace_summaries.append(f"Ran '{res.get('command')}' with exit code {res.get('exit_code')}")
+                elif tool_n == "web_search":
+                    hits = res if isinstance(res, list) else []
+                    if hits:
+                        trace_summaries.append(f"Found {len(hits)} web results for '{t.get('input', '')}'")
             if trace_summaries:
                 final_reply = ". ".join(trace_summaries) + "."
 

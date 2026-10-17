@@ -252,7 +252,11 @@ def write_file_to_disk(base_dir: str, relative_path: str, content: str) -> Dict[
 
 def run_terminal_command(command: str, cwd: str = ".", timeout: int = 45) -> Dict[str, Any]:
     """Executes a real shell command inside the target directory and returns stdout, stderr, and exit_code."""
+    # Normalize python3 → python on Windows (model hallucination prevention)
+    if sys.platform == "win32":
+        command = re.sub(r'^python3\b', 'python', command.strip())
     work_dir = str(Path(cwd).expanduser().resolve())
+
     try:
         proc = subprocess.run(
             command,

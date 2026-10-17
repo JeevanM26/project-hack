@@ -41,23 +41,98 @@ def is_process_running(name_substring: str) -> Tuple[bool, Optional[int]]:
     return False, None
 
 
+import ctypes
+
+
+def switch_to_default_desktop():
+    """Switches thread desktop from background sandbox to user's interactive 'default' desktop."""
+    try:
+        DESKTOP_ALL = 0x1FF
+        hdesk = ctypes.windll.user32.OpenDesktopW("default", 0, False, DESKTOP_ALL)
+        if hdesk:
+            ctypes.windll.user32.SetThreadDesktop(hdesk)
+            return hdesk
+    except Exception:
+        pass
+    return None
+
+
+def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
+    """Uses Windows UI Automation on default desktop to automate Calculator buttons and read output."""
+    switch_to_default_desktop()
+    try:
+        import uiautomation as auto
+
+        calc = auto.WindowControl(searchDepth=2, Name="Calculator")
+        if not calc.Exists(0, 0):
+            subprocess.Popen("calc.exe", shell=True)
+            time.sleep(0.6)
+            calc = auto.WindowControl(searchDepth=2, Name="Calculator")
+
+        if calc.Exists(0, 0):
+            calc.SetFocus()
+            btn_map = {
+                "0": "num0Button",
+                "1": "num1Button",
+                "2": "num2Button",
+                "3": "num3Button",
+                "4": "num4Button",
+                "5": "num5Button",
+                "6": "num6Button",
+                "7": "num7Button",
+                "8": "num8Button",
+                "9": "num9Button",
+                "+": "plusButton",
+                "-": "minusButton",
+                "*": "multiplyButton",
+                "/": "divideButton",
+                "=": "equalButton",
+                ".": "decimalSeparatorButton",
+                "C": "clearButton",
+            }
+            # Clear previous entry
+            clear_btn = calc.ButtonControl(searchDepth=6, AutomationId="clearButton")
+            if clear_btn.Exists(0, 0):
+                clear_btn.Click()
+
+            clean_expr = expr.replace(" ", "")
+            if not clean_expr.endswith("="):
+                clean_expr += "="
+
+            for ch in clean_expr:
+                autoid = btn_map.get(ch)
+                if autoid:
+                    btn = calc.ButtonControl(searchDepth=6, AutomationId=autoid)
+                    if btn.Exists(0, 0):
+                        btn.Click()
+                    time.sleep(0.04)
+
+            time.sleep(0.1)
+            res_ctrl = calc.TextControl(searchDepth=5, AutomationId="CalculatorResults")
+            disp = res_ctrl.Name if res_ctrl.Exists(0, 0) else ""
+            return True, disp
+    except Exception as exc:
+        print("UIA Calc Error:", exc)
+    return False, ""
+
+
 def activate_window_by_name(window_title: str) -> bool:
-    """Brings existing window to foreground using Windows Script Host."""
+    """Brings existing window to foreground on user desktop."""
+    switch_to_default_desktop()
+    try:
+        import uiautomation as auto
+
+        win = auto.WindowControl(searchDepth=2, Name=window_title)
+        if win.Exists(0, 0):
+            win.SetFocus()
+            return True
+    except Exception:
+        pass
     try:
         import win32com.client
+
         w = win32com.client.Dispatch("WScript.Shell")
         return bool(w.AppActivate(window_title))
-    except Exception:
-        return False
-
-
-def send_keys_to_active_window(keys: str) -> bool:
-    """Sends keystrokes to the focused window."""
-    try:
-        import win32com.client
-        w = win32com.client.Dispatch("WScript.Shell")
-        w.SendKeys(keys)
-        return True
     except Exception:
         return False
 
@@ -120,54 +195,35 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
         math_expr = extract_math_expression(lower)
         result = safe_eval_math(math_expr) if math_expr else None
 
-        if calc_running:
-            # DO NOT SPAWN A DUPLICATE! Focus existing instance
+        if math_expr and result is not None:
+            ok, disp = perform_calculator_uia(math_expr)
+            return {
+                "ok": True,
+                "action": "calculator_performed_in_existing_window" if calc_running else "calculator_spawned_and_calculated",
+                "already_running": calc_running,
+                "pid": calc_pid,
+                "expression": math_expr,
+                "result": result,
+                "display": disp,
+                "target": "Calculator",
+                "speech": f"{'Calculator was already open. ' if calc_running else 'Opened Calculator. '}Performed {math_expr}, equals {result}.",
+                "message": f"Calculator (PID {calc_pid or 'active'}) {'was already open' if calc_running else 'launched'}. Automated buttons: {math_expr} = {result} ({disp}).",
+                "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+            }
+        elif calc_running:
             activate_window_by_name("Calculator")
-            if math_expr and result is not None:
-                # Format for key entry
-                key_sequence = math_expr.replace(" ", "") + "="
-                send_keys_to_active_window(key_sequence)
-                return {
-                    "ok": True,
-                    "action": "calculator_performed_in_existing_window",
-                    "already_running": True,
-                    "pid": calc_pid,
-                    "expression": math_expr,
-                    "result": result,
-                    "target": "Calculator",
-                    "speech": f"Calculator was already open. Performed {math_expr}, equals {result}.",
-                    "message": f"Calculator (PID {calc_pid}) was already open. Focused window and performed: {math_expr} = {result}",
-                    "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
-                }
-            else:
-                return {
-                    "ok": True,
-                    "action": "calculator_focused_existing",
-                    "already_running": True,
-                    "pid": calc_pid,
-                    "target": "Calculator",
-                    "speech": "Calculator is already open and focused.",
-                    "message": f"Calculator (PID {calc_pid}) is already running. Focused existing window (no duplicate spawned).",
-                    "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
-                }
+            return {
+                "ok": True,
+                "action": "calculator_focused_existing",
+                "already_running": True,
+                "pid": calc_pid,
+                "target": "Calculator",
+                "speech": "Calculator is already open and focused.",
+                "message": f"Calculator (PID {calc_pid}) is already running. Focused existing window (no duplicate spawned).",
+                "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+            }
         else:
-            # Not running, spawn fresh
             subprocess.Popen("calc.exe", shell=True)
-            time.sleep(0.4)
-            activate_window_by_name("Calculator")
-            if math_expr and result is not None:
-                send_keys_to_active_window(math_expr.replace(" ", "") + "=")
-                return {
-                    "ok": True,
-                    "action": "calculator_spawned_and_calculated",
-                    "already_running": False,
-                    "expression": math_expr,
-                    "result": result,
-                    "target": "Calculator",
-                    "speech": f"Opened Calculator and calculated {math_expr}, equals {result}.",
-                    "message": f"Launched Calculator and performed: {math_expr} = {result}",
-                    "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
-                }
             return {
                 "ok": True,
                 "action": "calculator_spawned",

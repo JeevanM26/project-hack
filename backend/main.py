@@ -58,6 +58,31 @@ EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 if not os.path.exists(EDGE_PATH):
     EDGE_PATH = shutil.which("msedge") or shutil.which("chrome") or ""
 
+# Converter Tools: Neural TTS, ReportLab PDF Generation, Trimesh 3D Geometry
+try:
+    import edge_tts
+    EDGE_TTS_AVAILABLE = True
+except ImportError:
+    EDGE_TTS_AVAILABLE = False
+
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+
+try:
+    import trimesh
+    TRIMESH_AVAILABLE = True
+except ImportError:
+    TRIMESH_AVAILABLE = False
+
+BLENDER_EXE = r"E:\blender.exe" if os.path.exists(r"E:\blender.exe") else (shutil.which("blender") or "blender")
+BLENDER_AVAILABLE = os.path.exists(BLENDER_EXE) if BLENDER_EXE else False
+
 
 class CommandRequest(BaseModel):
     instruction: str
@@ -107,6 +132,22 @@ class SarvamTtsRequest(BaseModel):
     text: str
     language_code: str = "en-IN"
     sarvam_api_key: Optional[str] = ""
+
+
+class ConvertPdfRequest(BaseModel):
+    title: str = "J.A.R.V.I.S. Generated Document"
+    content: str
+    target_path: Optional[str] = "./workspace_app/document.pdf"
+
+
+class ConvertTtsRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "en-GB-RyanNeural"
+
+
+class Convert3dRequest(BaseModel):
+    mesh_type: str = "torus"
+    target_path: Optional[str] = "./workspace_app/model.glb"
 
 
 def is_port_in_use(port: int) -> bool:
@@ -556,10 +597,13 @@ async def serve_ide():
 @app.get("/api/health")
 async def health_check():
     models = await list_ollama_models()
-    active_model = next(
-        (m for m in models if "gemma" in m.lower()),
-        models[0] if models else (DEFAULT_MODEL if not GEMINI_API_KEY else "gemini-2.5-flash"),
-    )
+    preferred_models = ["gemma4:latest", "gemma2:9b", "gemma4:27b", "gemma2:27b"]
+    active_model = next((m for m in preferred_models if m in models), None)
+    if not active_model:
+        active_model = next(
+            (m for m in models if "gemma" in m.lower()),
+            models[0] if models else (DEFAULT_MODEL if not GEMINI_API_KEY else "gemini-2.5-flash"),
+        )
     playwright_installed = False
     try:
         import playwright  # noqa: F401
@@ -576,6 +620,10 @@ async def health_check():
         "ollama_models": models,
         "gemini_configured": bool(GEMINI_API_KEY),
         "playwright_ready": playwright_installed,
+        "pdf_converter_ready": REPORTLAB_AVAILABLE,
+        "neural_tts_ready": EDGE_TTS_AVAILABLE,
+        "trimesh_3d_ready": TRIMESH_AVAILABLE,
+        "blender_ready": BLENDER_AVAILABLE,
         "adaptive_memory_entries": len(ADAPTIVE_MEMORY),
     }
 
@@ -965,10 +1013,12 @@ async def screenshot_verify(req: ScreenshotVerifyRequest):
 async def open_native_app(req: CommandRequest):
     t0 = time.perf_counter()
     raw = req.instruction.strip().strip(".,!?;:\"'").lower()
+    blender_exe = r"E:\blender.exe" if os.path.exists(r"E:\blender.exe") else (shutil.which("blender") or "blender")
     win_map = {
         "calculator": "calc.exe",
         "calc": "calc.exe",
         "notepad": "notepad.exe",
+        "blender": blender_exe,
         "vs code": "code",
         "vscode": "code",
         "code": "code",
@@ -978,7 +1028,59 @@ async def open_native_app(req: CommandRequest):
     }
     target = win_map.get(raw, raw)
     try:
-        if target == "code":
+        # Specialized Handler: Real Blender 3D Project & Modeling Automation
+        if "blender" in raw or target == blender_exe:
+            if any(k in raw for k in ["model", "cube", "sphere", "torus", "monkey", "cylinder", "cone", "suzanne", "3d", "procedural"]):
+                # Generate a Python bpy modeling script to create 3D assets in Blender
+                script_path = Path(tempfile.gettempdir()) / "jarvis_blender_model.py"
+                mesh_type = "primitive_torus_add" if "torus" in raw else ("primitive_monkey_add" if ("monkey" in raw or "suzanne" in raw) else ("primitive_uv_sphere_add" if "sphere" in raw else "primitive_cube_add"))
+                script_content = f"""import bpy
+
+# Clear default scene objects
+bpy.ops.wm.read_factory_settings(use_empty=True)
+
+# Add requested 3D geometry
+bpy.ops.mesh.{mesh_type}(size=2.0, location=(0, 0, 1))
+obj = bpy.context.active_object
+obj.name = "JARVIS_Generated_Mesh"
+
+# Create a sleek metallic emissive material
+mat = bpy.data.materials.new(name="JARVIS_Crimson_Material")
+mat.use_nodes = True
+nodes = mat.node_tree.nodes
+principled = nodes.get("Principled BSDF")
+if principled:
+    principled.inputs["Base Color"].default_value = (0.05, 0.65, 0.95, 1.0)
+    principled.inputs["Metallic"].default_value = 0.85
+    principled.inputs["Roughness"].default_value = 0.15
+obj.data.materials.append(mat)
+
+# Add camera and key light
+bpy.ops.object.camera_add(location=(5, -5, 4), rotation=(1.1, 0, 0.8))
+bpy.context.scene.camera = bpy.context.active_object
+bpy.ops.object.light_add(type='SUN', location=(4, -2, 6))
+
+print("J.A.R.V.I.S. Blender 3D Model created successfully!")
+"""
+                script_path.write_text(script_content, encoding="utf-8")
+                subprocess.Popen([blender_exe, "--python", str(script_path)])
+                return {
+                    "ok": True,
+                    "action": "blender_3d_modeled_and_launched",
+                    "target": "Blender 5.2.2 (3D Modeling Pipeline)",
+                    "mesh": mesh_type,
+                    "script": str(script_path),
+                    "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+                }
+            else:
+                subprocess.Popen([blender_exe])
+                return {
+                    "ok": True,
+                    "action": "blender_launched",
+                    "target": "Blender 5.2.2 LTS",
+                    "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+                }
+        elif target == "code":
             code_bin = shutil.which("code") or "code"
             subprocess.Popen([code_bin, req.target_directory or "."], shell=(platform.system() == "Windows"))
         elif platform.system() == "Windows":
@@ -1083,3 +1185,141 @@ async def sarvam_tts_proxy(req: SarvamTtsRequest):
 async def update_system_prompts(payload: Dict[str, Any]):
     SYSTEM_PROMPTS_STORE.update(payload.get("prompts", {}))
     return {"ok": True, "count": len(SYSTEM_PROMPTS_STORE)}
+
+
+@app.post("/api/convert/pdf")
+async def convert_to_pdf(req: ConvertPdfRequest):
+    """Converts markdown, email, or plain text into a high-grade publication PDF document."""
+    if not REPORTLAB_AVAILABLE:
+        raise HTTPException(status_code=500, detail="ReportLab not installed.")
+
+    t0 = time.perf_counter()
+    out_path = Path(req.target_path or "./workspace_app/document.pdf").resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        "CustomTitle",
+        parent=styles["Title"],
+        fontName="Helvetica-Bold",
+        fontSize=20,
+        leading=24,
+        textColor=colors.HexColor("#0284c7"),
+        spaceAfter=14,
+    )
+    body_style = ParagraphStyle(
+        "CustomBody",
+        parent=styles["Normal"],
+        fontName="Helvetica",
+        fontSize=10,
+        leading=15,
+        textColor=colors.HexColor("#1e293b"),
+        spaceAfter=8,
+    )
+
+    story = [
+        Paragraph(f"<b>{req.title}</b>", title_style),
+        Paragraph(
+            f"<font color='#64748b' size='8'>Generated by J.A.R.V.I.S. Antigravity AI Engine • {time.strftime('%Y-%m-%d %H:%M:%S')}</font>",
+            body_style,
+        ),
+        Spacer(1, 12),
+    ]
+
+    for para in req.content.split("\n\n"):
+        para = para.strip().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        if para:
+            story.append(Paragraph(para.replace("\n", "<br/>"), body_style))
+            story.append(Spacer(1, 4))
+
+    doc = SimpleDocTemplate(
+        str(out_path),
+        pagesize=letter,
+        rightMargin=54,
+        leftMargin=54,
+        topMargin=54,
+        bottomMargin=54,
+    )
+    doc.build(story)
+
+    pdf_bytes = out_path.read_bytes()
+    b64_pdf = base64.b64encode(pdf_bytes).decode("ascii")
+
+    return {
+        "ok": True,
+        "path": str(out_path),
+        "size_bytes": len(pdf_bytes),
+        "base64_pdf": b64_pdf,
+        "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+    }
+
+
+@app.post("/api/convert/tts")
+async def convert_to_neural_tts(req: ConvertTtsRequest):
+    """Converts text into ultra-realistic studio neural voice MP3 via edge-tts (zero API key needed)."""
+    if not EDGE_TTS_AVAILABLE:
+        raise HTTPException(status_code=500, detail="edge-tts not installed.")
+
+    t0 = time.perf_counter()
+    clean_text = req.text.strip()[:1000]
+    voice = req.voice or "en-GB-RyanNeural"
+
+    tmp_mp3 = Path(tempfile.gettempdir()) / f"jarvis_speech_{int(time.time()*1000)}.mp3"
+    try:
+        communicate = edge_tts.Communicate(clean_text, voice=voice)
+        await communicate.save(str(tmp_mp3))
+
+        mp3_bytes = tmp_mp3.read_bytes()
+        b64_audio = base64.b64encode(mp3_bytes).decode("ascii")
+        try:
+            tmp_mp3.unlink(missing_ok=True)
+        except Exception:
+            pass
+
+        return {
+            "ok": True,
+            "voice": voice,
+            "audio_base64": b64_audio,
+            "mime_type": "audio/mp3",
+            "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"TTS generation error: {exc}")
+
+
+@app.post("/api/convert/3d")
+async def convert_to_3d_mesh(req: Convert3dRequest):
+    """Generates and converts 3D procedural geometry into binary glTF (.glb) using trimesh & Blender."""
+    t0 = time.perf_counter()
+    raw = req.mesh_type.lower()
+
+    target_path = Path(req.target_path or "./workspace_app/model.glb").resolve()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if TRIMESH_AVAILABLE:
+        if "torus" in raw:
+            mesh = trimesh.creation.torus(major_radius=1.2, minor_radius=0.35)
+        elif "sphere" in raw:
+            mesh = trimesh.creation.icosphere(subdivisions=3, radius=1.0)
+        elif "cylinder" in raw:
+            mesh = trimesh.creation.cylinder(radius=0.8, height=2.0)
+        else:
+            mesh = trimesh.creation.box(extents=(1.5, 1.5, 1.5))
+
+        mesh.visual.vertex_colors = [14, 165, 233, 255]
+        glb_bytes = mesh.export(file_type="glb")
+        target_path.write_bytes(glb_bytes)
+
+        return {
+            "ok": True,
+            "mesh_type": req.mesh_type,
+            "path": str(target_path),
+            "vertices": len(mesh.vertices),
+            "faces": len(mesh.faces),
+            "volume": round(mesh.volume, 3) if mesh.is_watertight else 0.0,
+            "is_watertight": bool(mesh.is_watertight),
+            "glb_base64": base64.b64encode(glb_bytes).decode("ascii"),
+            "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Trimesh not installed.")

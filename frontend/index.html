@@ -448,6 +448,12 @@
           <button type="button" data-cmd="Build a Full-Featured Interactive Scientific Calculator web app with arithmetic and memory keys" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-purple-500/40 text-purple-300 truncate text-left" title="Scientific Calculator App">
             &#129518; 6. Calculator App (Full)
           </button>
+          <button type="button" data-cmd="Model a 3D metallic torus in Blender" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-sky-500/40 text-sky-200 truncate text-left" title="Blender 3D Modeling Pipeline">
+            &#127912; 7. Blender 3D: Torus
+          </button>
+          <button type="button" data-cmd="Draft an email to investors announcing our AI IDE project" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-teal-500/40 text-teal-300 truncate text-left" title="Universal Email & Document Studio">
+            &#128231; 8. Email: Investor Update
+          </button>
         </div>
       </div>
 
@@ -1236,6 +1242,24 @@
 
     async function speakText(text) {
       document.getElementById('liveJarvisTranscript').textContent = text;
+      // 1. Try Neural Edge-TTS via Backend (ultra-realistic J.A.R.V.I.S. speech, no API key needed)
+      if (state.backendOnline) {
+        try {
+          const r = await fetch(`${state.backendUrl}/api/convert/tts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text.slice(0, 480), voice: 'en-GB-RyanNeural' })
+          });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.audio_base64) {
+              const audio = new Audio(`data:audio/mp3;base64,${d.audio_base64}`);
+              await audio.play();
+              return;
+            }
+          }
+        } catch (_) {}
+      }
       if (state.sarvamKey) {
         try {
           setAgentWorking('agent_sarvam', true, 'Sarvam TTS...');
@@ -1275,6 +1299,28 @@
       if (!cmd) return;
 
       const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
+
+      // Specialized Fast Path: Real Blender 3D Project & Modeling Pipeline
+      if (lower.includes('blender') || (lower.includes('model') && (lower.includes('torus') || lower.includes('cube') || lower.includes('sphere') || lower.includes('monkey')))) {
+        const t0 = performance.now();
+        try {
+          const r = await fetch(`${state.backendUrl}/api/open-app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: cmd })
+          });
+          const d = await r.json();
+          const ms = Math.round(performance.now() - t0);
+          document.getElementById('latencyPill').textContent = `${ms}ms Blender 3D`;
+          pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `Blender 5.2.2 Pipeline: 3D model spawned in ${ms}ms!`, 'text-sky-300');
+          speakText(`Blender 3D model launched in ${ms} milliseconds.`);
+        } catch (err) {
+          document.getElementById('sideTerminalOutput').textContent = `[BLENDER 3D ERROR] Backend error: ${err}`;
+        }
+        await runFullAutonomousPipeline(cmd);
+        return;
+      }
+
       const simpleOpen = lower.match(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start)\s+(.+)$/);
       const isComplex = / and |write|code|create|build|fix|mistake|bug|install|app|test|screenshot|triage|radar|dashboard|kanban|physics|sim/.test(lower);
 
@@ -1677,7 +1723,31 @@
         }
         speakText(`Saved ${state.selectedFile} to workspace.`);
       };
+
+      const exportCurrentDocToPdf = async () => {
+        const text = document.getElementById('studioCodeEditor').value || 'J.A.R.V.I.S. Project Spec';
+        const title = state.selectedFile || 'Project Spec';
+        try {
+          const r = await fetch(`${state.backendUrl}/api/convert/pdf`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, content: text, target_path: './hackathon_app/document.pdf' })
+          });
+          const d = await r.json();
+          if (d.ok && d.base64_pdf) {
+            const link = document.createElement('a');
+            link.href = `data:application/pdf;base64,${d.base64_pdf}`;
+            link.download = `${title.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+            link.click();
+            speakText(`Exported publication PDF in ${d.latency_ms} milliseconds.`);
+          }
+        } catch (err) {
+          alert('PDF conversion requires backend running on port 8000: ' + err);
+        }
+      };
+
       document.getElementById('btnSaveDiskFile')?.addEventListener('click', saveCurrentFileToDisk);
+      document.getElementById('btnExportPdf')?.addEventListener('click', exportCurrentDocToPdf);
 
       // replaced:
       const _ignore = (async () => {

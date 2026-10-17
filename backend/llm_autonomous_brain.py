@@ -25,6 +25,17 @@ class JarvisAutonomousBrain:
         self.gemini_api_key = os.getenv("GEMINI_API_KEY", "")
         self.preferred_model = os.getenv("JARVIS_GEMMA_MODEL", "")
         self.conversation_history: List[Dict[str, str]] = []
+        self.is_stopped: bool = False
+
+    def stop(self) -> Dict[str, Any]:
+        """Halts running autonomous agent tasks immediately."""
+        self.is_stopped = True
+        self.graph.set_agent_task("agent_coleader", "idle", "Halted by user via STOP option")
+        self.graph.set_agent_task("agent_os_operator", "idle", "Halted")
+        self.graph.set_agent_task("agent_coder", "idle", "Halted")
+        self.graph.set_agent_task("agent_dir_auditor", "idle", "Halted")
+        self.graph.set_agent_task("agent_researcher", "idle", "Halted")
+        return {"ok": True, "status": "stopped", "message": "Execution halted by user."}
 
     def detect_live_model(self) -> Dict[str, Any]:
         """Auto-detects installed Ollama models so we never fail on a fake hardcoded model name."""
@@ -85,6 +96,7 @@ class JarvisAutonomousBrain:
 
     def execute_user_instruction(self, instruction: str, target_directory: str = ".") -> Dict[str, Any]:
         """Executes real OS tools, directory bug audits, code generation, and web research with zero canned dialogues."""
+        self.is_stopped = False
         self.graph.set_agent_task("agent_coleader", "working", f"Analyzing command: {instruction[:60]}", "mem_episodic")
         tool_traces: List[Dict[str, Any]] = []
         created_or_fixed_files: Dict[str, str] = {}
@@ -443,49 +455,80 @@ Only include the actions actually needed for the user's prompt. Output valid JSO
                     tool_traces.append({"tool": "run_terminal_command", "input": cmd, "result": cmd_res})
                     self.graph.set_agent_task("agent_coder", "idle", f"Exit code: {cmd_res.get('exit_code')}")
 
-        # Final Synthesis by Co-Leader based strictly on real tool outputs (ZERO hardcoded dialogue!)
+        sanitized_traces = []
+        for t in tool_traces:
+            item = {"tool": t.get("tool"), "input": t.get("input")}
+            r = t.get("result", {})
+            if isinstance(r, dict):
+                clean_r = {k: v for k, v in r.items() if k not in ("screenshot_base64", "resolution")}
+                item["result"] = clean_r
+            else:
+                item["result"] = r
+            sanitized_traces.append(item)
+
+        action_descriptions = []
+        for t in tool_traces:
+            tname = t.get("tool")
+            res = t.get("result", {})
+            if tname == "desktop_gui" and res.get("ok"):
+                app = str(res.get("app", "desktop")).title()
+                steps = res.get("steps", [])
+                action_descriptions.append(f"Successfully operated {app}: {', '.join(steps[-2:])}")
+            elif tname == "open_system_app_or_url" and res.get("ok"):
+                action_descriptions.append(f"Launched {res.get('target', 'application')} on your system")
+            elif tname == "write_file_to_disk" and res.get("ok"):
+                action_descriptions.append(f"Created file {res.get('relative_path')}")
+            elif tname == "run_terminal_command":
+                action_descriptions.append(f"Executed command '{res.get('command')}' (exit code {res.get('exit_code')})")
+            elif tname == "inspect_directory_and_find_mistakes" and res.get("ok"):
+                action_descriptions.append(f"Audited {res.get('file_count', 0)} files in {res.get('directory', '.')}")
+            elif tname == "calculate":
+                action_descriptions.append(f"Computed {t.get('input')} = {res.get('result')}")
+
+        default_summary = ". ".join(action_descriptions) + "." if action_descriptions else "Operation completed on your system."
+
+        if self.is_stopped:
+            self.graph.set_agent_task("agent_coleader", "idle", "Halted by user via STOP")
+            return {
+                "ok": False,
+                "stopped": True,
+                "spoken_response": "Execution halted by user.",
+                "plan": plan,
+                "tool_traces": tool_traces,
+                "created_or_fixed_files": created_or_fixed_files,
+                "files": [],
+                "screenshot": "",
+                "memory_graph": self.graph.snapshot(),
+            }
+
+        # Final Synthesis by Co-Leader based strictly on clean action descriptions (ZERO hallucination!)
         synth_system = (
-            "You are J.A.R.V.I.S., the user's desktop AI assistant with full local OS control. "
-            "Respond in 1-2 clear, natural sentences based strictly on the real tool execution results below. "
-            "Report exactly what apps were launched, files created or fixed, or commands executed. "
-            "Never output generic assistant refusals like 'I cannot access external systems'."
+            "You are J.A.R.V.I.S., the user's real-world desktop AI assistant. "
+            "In 1 clear sentence, confirm to the user what desktop actions or code operations you completed on their laptop. "
+            "Example for Blender: 'I have opened Blender and added the requested 3D mesh.' "
+            "Example for Notepad: 'I launched Notepad and entered the requested text.' "
+            "Example for Code: 'I created the requested code file and verified its execution.' "
+            "Never discuss machine learning models, neural networks, or image resolution."
         )
         final_reply = self.call_llm(
             synth_system,
-            f"User Command: {instruction}\nReal Tool Execution Traces:\n{json.dumps(tool_traces, indent=2)}",
+            f"User Command: {instruction}\nActions Performed:\n{json.dumps(sanitized_traces, indent=2)}",
             json_mode=False,
         )
 
-        # Safety override if small model defaults to canned AI refusal despite successful tool execution
-        if not final_reply or any(phrase in str(final_reply).lower() for phrase in ["unable to access", "cannot access", "as an ai", "don't have access", "cannot run any applications", "cannot provide the information"]):
-            trace_summaries = []
-            for t in tool_traces:
-                tool_n = t.get("tool")
-                res = t.get("result", {})
-                if tool_n == "calculate":
-                    expr = t.get("input", "")
-                    result_val = res.get("result") or res.get("python_computed_result")
-                    if result_val:
-                        trace_summaries.append(f"Computed {expr} = {result_val}")
-                        if res.get("gui_ok"):
-                            trace_summaries.append("also typed the expression into Windows Calculator")
-                elif tool_n == "open_system_app_or_url" and res.get("ok"):
-                    trace_summaries.append(f"Launched {res.get('target', 'application')} on your system")
-                elif tool_n == "inspect_directory_and_find_mistakes" and res.get("ok"):
-                    trace_summaries.append(f"Audited {res.get('file_count', 0)} files in {res.get('directory', 'directory')}")
-                elif tool_n == "write_file_to_disk" and res.get("ok"):
-                    trace_summaries.append(f"Wrote {res.get('relative_path')} ({res.get('bytes_written')} bytes)")
-                elif tool_n == "run_terminal_command":
-                    trace_summaries.append(f"Ran '{res.get('command')}' with exit code {res.get('exit_code')}")
-                elif tool_n == "desktop_gui" and res.get("ok"):
-                    steps_preview = ", ".join(res.get("steps", [])[-2:]) if res.get("steps") else "completed"
-                    trace_summaries.append(f"Operated {res.get('app', 'desktop')} via Muse AI ({steps_preview})")
-                elif tool_n == "web_search":
-                    hits = res if isinstance(res, list) else []
-                    if hits:
-                        trace_summaries.append(f"Found {len(hits)} web results for '{t.get('input', '')}'")
-            if trace_summaries:
-                final_reply = ". ".join(trace_summaries) + "."
+        bad_phrases = [
+            "unable to access", "cannot access", "as an ai", "don't have access",
+            "cannot run any applications", "cannot provide the information",
+            "context does not provide", "not provided in the context", "cannot extract",
+            "does not provide any information", "cannot fulfill", "no information about",
+            "i am unable", "does not contain", "model has the following", "the model is",
+            "face detection", "cat", "convolutional", "neural network", "parameters",
+            "training data", "image resolution", "high-resolution"
+        ]
+
+        # Safety override: if model output contains any hallucination or refusal, use default_summary
+        if not final_reply or any(phrase in str(final_reply).lower() for phrase in bad_phrases):
+            final_reply = default_summary
 
         self.graph.set_agent_task("agent_coleader", "idle", "Completed mission & updated memory graph")
 

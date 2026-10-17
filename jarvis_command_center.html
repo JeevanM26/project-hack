@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark h-full">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -17,29 +17,29 @@
       --ember-orange: #ff5500;
       --pitch-black: #050102;
     }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+    }
     body {
       font-family: 'Inter', sans-serif;
       background-color: #030001;
       background-image:
-        radial-gradient(circle at 50% 0%, rgba(255, 30, 39, 0.12) 0%, rgba(120, 0, 10, 0.04) 35%, #030001 70%);
+        radial-gradient(circle at 50% 0%, rgba(255, 30, 39, 0.14) 0%, rgba(120, 0, 10, 0.04) 35%, #030001 70%);
       color: #ffe4e6;
-      overflow-x: hidden;
     }
     .font-hud { font-family: 'Orbitron', sans-serif; }
     .mono { font-family: 'JetBrains Mono', monospace; }
 
     /* Crimson Glass Panels */
     .crimson-panel {
-      background: linear-gradient(155deg, rgba(18, 3, 6, 0.92) 0%, rgba(6, 1, 3, 0.98) 100%);
+      background: linear-gradient(155deg, rgba(18, 3, 6, 0.94) 0%, rgba(6, 1, 3, 0.98) 100%);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 30, 39, 0.3);
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 30, 39, 0.1);
-    }
-
-    .editor-container {
-      background: #080204;
-      border: 1px solid rgba(255, 30, 39, 0.25);
     }
 
     .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -55,46 +55,49 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-red-600/40">
+<body class="h-screen w-screen overflow-hidden flex flex-col selection:bg-red-600/40">
 
   <!-- TOP HEADER HUD & STATUS BAR -->
-  <header class="sticky top-0 z-40 px-4 py-2 bg-black/90 backdrop-blur-md border-b border-red-950/70 flex flex-wrap items-center justify-between gap-3">
+  <header class="h-12 flex-shrink-0 px-4 py-1.5 bg-black/95 backdrop-blur-md border-b border-red-950/80 flex items-center justify-between gap-3 z-30">
     <!-- Brand / Status -->
     <div class="flex items-center gap-3">
       <div class="flex items-center gap-2">
-        <span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_#ff1e27] animate-pulse"></span>
-        <span class="font-hud text-sm font-black tracking-widest text-red-500 text-glow">J.A.R.V.I.S. // ANTIGRAVITY IDE</span>
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_12px_#ff1e27] animate-pulse"></span>
+        <span class="font-hud text-xs sm:text-sm font-black tracking-widest text-red-500 text-glow">J.A.R.V.I.S. // ANTIGRAVITY IDE</span>
       </div>
       <span id="activeModelBadge" class="text-[10px] mono px-2.5 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-red-300">
-        Connecting to Ollama &amp; Backend...
+        Backend: Online
       </span>
       <span id="osDesktopBadge" class="hidden sm:inline-flex text-[10px] mono px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
         WinSta0\Default: Live
       </span>
+      <button id="btnHeaderStop" type="button" class="hidden px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white animate-pulse shadow-[0_0_12px_#ff1e27] transition flex items-center gap-1">
+        <span>■</span> Stop Task
+      </button>
     </div>
 
     <!-- Center Navigation Pill Bar (View Switcher) -->
-    <nav class="inline-flex items-center gap-1 rounded-full bg-[#0d0204] px-2 py-1 border border-red-500/40 shadow-[0_0_20px_rgba(255,30,39,0.2)]">
-      <button type="button" data-view="ide" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_14px_#ff1e27] transition flex items-center gap-1.5">
+    <nav class="inline-flex items-center gap-1 rounded-full bg-[#0d0204] px-1.5 py-0.5 border border-red-500/40 shadow-[0_0_18px_rgba(255,30,39,0.2)]">
+      <button type="button" data-view="ide" class="nav-view-btn px-3 py-1 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_14px_#ff1e27] transition flex items-center gap-1.5">
         <span>&#9881;</span> Antigravity IDE
       </button>
-      <button type="button" data-view="desktop" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+      <button type="button" data-view="desktop" class="nav-view-btn px-3 py-1 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
         <span>&#128187;</span> Muse AI Live Desktop
       </button>
-      <button type="button" data-view="swarm" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+      <button type="button" data-view="swarm" class="nav-view-btn px-3 py-1 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
         <span>&#10022;</span> Neural Swarm Graph
       </button>
-      <button type="button" data-view="voice" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+      <button type="button" data-view="voice" class="nav-view-btn px-3 py-1 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
         <span>&#9679;</span> Voice Core 3D
       </button>
     </nav>
 
     <!-- Right Quick Actions -->
     <div class="flex items-center gap-2">
-      <button id="btnQuickAudit" type="button" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 mono transition flex items-center gap-1">
+      <button id="btnQuickAudit" type="button" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 mono transition flex items-center gap-1">
         <span>&#9888;</span> Audit Mistakes
       </button>
-      <button id="btnOpenConfig" type="button" class="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 border border-red-500/40 text-red-300 transition">
+      <button id="btnOpenConfig" type="button" class="px-2.5 py-1 rounded-full text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 border border-red-500/40 text-red-300 transition">
         Settings
       </button>
     </div>
@@ -103,34 +106,34 @@
   <!-- ====================================================================================== -->
   <!-- MAIN STAGE: 1. ANTIGRAVITY IDE VIEW (3 COLUMNS: EXPLORER | MONACO | CLAUDE CODE & SCREEN) -->
   <!-- ====================================================================================== -->
-  <main id="viewIde" class="flex-1 w-full px-3 py-2 flex flex-col gap-2">
+  <main id="viewIde" class="flex-1 min-h-0 w-full px-3 py-1.5 flex flex-col gap-1.5 overflow-hidden">
     <!-- Top Action Bar for IDE -->
-    <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-black/60 border border-red-950/70 text-xs mono">
+    <div class="h-9 flex-shrink-0 flex items-center justify-between gap-2 px-3 py-1 rounded-xl bg-black/70 border border-red-950/80 text-xs mono">
       <div class="flex items-center gap-2 flex-wrap">
         <span class="text-red-400 font-bold">Workspace:</span>
-        <input id="inputWorkspaceDir" type="text" value="." class="bg-black/80 border border-red-900/60 rounded px-2.5 py-1 text-xs mono text-red-100 focus:outline-none focus:border-red-500 w-44 sm:w-64" placeholder="Directory path (. for root)">
-        <button id="btnRefreshWorkspace" type="button" class="px-2.5 py-1 rounded bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
+        <input id="inputWorkspaceDir" type="text" value="." class="bg-black/90 border border-red-900/60 rounded px-2 py-0.5 text-xs mono text-red-100 focus:outline-none focus:border-red-500 w-40 sm:w-60" placeholder="Directory path (. for root)">
+        <button id="btnRefreshWorkspace" type="button" class="px-2 py-0.5 rounded bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
           &#8635; Reload Tree
         </button>
       </div>
 
       <div class="flex items-center gap-2">
-        <span id="activeFileIndicator" class="text-red-300/80 font-bold truncate max-w-xs">No file open</span>
-        <button id="btnSaveFileDisk" type="button" class="px-3 py-1 rounded bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 font-bold transition flex items-center gap-1">
-          <span>&#128190;</span> Save to Disk
+        <span id="activeFileIndicator" class="text-red-300/80 font-bold truncate max-w-xs">welcome.py</span>
+        <button id="btnSaveFileDisk" type="button" class="px-2.5 py-0.5 rounded bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 font-bold transition flex items-center gap-1">
+          <span>&#128190;</span> Save
         </button>
-        <button id="btnRunCurrentFile" type="button" class="px-3 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition flex items-center gap-1 shadow-[0_0_10px_#ff1e27]">
+        <button id="btnRunCurrentFile" type="button" class="px-2.5 py-0.5 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition flex items-center gap-1 shadow-[0_0_10px_#ff1e27]">
           <span>&#9654;</span> Run Code
         </button>
       </div>
     </div>
 
     <!-- 3-Column IDE Workspace Grid -->
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
+    <div class="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2 overflow-hidden">
       
       <!-- COLUMN 1: WORKSPACE FILE EXPLORER & AST ISSUE AUDITOR (3 COLS) -->
-      <section class="lg:col-span-3 flex flex-col gap-2 crimson-panel rounded-xl p-3 overflow-hidden">
-        <div class="flex items-center justify-between border-b border-red-950/70 pb-1.5">
+      <section class="lg:col-span-3 h-full flex flex-col crimson-panel rounded-xl p-2.5 overflow-hidden">
+        <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950/80 pb-1.5 mb-1">
           <div class="flex items-center gap-1.5">
             <span class="text-red-500 font-bold">&#128194;</span>
             <span class="font-hud text-xs font-bold text-red-400 tracking-wider">PROJECT EXPLORER</span>
@@ -139,12 +142,12 @@
         </div>
 
         <!-- Interactive File Tree -->
-        <div id="fileTreeContainer" class="flex-1 custom-scroll overflow-y-auto space-y-1 text-xs mono pr-1">
+        <div id="fileTreeContainer" class="flex-1 min-h-0 custom-scroll overflow-y-auto space-y-1 text-xs mono pr-1">
           <div class="text-red-300/50 text-center py-6">Loading files...</div>
         </div>
 
         <!-- Detected AST Issues / Mistakes Card -->
-        <div class="border-t border-red-950/80 pt-2 flex flex-col gap-1.5 max-h-48 overflow-hidden">
+        <div class="flex-shrink-0 border-t border-red-950/80 pt-1.5 mt-1 flex flex-col gap-1 max-h-36 overflow-hidden">
           <div class="flex items-center justify-between">
             <span class="text-[11px] font-bold text-amber-400 mono flex items-center gap-1">
               <span>&#9888;</span> Detected AST Bugs
@@ -152,30 +155,30 @@
             <span id="detectedBugsCount" class="text-[10px] mono text-amber-300">0 issues</span>
           </div>
           <div id="detectedBugsList" class="custom-scroll overflow-y-auto space-y-1 text-[11px] mono flex-1 pr-1">
-            <div class="text-red-300/50 italic">No AST syntax errors found. Run "Audit Mistakes" to scan.</div>
+            <div class="text-red-300/50 italic text-[10px]">No AST syntax errors found. Run "Audit Mistakes" to scan.</div>
           </div>
         </div>
       </section>
 
-      <!-- COLUMN 2: MONACO CODE EDITOR (6 COLS) -->
-      <section class="lg:col-span-5 flex flex-col crimson-panel rounded-xl overflow-hidden">
+      <!-- COLUMN 2: MONACO CODE EDITOR (5 COLS) -->
+      <section class="lg:col-span-5 h-full flex flex-col crimson-panel rounded-xl overflow-hidden">
         <!-- Editor Tabs Bar -->
-        <div id="editorTabsBar" class="flex items-center gap-1 px-2 pt-2 bg-black/80 border-b border-red-950/80 overflow-x-auto custom-scroll text-xs mono">
-          <div class="tab-item active flex items-center gap-2 px-3 py-1.5 rounded-t bg-[#0d0204] border-t border-x border-red-500/50 text-red-200">
+        <div id="editorTabsBar" class="flex-shrink-0 flex items-center gap-1 px-2 pt-1.5 bg-black/80 border-b border-red-950/80 overflow-x-auto custom-scroll text-xs mono">
+          <div class="tab-item active flex items-center gap-2 px-3 py-1 rounded-t bg-[#0d0204] border-t border-x border-red-500/50 text-red-200">
             <span>&#128196;</span>
             <span id="tabTitlePrimary">welcome.py</span>
           </div>
         </div>
 
         <!-- Monaco Editor Container -->
-        <div id="monacoWrapper" class="flex-1 relative bg-[#060102]">
-          <div id="monacoEditorContainer" class="absolute inset-0"></div>
-          <!-- Fallback Textarea if Monaco is loading or fails -->
+        <div id="monacoWrapper" class="flex-1 min-h-0 relative bg-[#060102]">
+          <div id="monacoEditorContainer" class="absolute inset-0 w-full h-full"></div>
+          <!-- Fallback Textarea -->
           <textarea id="fallbackEditor" class="hidden absolute inset-0 w-full h-full bg-[#060102] text-red-100 p-3 text-xs mono resize-none focus:outline-none"></textarea>
         </div>
 
         <!-- Editor Status Bar -->
-        <div class="px-3 py-1 bg-black/90 border-t border-red-950/70 flex items-center justify-between text-[10px] mono text-red-400">
+        <div class="flex-shrink-0 px-3 py-1 bg-black/90 border-t border-red-950/70 flex items-center justify-between text-[10px] mono text-red-400">
           <div class="flex items-center gap-3">
             <span id="cursorStatus">Ln 1, Col 1</span>
             <span id="charCountStatus">0 chars</span>
@@ -188,9 +191,9 @@
       </section>
 
       <!-- COLUMN 3: CLAUDE CODE LIVE EXECUTION STREAM & LIVE SCREEN VIEWPORT (4 COLS) -->
-      <section class="lg:col-span-4 flex flex-col gap-2 crimson-panel rounded-xl p-3 overflow-hidden">
+      <section class="lg:col-span-4 h-full flex flex-col crimson-panel rounded-xl p-2.5 overflow-hidden">
         <!-- Header with Tabs for Stream vs Live Desktop Screen -->
-        <div class="flex items-center justify-between border-b border-red-950/70 pb-1.5">
+        <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950/80 pb-1.5 mb-1">
           <div class="flex items-center gap-2">
             <button id="btnTabClaudeStream" type="button" class="text-xs font-bold text-red-400 border-b-2 border-red-500 pb-0.5 mono">
               Claude Code Execution
@@ -205,9 +208,9 @@
         </div>
 
         <!-- Content Area 1: Claude Code Step-by-Step Execution Stream -->
-        <div id="claudeStreamContainer" class="flex-1 flex flex-col gap-2 overflow-hidden">
+        <div id="claudeStreamContainer" class="flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
           <!-- Step Cards List -->
-          <div id="stepCardsList" class="flex-1 custom-scroll overflow-y-auto space-y-2 pr-1">
+          <div id="stepCardsList" class="flex-1 min-h-0 custom-scroll overflow-y-auto space-y-2 pr-1">
             <div class="p-2.5 rounded-lg bg-black/60 border border-red-950 text-xs mono text-red-300/70">
               <span class="text-red-400 font-bold">J.A.R.V.I.S. Autonomous Agent Engine Ready</span><br>
               Type any command below (e.g. "Work in directory and find mistakes", "Open Blender and add a cube", "Write a Snake game in Pygame"). Every step, file write, terminal stdout, and GUI action will stream here in real time.
@@ -215,26 +218,26 @@
           </div>
 
           <!-- Integrated Terminal Output Console -->
-          <div class="h-36 rounded-lg bg-black border border-red-950 flex flex-col overflow-hidden">
-            <div class="px-2.5 py-1 bg-zinc-950 border-b border-red-950 flex items-center justify-between text-[10px] mono text-red-400">
+          <div class="flex-shrink-0 h-32 rounded-lg bg-black border border-red-950 flex flex-col overflow-hidden">
+            <div class="px-2.5 py-0.5 bg-zinc-950 border-b border-red-950 flex items-center justify-between text-[10px] mono text-red-400">
               <span>Terminal Output / Shell Stdout</span>
               <button id="btnClearTerminal" type="button" class="text-red-400/70 hover:text-red-300">Clear</button>
             </div>
-            <pre id="terminalOutputBox" class="flex-1 p-2 text-[11px] mono text-red-200 overflow-y-auto custom-scroll selection:bg-red-800">Ready for command execution...</pre>
+            <pre id="terminalOutputBox" class="flex-1 p-2 text-[10px] mono text-red-200 overflow-y-auto custom-scroll selection:bg-red-800">Ready for command execution...</pre>
           </div>
         </div>
 
         <!-- Content Area 2: Live Desktop Screen Viewport (Muse AI) -->
-        <div id="screenViewportContainer" class="hidden flex-1 flex flex-col gap-2 overflow-hidden">
+        <div id="screenViewportContainer" class="hidden flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
           <div class="flex-1 relative rounded-lg bg-black border border-red-950 overflow-hidden flex items-center justify-center">
             <img id="liveDesktopStreamImg" src="" alt="Live Desktop Stream" class="w-full h-full object-contain" />
             <div id="screenStreamLoading" class="absolute inset-0 flex items-center justify-center bg-black/75 text-xs mono text-red-300">
               Streaming WinSta0\Default Screen...
             </div>
           </div>
-          <div class="flex items-center justify-between text-[10px] mono text-red-400">
+          <div class="flex-shrink-0 flex items-center justify-between text-[10px] mono text-red-400 pt-1">
             <span id="screenResolutionBadge">Resolution: 2560x1600</span>
-            <button id="btnCaptureFreshFrame" type="button" class="px-2.5 py-1 rounded bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
+            <button id="btnCaptureFreshFrame" type="button" class="px-2 py-0.5 rounded bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
               &#128248; Capture Frame
             </button>
           </div>
@@ -248,25 +251,25 @@
   <!-- ====================================================================================== -->
   <!-- MAIN STAGE: 2. MUSE AI LIVE DESKTOP VIEW (FULL DEDICATED COMPUTER USE VIEWPORT)           -->
   <!-- ====================================================================================== -->
-  <main id="viewDesktop" class="hidden flex-1 w-full px-4 py-3 flex flex-col gap-3">
-    <div class="crimson-panel rounded-2xl p-4 flex-1 flex flex-col gap-3">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-red-950 pb-2">
+  <main id="viewDesktop" class="hidden flex-1 min-h-0 w-full px-4 py-2 flex flex-col gap-2 overflow-hidden">
+    <div class="crimson-panel rounded-2xl p-3 flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+      <div class="flex-shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-red-950 pb-2">
         <div>
           <h2 class="font-hud text-sm font-bold text-red-400">MUSE AI // LIVE WINDOWS COMPUTER USE ENGINE</h2>
-          <p class="text-xs text-red-200/70">Operating live on WinSta0\Default: Blender, Calculator, Notepad, VS Code, Browser, and any desktop app</p>
+          <p class="text-[11px] text-red-200/70">Operating live on WinSta0\Default: Blender, Calculator, Notepad, VS Code, Browser, and any desktop app</p>
         </div>
         <div class="flex items-center gap-2">
-          <button id="btnTriggerBlenderDemo" type="button" class="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-bold mono transition">
+          <button id="btnTriggerBlenderDemo" type="button" class="px-3 py-1 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-bold mono transition">
             Test Blender Cube
           </button>
-          <button id="btnTriggerCalcDemo" type="button" class="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-bold mono transition">
+          <button id="btnTriggerCalcDemo" type="button" class="px-3 py-1 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-bold mono transition">
             Test Calculator (125*8)
           </button>
         </div>
       </div>
 
       <!-- Large Live Viewport -->
-      <div class="flex-1 min-h-[500px] relative rounded-xl bg-black border border-red-900/50 overflow-hidden flex items-center justify-center">
+      <div class="flex-1 min-h-0 relative rounded-xl bg-black border border-red-900/50 overflow-hidden flex items-center justify-center">
         <img id="viewDesktopLargeImg" src="" alt="Full Screen Desktop" class="w-full h-full object-contain" />
         <div id="viewDesktopOverlay" class="absolute bottom-3 left-3 bg-black/80 border border-red-500/40 px-3 py-1.5 rounded-lg text-xs mono text-red-300">
           Desktop Feed Active
@@ -278,24 +281,24 @@
   <!-- ====================================================================================== -->
   <!-- MAIN STAGE: 3. NEURAL MEMORY & AGENT SWARM GRAPH (REFERENCE VIDEO 2)                   -->
   <!-- ====================================================================================== -->
-  <main id="viewSwarm" class="hidden flex-1 w-full px-4 py-3 flex flex-col gap-3">
-    <div class="crimson-panel rounded-2xl p-4 flex-1 flex flex-col gap-3">
-      <div class="flex items-center justify-between border-b border-red-950 pb-2">
+  <main id="viewSwarm" class="hidden flex-1 min-h-0 w-full px-4 py-2 flex flex-col gap-2 overflow-hidden">
+    <div class="crimson-panel rounded-2xl p-3 flex-1 min-h-0 flex flex-col gap-2 overflow-hidden">
+      <div class="flex-shrink-0 flex items-center justify-between border-b border-red-950 pb-2">
         <div>
           <h2 class="font-hud text-sm font-bold text-red-400">NEURAL MEMORY &amp; AGENT SWARM GRAPH</h2>
-          <p class="text-xs text-red-200/70">Live synapses connecting Co-Leader, OS Operator, Directory Auditor, Coder, and Memory Blocks</p>
+          <p class="text-[11px] text-red-200/70">Live synapses connecting Co-Leader, OS Operator, Directory Auditor, Coder, and Memory Blocks</p>
         </div>
         <span class="text-xs mono text-red-400">Nodes: <span id="swarmNodeCount">9</span></span>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
         <!-- SVG Canvas for Graph -->
-        <div class="lg:col-span-8 rounded-xl bg-black border border-red-900/50 relative overflow-hidden min-h-[460px]">
+        <div class="lg:col-span-8 rounded-xl bg-black border border-red-900/50 relative overflow-hidden h-full">
           <svg id="swarmSvgCanvas" class="w-full h-full"></svg>
         </div>
         <!-- Node Inspector & Matrix -->
-        <div class="lg:col-span-4 flex flex-col gap-3">
-          <div class="rounded-xl bg-black/80 border border-red-950 p-3 space-y-2">
+        <div class="lg:col-span-4 flex flex-col gap-2 h-full overflow-hidden">
+          <div class="flex-shrink-0 rounded-xl bg-black/80 border border-red-950 p-3 space-y-1.5">
             <h3 class="font-hud text-xs font-bold text-red-400">Selected Node Inspector</h3>
             <div id="swarmSelectedCard" class="text-xs mono space-y-1 text-red-200">
               <div id="swarmNodeLabel" class="font-bold text-white">agent_coleader</div>
@@ -303,9 +306,9 @@
               <p id="swarmNodeTask" class="text-red-300/80">Idle — awaiting user command</p>
             </div>
           </div>
-          <div class="flex-1 rounded-xl bg-black/80 border border-red-950 p-3 flex flex-col gap-2 overflow-hidden">
-            <h3 class="font-hud text-xs font-bold text-red-400">Agent Task Matrix</h3>
-            <div id="swarmAgentMatrix" class="flex-1 custom-scroll overflow-y-auto space-y-1.5 text-xs mono pr-1"></div>
+          <div class="flex-1 min-h-0 rounded-xl bg-black/80 border border-red-950 p-3 flex flex-col gap-1.5 overflow-hidden">
+            <h3 class="flex-shrink-0 font-hud text-xs font-bold text-red-400">Agent Task Matrix</h3>
+            <div id="swarmAgentMatrix" class="flex-1 min-h-0 custom-scroll overflow-y-auto space-y-1.5 text-xs mono pr-1"></div>
           </div>
         </div>
       </div>
@@ -315,17 +318,17 @@
   <!-- ====================================================================================== -->
   <!-- MAIN STAGE: 4. VOICE CORE 3D PARTICLE & SPIKE SPHERE (REFERENCE VIDEO 1)               -->
   <!-- ====================================================================================== -->
-  <main id="viewVoice" class="hidden flex-1 w-full px-4 py-3 flex flex-col items-center justify-between min-h-[580px] relative">
+  <main id="viewVoice" class="hidden flex-1 min-h-0 w-full px-4 py-2 flex flex-col items-center justify-between relative overflow-hidden">
     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <div id="threeJsVoiceContainer" class="w-full h-full max-w-4xl max-h-[520px]"></div>
+      <div id="threeJsVoiceContainer" class="w-full h-full max-w-4xl max-h-[480px]"></div>
     </div>
     
-    <div class="relative z-10 w-full max-w-2xl text-center space-y-2 pt-6">
-      <h2 class="font-hud text-lg font-black text-red-500 tracking-wider text-glow">CRIMSON 3D AUDIO CORE</h2>
+    <div class="relative z-10 w-full max-w-2xl text-center space-y-1 pt-4 flex-shrink-0">
+      <h2 class="font-hud text-base sm:text-lg font-black text-red-500 tracking-wider text-glow">CRIMSON 3D AUDIO CORE</h2>
       <p id="voiceSpeechStatus" class="text-xs mono text-red-300/80">Listening for voice instructions or waiting for prompt...</p>
     </div>
 
-    <div class="relative z-10 w-full max-w-2xl pb-4">
+    <div class="relative z-10 w-full max-w-2xl pb-2 flex-shrink-0">
       <div class="crimson-panel rounded-2xl p-3 text-center text-xs mono text-red-200">
         <span id="voiceLastSpeechResponse">"Awaiting command. I have direct access to your Windows desktop, applications, and filesystem."</span>
       </div>
@@ -333,12 +336,12 @@
   </main>
 
   <!-- ====================================================================================== -->
-  <!-- BOTTOM CLAUDE CODE COMMAND PROMPT BAR                                                  -->
+  <!-- BOTTOM CLAUDE CODE COMMAND PROMPT BAR WITH STOP OPTION                                 -->
   <!-- ====================================================================================== -->
-  <footer class="sticky bottom-0 z-40 bg-black/95 backdrop-blur-md border-t border-red-950/80 px-4 py-2.5">
-    <div class="max-w-7xl mx-auto flex flex-col gap-2">
+  <footer class="flex-shrink-0 z-30 bg-black/95 backdrop-blur-md border-t border-red-950/80 px-4 py-2">
+    <div class="max-w-7xl mx-auto flex flex-col gap-1.5">
       <!-- Quick Prompt Suggestion Chips -->
-      <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-1 text-[11px] mono">
+      <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-0.5 text-[11px] mono">
         <span class="text-red-400/80 font-bold shrink-0">Quick Prompts:</span>
         <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Blender and add a 3D mesh cube">
           🧊 Open Blender &amp; add cube
@@ -346,7 +349,7 @@
         <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Work in directory . and find the mistakes">
           🔍 Find mistakes in directory
         </button>
-        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Notepad and type 'J.A.R.V.I.S. Antigravity IDE is now operational'">
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Notepad and type 'J.A.R.V.I.S. Antigravity IDE is operational'">
           📝 Open Notepad &amp; type notes
         </button>
         <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Write a complete Snake game in Pygame and run it">
@@ -357,7 +360,7 @@
         </button>
       </div>
 
-      <!-- Main Input Bar -->
+      <!-- Main Input Bar With STOP Option -->
       <form id="jarvisPromptForm" class="flex items-center gap-2">
         <div class="relative flex-1">
           <input
@@ -365,7 +368,7 @@
             type="text"
             autocomplete="off"
             placeholder="Tell J.A.R.V.I.S. what to build, run, or operate (e.g. 'Open Blender and add a cube', 'Fix mistakes in folder', 'Build a REST API')..."
-            class="w-full bg-[#0a0204] border border-red-500/40 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-red-50 placeholder-red-400/40 focus:outline-none focus:border-red-500 shadow-[0_0_15px_rgba(255,30,39,0.15)] mono"
+            class="w-full bg-[#0a0204] border border-red-500/40 rounded-xl px-4 py-2 text-xs sm:text-sm text-red-50 placeholder-red-400/40 focus:outline-none focus:border-red-500 shadow-[0_0_15px_rgba(255,30,39,0.15)] mono"
           />
         </div>
 
@@ -374,16 +377,27 @@
           id="btnToggleVoiceMic"
           type="button"
           title="Toggle Voice Input (Speech-to-Text)"
-          class="px-3.5 py-2.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 text-sm transition flex items-center justify-center shrink-0"
+          class="px-3 py-2 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 text-sm transition flex items-center justify-center shrink-0"
         >
           <span id="voiceMicIcon">&#127908;</span>
         </button>
 
-        <!-- Submit Button -->
+        <!-- Dedicated STOP / ABORT Button -->
+        <button
+          id="btnStopExecution"
+          type="button"
+          title="Halt current agent action immediately (Escape key)"
+          class="px-4 py-2 rounded-xl bg-red-950/90 hover:bg-red-800 border border-red-500/60 text-red-100 text-xs sm:text-sm font-bold tracking-wide transition flex items-center gap-1.5 shrink-0 shadow-[0_0_12px_rgba(255,30,39,0.35)]"
+        >
+          <span class="text-sm">■</span>
+          <span>STOP</span>
+        </button>
+
+        <!-- Execute / Submit Button -->
         <button
           id="btnSubmitPrompt"
           type="submit"
-          class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold tracking-wide shadow-[0_0_18px_#ff1e27] transition flex items-center gap-1.5 shrink-0"
+          class="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold tracking-wide shadow-[0_0_18px_#ff1e27] transition flex items-center gap-1.5 shrink-0"
         >
           <span>EXECUTE</span>
           <span>&#10148;</span>
@@ -427,14 +441,15 @@
     const state = {
       backendUrl: localStorage.getItem('jarvis_backend_url') || 'http://127.0.0.1:8000',
       activeView: 'ide',
-      activeFilePath: '',
+      activeFilePath: 'welcome.py',
       openTabs: [],
       filesTree: [],
       detectedMistakes: [],
       memoryGraph: { nodes: [], edges: [] },
       isExecuting: false,
       isListeningVoice: false,
-      screenStreamTimer: null
+      screenStreamTimer: null,
+      currentAbortController: null
     };
 
     // DOM Elements
@@ -455,6 +470,8 @@
       jarvisPromptForm: document.getElementById('jarvisPromptForm'),
       jarvisPromptInput: document.getElementById('jarvisPromptInput'),
       btnSubmitPrompt: document.getElementById('btnSubmitPrompt'),
+      btnStopExecution: document.getElementById('btnStopExecution'),
+      btnHeaderStop: document.getElementById('btnHeaderStop'),
       btnToggleVoiceMic: document.getElementById('btnToggleVoiceMic'),
       voiceMicIcon: document.getElementById('voiceMicIcon'),
       agentExecutionStatusBadge: document.getElementById('agentExecutionStatusBadge'),
@@ -499,7 +516,7 @@
           lineNumbers: 'on',
           scrollBeyondLastLine: false,
           roundedSelection: true,
-          minimap: { enabled: true }
+          minimap: { enabled: false }
         });
 
         window.monacoEditor.onDidChangeCursorPosition(e => {
@@ -509,6 +526,10 @@
         window.monacoEditor.onDidChangeModelContent(() => {
           const val = window.monacoEditor.getValue();
           document.getElementById('charCountStatus').textContent = `${val.length} chars`;
+        });
+
+        window.addEventListener('resize', () => {
+          window.monacoEditor?.layout();
         });
       });
     }
@@ -576,7 +597,7 @@
         const icon = getFileIcon(f.extension);
         const isActive = f.path === state.activeFilePath;
         html += `
-          <div data-path="${f.path}" class="file-tree-item flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition ${isActive ? 'bg-red-950/80 border border-red-500/50 text-white' : 'hover:bg-red-950/40 text-red-200/80'}">
+          <div data-path="${f.path}" class="file-tree-item flex items-center justify-between px-2 py-1 rounded cursor-pointer transition ${isActive ? 'bg-red-950/80 border border-red-500/50 text-white' : 'hover:bg-red-950/40 text-red-200/80'}">
             <div class="flex items-center gap-1.5 truncate">
               <span>${icon}</span>
               <span class="truncate">${f.path}</span>
@@ -706,10 +727,10 @@
       let html = '';
       mistakes.forEach((m, idx) => {
         html += `
-          <div class="p-1.5 rounded bg-amber-950/60 border border-amber-500/40 space-y-1">
+          <div class="p-1 rounded bg-amber-950/60 border border-amber-500/40 space-y-1">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-amber-300 truncate">${m.file || 'File'}</span>
-              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-900 text-amber-200">${m.type || 'Bug'}</span>
+              <span class="font-bold text-amber-300 truncate text-[11px]">${m.file || 'File'}</span>
+              <span class="text-[9px] px-1 py-0.2 rounded bg-amber-900 text-amber-200">${m.type || 'Bug'}</span>
             </div>
             <p class="text-[10px] text-amber-100/80">${m.detail || ''}</p>
             <button data-fix-idx="${idx}" type="button" class="btn-fix-bug text-[9px] text-red-300 underline hover:text-white">
@@ -730,17 +751,54 @@
       });
     }
 
-    // ─── 3. CLAUDE CODE LIVE EXECUTION STREAMER ────────────────────────────────
+    // ─── 3. CLAUDE CODE LIVE EXECUTION STREAMER & STOP OPTION ─────────────────
+    async function stopAgentExecution() {
+      if (state.currentAbortController) {
+        state.currentAbortController.abort();
+        state.currentAbortController = null;
+      }
+
+      try {
+        await fetch(`${state.backendUrl}/api/stop`, { method: 'POST' });
+      } catch (e) {}
+
+      state.isExecuting = false;
+      elements.agentExecutionStatusBadge.textContent = 'Agent: Stopped';
+      elements.agentExecutionStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-zinc-900 border border-red-500/40 text-red-400';
+      elements.btnSubmitPrompt.innerHTML = '<span>EXECUTE</span> <span>&#10148;</span>';
+      elements.btnSubmitPrompt.className = 'px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold tracking-wide shadow-[0_0_18px_#ff1e27] transition flex items-center gap-1.5 shrink-0';
+      elements.btnHeaderStop.classList.add('hidden');
+
+      appendStepCard({
+        title: 'Execution Halted',
+        tool: 'STOP_ACTION',
+        badgeColor: 'border-red-500 text-red-400',
+        content: 'Agent execution was stopped by user request (STOP option / Esc).',
+        status: 'error'
+      });
+      appendTerminal('\n[STOP] Execution halted by user.');
+    }
+
     async function executeUserPrompt(instruction) {
-      if (!instruction || state.isExecuting) return;
+      if (!instruction) return;
+      if (state.isExecuting) {
+        // If already executing, clicking submit acts as STOP
+        stopAgentExecution();
+        return;
+      }
+
       state.isExecuting = true;
+      state.currentAbortController = new AbortController();
+
       elements.agentExecutionStatusBadge.textContent = 'Agent: Working...';
       elements.agentExecutionStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/50 text-amber-200 animate-pulse';
 
-      // Switch right pane to Claude Code stream
+      elements.btnSubmitPrompt.innerHTML = '<span class="animate-pulse">■</span> <span>STOP (ESC)</span>';
+      elements.btnSubmitPrompt.className = 'px-5 py-2 rounded-xl bg-red-700 hover:bg-red-600 text-white text-xs sm:text-sm font-bold tracking-wide shadow-[0_0_20px_#ff1e27] transition flex items-center gap-1.5 shrink-0 animate-pulse';
+      elements.btnHeaderStop.classList.remove('hidden');
+
       switchRightTab('claude');
 
-      // Clear previous step cards and append user prompt card
       appendStepCard({
         title: 'User Instruction Received',
         tool: 'CO-LEADER',
@@ -762,12 +820,12 @@
         const res = await fetch(`${state.backendUrl}/api/execute`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
+          signal: state.currentAbortController.signal
         });
         const data = await res.json();
 
         if (data.ok) {
-          // Render each tool trace as a live Claude Code step card
           (data.tool_traces || []).forEach((t, i) => {
             const toolName = t.tool;
             const resObj = t.result || {};
@@ -807,45 +865,50 @@
             status: 'done'
           });
 
-          // If files were written, auto-open the first one in Monaco Editor!
           if (data.files && data.files.length > 0) {
             const firstFile = data.files[0];
             setEditorContent(firstFile.content, '', firstFile.path);
             fetchWorkspaceFiles();
           }
 
-          // If screenshot returned, display it
           if (data.screenshot) {
             elements.liveDesktopStreamImg.src = data.screenshot;
             elements.viewDesktopLargeImg.src = data.screenshot;
             elements.screenStreamLoading.classList.add('hidden');
           }
 
-          // Spoken speech output
           speakText(data.spoken_response);
           document.getElementById('voiceLastSpeechResponse').textContent = `"${data.spoken_response}"`;
         } else {
           appendStepCard({
-            title: 'Execution Failed',
-            tool: 'ERROR',
+            title: data.stopped ? 'Execution Halted' : 'Execution Failed',
+            tool: data.stopped ? 'STOP' : 'ERROR',
             badgeColor: 'border-red-600 text-red-400',
-            content: data.error || 'Unknown execution error',
+            content: data.spoken_response || data.error || 'Execution halted.',
             status: 'error'
           });
         }
       } catch (err) {
-        appendStepCard({
-          title: 'Network / Server Error',
-          tool: 'HTTP_ERROR',
-          badgeColor: 'border-red-600 text-red-400',
-          content: String(err),
-          status: 'error'
-        });
-        appendTerminal(`[FATAL ERROR] ${err}`);
+        if (err.name === 'AbortError') {
+          // Handled by stopAgentExecution
+        } else {
+          appendStepCard({
+            title: 'Network / Server Error',
+            tool: 'HTTP_ERROR',
+            badgeColor: 'border-red-600 text-red-400',
+            content: String(err),
+            status: 'error'
+          });
+          appendTerminal(`[FATAL ERROR] ${err}`);
+        }
       } finally {
         state.isExecuting = false;
+        state.currentAbortController = null;
         elements.agentExecutionStatusBadge.textContent = 'Agent: Ready';
         elements.agentExecutionStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300';
+        elements.btnSubmitPrompt.innerHTML = '<span>EXECUTE</span> <span>&#10148;</span>';
+        elements.btnSubmitPrompt.className = 'px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold tracking-wide shadow-[0_0_18px_#ff1e27] transition flex items-center gap-1.5 shrink-0';
+        elements.btnHeaderStop.classList.add('hidden');
       }
     }
 
@@ -869,7 +932,7 @@
       const statusIcon = isSuccess ? '✓' : isWorking ? '⚡' : '✗';
       const statusColor = isSuccess ? 'text-emerald-400' : isWorking ? 'text-amber-400' : 'text-rose-400';
 
-      cardEl.className = 'p-3 rounded-lg bg-black/75 border border-red-950/80 space-y-1.5 text-xs mono transition hover:border-red-500/40';
+      cardEl.className = 'p-2.5 rounded-lg bg-black/75 border border-red-950/80 space-y-1 text-xs mono transition hover:border-red-500/40';
       cardEl.innerHTML = `
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5 truncate">
@@ -940,9 +1003,9 @@
       document.querySelectorAll('.nav-view-btn').forEach(btn => {
         const v = btn.getAttribute('data-view');
         if (v === viewName) {
-          btn.className = 'nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_14px_#ff1e27] transition flex items-center gap-1.5';
+          btn.className = 'nav-view-btn px-3 py-1 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_14px_#ff1e27] transition flex items-center gap-1.5';
         } else {
-          btn.className = 'nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5';
+          btn.className = 'nav-view-btn px-3 py-1 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5';
         }
       });
 
@@ -975,7 +1038,6 @@
       const nodes = state.memoryGraph.nodes || [];
       const edges = state.memoryGraph.edges || [];
 
-      // Layout nodes radially around Co-Leader
       const cx = w / 2;
       const cy = h / 2;
       const r = Math.min(w, h) * 0.38;
@@ -993,7 +1055,6 @@
         }
       });
 
-      // Draw Edges (Synapses)
       edges.forEach(e => {
         const src = nodeCoords[e.source];
         const tgt = nodeCoords[e.target];
@@ -1010,7 +1071,6 @@
         }
       });
 
-      // Draw Nodes
       nodes.forEach(n => {
         const coord = nodeCoords[n.id] || { x: cx, y: cy };
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -1045,7 +1105,6 @@
         svg.appendChild(g);
       });
 
-      // Agent Matrix List
       const matrixEl = document.getElementById('swarmAgentMatrix');
       if (matrixEl) {
         matrixEl.innerHTML = nodes.map(n => `
@@ -1078,7 +1137,6 @@
       threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       container.appendChild(threeRenderer.domElement);
 
-      // Core Red Particle Sphere
       particleGroup = new THREE.Group();
       const pCount = 1200;
       const pGeo = new THREE.BufferGeometry();
@@ -1105,7 +1163,6 @@
       particleGroup.add(points);
       threeScene.add(particleGroup);
 
-      // Radial Audio Spikes
       spikeGroup = new THREE.Group();
       const spikeCount = 64;
       for (let i = 0; i < spikeCount; i++) {
@@ -1120,7 +1177,6 @@
       }
       threeScene.add(spikeGroup);
 
-      // Gyroscopic Outer Rings
       for (let r = 0; r < 3; r++) {
         const ringGeo = new THREE.TorusGeometry(75 + r * 10, 0.6, 8, 80);
         const ringMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, wireframe: true, transparent: true, opacity: 0.5 });
@@ -1180,7 +1236,7 @@
       speechRecognition.onstart = () => {
         state.isListeningVoice = true;
         elements.voiceMicIcon.textContent = '🔴';
-        elements.btnToggleVoiceMic.className = 'px-3.5 py-2.5 rounded-xl bg-red-600 text-white animate-pulse transition';
+        elements.btnToggleVoiceMic.className = 'px-3 py-2 rounded-xl bg-red-600 text-white animate-pulse transition';
         document.getElementById('voiceSpeechStatus').textContent = 'Listening to your voice... Speak now.';
       };
 
@@ -1194,7 +1250,7 @@
       speechRecognition.onend = () => {
         state.isListeningVoice = false;
         elements.voiceMicIcon.textContent = '🎤';
-        elements.btnToggleVoiceMic.className = 'px-3.5 py-2.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition';
+        elements.btnToggleVoiceMic.className = 'px-3 py-2 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition';
       };
     }
 
@@ -1236,18 +1292,33 @@
         });
       });
 
-      // Tab Switcher on Right Column (Claude Code Stream vs Screen Viewport)
+      // Right Column Tab Switcher
       elements.btnTabClaudeStream.addEventListener('click', () => switchRightTab('claude'));
       elements.btnTabScreenViewport.addEventListener('click', () => switchRightTab('screen'));
       elements.btnCaptureFreshFrame.addEventListener('click', captureFreshScreenFrame);
 
-      // Prompt Submit Form
+      // Prompt Form Submit
       elements.jarvisPromptForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const text = elements.jarvisPromptInput.value.trim();
         if (text) {
           executeUserPrompt(text);
           elements.jarvisPromptInput.value = '';
+        }
+      });
+
+      // STOP Buttons
+      elements.btnStopExecution.addEventListener('click', stopAgentExecution);
+      elements.btnHeaderStop.addEventListener('click', stopAgentExecution);
+
+      // Keyboard Esc to STOP, Ctrl+S to save
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && state.isExecuting) {
+          e.preventDefault();
+          stopAgentExecution();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          saveCurrentFileToDisk();
         }
       });
 
@@ -1295,14 +1366,6 @@
         }
         elements.configModal.classList.add('hidden');
         fetchWorkspaceFiles();
-      });
-
-      // Keyboard Shortcut Ctrl+S to save
-      window.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-          e.preventDefault();
-          saveCurrentFileToDisk();
-        }
       });
     });
   </script>

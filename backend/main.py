@@ -189,6 +189,11 @@ def api_control_desktop(req: DesktopGuiRequest):
     return control_desktop_gui(req.app, req.goal, req.actions)
 
 
+@app.post("/api/stop")
+def api_stop():
+    return brain.stop()
+
+
 @app.websocket("/ws/telemetry")
 async def ws_telemetry(ws: WebSocket):
     await ws.accept()

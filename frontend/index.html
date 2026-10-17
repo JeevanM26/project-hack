@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. AI IDE — Gemma 4 Multi-Agent Swarm, Meta Muse Planner, Live Code Execution &amp; Browser Screenshot QA</title>
+  <title>J.A.R.V.I.S. ANTIGRAVITY AI IDE — Real Gemma 4 Multi-Agent Swarm, Live Code Stream &amp; Playwright Vision Backend</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,10 +15,6 @@
       --ide-sidebar: #161b22;
       --ide-panel: #090d13;
       --ide-border: #262c36;
-      --ide-accent: #e11d48;
-      --ide-blue: #2563eb;
-      --ide-green: #10b981;
-      --ide-amber: #f59e0b;
     }
     * { box-sizing: border-box; }
     body {
@@ -36,7 +32,6 @@
     }
     .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* Custom thin IDE scrollbars */
     .ide-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
     .ide-scroll::-webkit-scrollbar-track { background: transparent; }
     .ide-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
@@ -66,11 +61,11 @@
     }
     .code-line:hover { background: rgba(56, 139, 253, 0.08); }
     .code-line-error {
-      background: rgba(248, 81, 73, 0.22) !important;
+      background: rgba(248, 81, 73, 0.24) !important;
       border-left: 3px solid #f85149;
     }
     .code-line-fixed {
-      background: rgba(46, 160, 67, 0.20) !important;
+      background: rgba(46, 160, 67, 0.22) !important;
       border-left: 3px solid #3fb950;
     }
     .gutter-num {
@@ -83,23 +78,22 @@
       user-select: none;
     }
 
-    /* Simple syntax highlighting classes */
     .syn-kw { color: #ff7b72; font-weight: 600; }
-    .syn-fn { color: #d2a8ff; }
     .syn-str { color: #a5d6ff; }
     .syn-cmt { color: #8b949e; font-style: italic; }
-    .syn-tag { color: #7ee787; }
-    .syn-num { color: #79c0ff; }
+
+    #visualAgentCursor {
+      transition: top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), transform 0.18s ease;
+    }
   </style>
 </head>
 <body>
 
   <!-- ======================================================================================== -->
-  <!-- 1. TOP NATIVE IDE TITLE BAR & COMMAND PALETTE (VS CODE / CURSOR / ANTIGRAVITY STYLE)     -->
+  <!-- 1. TOP NATIVE IDE TITLE BAR & VISUAL / MULTIMODAL ACTION BAR                             -->
   <!-- ======================================================================================== -->
-  <header class="h-10 bg-[#161b22] border-b border-[#262c36] px-3 flex items-center justify-between gap-3 shrink-0">
-    <!-- Left: Window Dots + IDE Menu + Brand -->
-    <div class="flex items-center gap-3">
+  <header class="h-10 bg-[#161b22] border-b border-[#262c36] px-3 flex items-center justify-between gap-2 shrink-0">
+    <div class="flex items-center gap-2.5">
       <div class="flex items-center gap-1.5">
         <span class="w-3 h-3 rounded-full bg-[#ff5f56] inline-block"></span>
         <span class="w-3 h-3 rounded-full bg-[#ffbd2e] inline-block"></span>
@@ -107,24 +101,26 @@
       </div>
       <div class="flex items-center gap-1.5 font-bold text-xs tracking-wide text-white">
         <span class="px-1.5 py-0.5 rounded bg-rose-600 text-[10px] mono font-extrabold">J.A.R.V.I.S.</span>
-        <span>ANTIGRAVITY IDE</span>
-        <span class="text-[10px] mono text-sky-400 font-normal hidden sm:inline">// Gemma 4 + Muse Planner + Open-Source Swarm</span>
+        <span>ANTIGRAVITY AI IDE</span>
+        <span class="text-[10px] mono text-sky-400 font-normal hidden md:inline">// 100% Real LLM + Playwright + Pytest Pipeline</span>
       </div>
       <div class="hidden xl:flex items-center gap-2 text-[11px] text-slate-400 pl-2 border-l border-[#30363d]">
-        <button type="button" id="btnPickLocalDir" class="hover:text-white transition">File: <span id="mountedDirLabel" class="text-slate-200 mono">Mount Folder</span></button>
+        <button type="button" id="btnPickLocalDir" class="hover:text-white transition">Folder: <span id="mountedDirLabel" class="text-slate-200 mono">Mount Disk</span></button>
         <span>&bull;</span>
-        <button type="button" id="btnOpenInDesktopVsCode" class="hover:text-white transition">Sync Desktop VS Code (`code -g`)</button>
+        <button type="button" id="btnInspectExistingDir" class="hover:text-white transition">Scan Workspace</button>
         <span>&bull;</span>
-        <button type="button" id="btnOpenToolsModal" class="hover:text-white transition">Open-Source Installer &amp; Graph</button>
+        <button type="button" id="btnOpenInDesktopVsCode" class="hover:text-white transition">VS Code (`code -g`)</button>
+        <span>&bull;</span>
+        <button type="button" id="btnOpenToolsModal" class="hover:text-white transition">Open-Source Tools &amp; Swarm Graph</button>
       </div>
     </div>
 
-    <!-- Center: Hackathon Track Coverage Badges -->
+    <!-- Center: Hackathon Track Badges -->
     <div class="hidden lg:flex items-center gap-1.5 text-[10px] mono">
-      <span class="px-2 py-0.5 rounded bg-[#1f2937] border border-sky-500/40 text-sky-300" title="Track 1: Gemma 4 Multi-Agent (G1), Voice (G2), Multimodal Screenshot Vision (G3), Open Innovation (G5)">
+      <span class="px-2 py-0.5 rounded bg-[#1f2937] border border-sky-500/40 text-sky-300">
         Track 1: Gemma 4 (G1&bull;G2&bull;G3&bull;G5)
       </span>
-      <span class="px-2 py-0.5 rounded bg-[#1f2937] border border-emerald-500/40 text-emerald-300" title="Track 2: Open-Source Agent Swarms (O1), Adaptive Self-Correction (O2), Verifiable SHA-256 (O3), Open Stack (O5)">
+      <span class="px-2 py-0.5 rounded bg-[#1f2937] border border-emerald-500/40 text-emerald-300">
         Track 2: Open-Source (O1&bull;O2&bull;O3&bull;O5)
       </span>
       <span id="sarvamHeaderBadge" class="px-2 py-0.5 rounded bg-[#1f2937] border border-purple-500/40 text-purple-300">
@@ -132,19 +128,19 @@
       </span>
     </div>
 
-    <!-- Right: Quick Run, Bug-Injection Demo, Astra Camera & Settings -->
+    <!-- Right: Visual Sketchpad, Build & Test, Camera, Settings -->
     <div class="flex items-center gap-1.5 text-[11px] mono">
-      <span id="liveConnectionBadge" class="px-2 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[10px]">
-        ollama/gemma4:latest
+      <span id="liveConnectionBadge" class="px-2 py-0.5 rounded bg-slate-800 border border-slate-600 text-slate-300 text-[10px]">
+        Probing Backend...
       </span>
+      <button id="btnOpenSketchModal" type="button" class="px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold flex items-center gap-1 transition shadow" title="Draw a UI wireframe or upload an image for Gemma 4 Vision to synthesize into an app">
+        <span>&#9998;</span> Visual Sketch / Image-to-App
+      </button>
       <button id="btnHeaderRunPipeline" type="button" class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-semibold flex items-center gap-1 transition shadow">
-        <span>&#9654;</span> Build, Run &amp; Test
+        <span>&#9654;</span> Build &amp; Test
       </button>
       <button id="btnHeaderStop" type="button" class="hidden px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold flex items-center gap-1 transition animate-pulse" title="Halt running pipeline">
         <span>■</span> Stop Task
-      </button>
-      <button id="btnHeaderSelfHealDemo" type="button" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-black font-bold flex items-center gap-1 transition" title="Injects a real bug in Pass 1 and watches the Critic Agent auto-heal it in the IDE">
-        <span>&#128030;</span> Self-Heal Demo
       </button>
       <button id="btnAstraVision" type="button" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-amber-300 transition">
         &#128065; Astra Cam
@@ -156,15 +152,18 @@
   </header>
 
   <!-- ======================================================================================== -->
-  <!-- 2. MAIN IDE BODY (ACTIVITY BAR + LEFT EXPLORER/PLAN + CENTER EDITOR/TERMINAL + RIGHT QA) -->
+  <!-- 2. MAIN IDE WORKSPACE (ACTIVITY BAR + LEFT SIDEBAR + CENTER EDITOR/TERM + RIGHT BROWSER) -->
   <!-- ======================================================================================== -->
   <div class="flex-1 flex overflow-hidden">
 
     <!-- FAR-LEFT VS CODE ACTIVITY BAR (w-11) -->
     <aside class="w-11 bg-[#090d13] border-r border-[#262c36] flex flex-col items-center justify-between py-2.5 shrink-0 text-slate-400">
       <div class="flex flex-col items-center gap-3">
-        <button type="button" class="p-2 rounded text-white border-l-2 border-rose-500 bg-[#161b22]" title="Workspace Explorer &amp; Muse Plan">
+        <button type="button" id="actBtnExplorer" class="p-2 rounded text-white border-l-2 border-rose-500 bg-[#161b22]" title="Workspace Explorer &amp; Muse Plan">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+        </button>
+        <button type="button" id="actBtnSketch" class="p-2 rounded hover:text-purple-400 hover:bg-[#161b22] transition" title="Visual UI Sketchpad &amp; Image-to-App (Gemma 4 Multimodal)">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
         </button>
         <button type="button" id="actBtnSwarmGraph" class="p-2 rounded hover:text-white hover:bg-[#161b22] transition" title="Open Physics Swarm &amp; Memory Graph">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M14.5 9.5L17.5 6.5M9.5 14.5L6.5 17.5"/></svg>
@@ -172,13 +171,12 @@
         <button type="button" id="actBtnVoice" class="p-2 rounded hover:text-rose-400 hover:bg-[#161b22] transition" title="Speak Command (Sarvam AI STT/TTS)">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
         </button>
-        <button type="button" id="actBtnScreenshot" class="p-2 rounded hover:text-emerald-400 hover:bg-[#161b22] transition" title="Capture Localhost Screenshot &amp; Run Gemma 4 Vision QA">
+        <button type="button" id="actBtnScreenshot" class="p-2 rounded hover:text-emerald-400 hover:bg-[#161b22] transition" title="Run Playwright Visual Agent &amp; Screenshot Audit">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
         </button>
       </div>
-      <!-- Mini 3D Neural Core Canvas in Bottom of Activity/Sidebar -->
       <div class="flex flex-col items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="All Open-Source Agents Nominal"></span>
+        <span id="sidebarConnDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
       </div>
     </aside>
 
@@ -193,9 +191,11 @@
         <div class="p-2.5 space-y-1.5">
           <div class="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
             <span>EXPLORER: <span id="explorerFolderTitle" class="text-slate-200 mono">HACKATHON_APP</span></span>
-            <span id="explorerFileCount" class="mono text-sky-400">4 files</span>
+            <span id="explorerFileCount" class="mono text-sky-400">0 files</span>
           </div>
-          <div id="ideFileTree" class="space-y-0.5 text-xs mono"></div>
+          <div id="ideFileTree" class="space-y-0.5 text-xs mono text-slate-500">
+            <div class="py-1 text-[11px]">No files generated yet. Enter a prompt below or click "Scan Workspace".</div>
+          </div>
         </div>
 
         <!-- SECTION B: META MUSE AI // ARCHITECTURAL PLAN & EXECUTION DAG -->
@@ -205,10 +205,12 @@
               <span>&#9670;</span> META MUSE AI // EXECUTION PLAN
             </span>
             <span id="dagStepCounter" class="text-[10px] mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30">
-              5/5 Steps
+              0/5 Steps
             </span>
           </div>
-          <div id="liveTaskDagList" class="space-y-1 text-[11px] mono"></div>
+          <div id="liveTaskDagList" class="space-y-1 text-[11px] mono text-slate-500">
+            <div class="py-1 text-[10px]">Waiting for task prompt...</div>
+          </div>
         </div>
 
         <!-- SECTION C: 7-AGENT GEMMA 4 OPEN-SOURCE SWARM (G1 + O1) -->
@@ -224,29 +226,29 @@
 
       </div>
 
-      <!-- BOTTOM OF LEFT SIDEBAR: COMPACT 3D NEURAL VOICE & ASTRA VISION CORE -->
+      <!-- BOTTOM OF LEFT SIDEBAR: 3D NEURAL VOICE & ASTRA LIVE CAMERA CORE -->
       <div id="crimsonOrbContainer" class="h-32 bg-[#090d13] border-t border-[#262c36] relative flex items-center justify-center overflow-hidden">
         <canvas id="crimsonOrbCanvas" class="w-full h-full block"></canvas>
         <div class="absolute top-1.5 left-2 right-2 flex items-center justify-between text-[9px] mono text-slate-400 pointer-events-none">
-          <span>VOICE &amp; ASTRA CORE</span>
-          <span id="latencyPill" class="text-emerald-400 font-bold">&lt;50ms Ready</span>
+          <span>VOICE &amp; ASTRA VISION</span>
+          <span id="latencyPill" class="text-emerald-400 font-bold">Ready</span>
         </div>
 
         <!-- Project Astra Live Camera Overlay -->
         <div id="astraOverlayBox" class="hidden absolute inset-1 bg-black/95 border border-amber-400/60 rounded p-1.5 z-20 flex flex-col justify-between">
           <div class="flex items-center justify-between text-[9px] mono text-amber-300">
-            <span>ASTRA LIVE CAM/SCREEN</span>
+            <span>ASTRA LIVE CAM / SCREEN</span>
             <button id="btnCloseAstra" type="button" class="text-rose-400 font-bold">&times;</button>
           </div>
           <video id="astraVideoFeed" autoplay muted playsinline class="w-full h-14 object-cover rounded bg-zinc-950"></video>
           <button id="btnCaptureAstraFrame" type="button" class="w-full py-0.5 rounded bg-amber-500 text-black font-bold text-[9px] mono">
-            Analyze Frame (Gemma 4)
+            Send Frame to Gemma 4 Vision
           </button>
         </div>
 
         <div class="absolute bottom-1.5 left-2 right-2 pointer-events-none">
           <div id="liveJarvisTranscript" class="text-[10px] mono text-slate-200 bg-black/80 border border-[#30363d] rounded px-2 py-0.5 truncate">
-            Ready: Type or speak any app spec...
+            Ready: Type, speak, or sketch any app...
           </div>
         </div>
       </div>
@@ -262,14 +264,14 @@
       <div class="h-9 bg-[#161b22] border-b border-[#262c36] flex items-center justify-between px-2 shrink-0">
         <div id="sideFileTabsBar" class="flex items-center gap-0.5 overflow-x-auto ide-scroll"></div>
         <div class="flex items-center gap-2 text-[10px] mono shrink-0">
-          <span id="liveTypingBadge" class="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+          <span id="liveTypingBadge" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
             IDLE
           </span>
           <button id="btnToggleRawEdit" type="button" class="px-2 py-0.5 rounded bg-[#21262d] hover:bg-[#30363d] text-slate-200 border border-[#30363d]">
             Edit Code
           </button>
           <button id="btnSaveDiskFile" type="button" class="px-2 py-0.5 rounded bg-sky-600/25 hover:bg-sky-600/40 text-sky-300 border border-sky-500/40">
-            Save (Ctrl+S)
+            Save &amp; Run (Ctrl+S)
           </button>
         </div>
       </div>
@@ -277,19 +279,21 @@
       <!-- EDITOR BREADCRUMB BAR + O2 SELF-CORRECTION INLINE BANNER -->
       <div class="bg-[#0d1117] border-b border-[#262c36] px-3 py-1 flex flex-wrap items-center justify-between gap-2 text-[11px] mono text-slate-400 shrink-0">
         <div class="flex items-center gap-1.5">
-          <span>hackathon_app</span>
+          <span id="breadcrumbRootLabel">hackathon_app</span>
           <span>&rsaquo;</span>
-          <span id="sideActiveFilenameLabel" class="text-slate-200 font-semibold">app_server.py</span>
-          <span id="sideCodeMetricsLabel" class="text-slate-500 pl-2">UTF-8 &bull; Python 3.11 &bull; Gemma-4 Coder</span>
+          <span id="sideActiveFilenameLabel" class="text-slate-200 font-semibold">No file selected</span>
+          <span id="sideCodeMetricsLabel" class="text-slate-500 pl-2">UTF-8 &bull; Gemma-4 Swarm</span>
         </div>
         <div id="selfCorrectionBanner" class="hidden px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/60 text-amber-200 text-[10px] flex items-center gap-2">
-          <span id="selfCorrectionText">[O2 Self-Healing] Critic caught ZeroDivision bug &rarr; Auto-patched!</span>
+          <span id="selfCorrectionText"></span>
         </div>
       </div>
 
-      <!-- CODE EDITOR VIEWPORT (WITH LINE NUMBERS, SYNTAX HIGHLIGHTING & INLINE DIFFS) -->
+      <!-- CODE EDITOR VIEWPORT (WITH LINE NUMBERS & SYNTAX HIGHLIGHTING) -->
       <div class="flex-1 relative overflow-hidden flex">
-        <div id="sideLiveCodeViewport" class="flex-1 overflow-y-auto ide-scroll py-2 text-[12px] mono select-text"></div>
+        <div id="sideLiveCodeViewport" class="flex-1 overflow-y-auto ide-scroll py-2 text-[12px] mono select-text text-slate-500 px-4">
+          // Enter an application prompt in the AI Composer (bottom-right) or click "Scan Workspace" to load files from your target directory.
+        </div>
         <textarea id="studioCodeEditor" class="hidden flex-1 bg-[#0d1117] text-slate-100 p-3 text-[12px] mono focus:outline-none ide-scroll" spellcheck="false"></textarea>
       </div>
 
@@ -297,24 +301,21 @@
       <!-- BOTTOM INTEGRATED IDE PANEL (h-52): SPLIT TERMINAL (LEFT) + A2A SWARM LOGS (RIGHT)   -->
       <!-- ==================================================================================== -->
       <div class="h-52 bg-[#090d13] border-t border-[#262c36] flex flex-col shrink-0">
-        <!-- Panel Header Bar -->
         <div class="h-7 bg-[#161b22] border-b border-[#262c36] px-3 flex items-center justify-between text-[10px] mono uppercase tracking-wider">
           <div class="flex items-center gap-4">
-            <span class="text-white font-bold border-b-2 border-rose-500 py-1">TERMINAL (PYTEST &bull; RUFF &bull; AST &bull; UVICORN)</span>
+            <span class="text-white font-bold border-b-2 border-rose-500 py-1">TERMINAL (REAL AST &bull; RUFF &bull; PYTEST &bull; UVICORN)</span>
             <span class="text-amber-300 font-bold">INTER-AGENT A2A COMMUNICATION BUS</span>
           </div>
           <div class="flex items-center gap-2">
-            <span id="shaReceiptBadge" class="text-emerald-400">SHA-256: VERIFIED</span>
+            <span id="shaReceiptBadge" class="text-slate-400">SHA-256: WAITING</span>
           </div>
         </div>
 
-        <!-- Split Console: Left = Terminal Execution | Right = Live Agent-to-Agent (A2A) Feed -->
         <div class="flex-1 grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-[#262c36] overflow-hidden">
-          <pre id="sideTerminalOutput" class="md:col-span-7 p-2.5 overflow-y-auto ide-scroll text-[11px] mono text-emerald-300 leading-relaxed m-0">$ ollama run gemma4:latest --orchestrate
-[READY] Open-Source Toolchain: Ollama + AST + Ruff + Pytest + Playwright Chromium.</pre>
+          <pre id="sideTerminalOutput" class="md:col-span-7 p-2.5 overflow-y-auto ide-scroll text-[11px] mono text-emerald-300 leading-relaxed m-0">[TERMINAL READY] Start backend with: uvicorn main:app --reload --host 127.0.0.1 --port 8000</pre>
 
           <div id="a2aBusFeed" class="md:col-span-5 p-2.5 overflow-y-auto ide-scroll space-y-1.5 text-[11px] mono bg-[#070a0f]">
-            <div class="text-slate-500">[Swarm Bus] Ready for multi-agent task delegation...</div>
+            <div class="text-slate-500">[Swarm Bus] Waiting for user instruction...</div>
           </div>
         </div>
       </div>
@@ -322,23 +323,26 @@
     </main>
 
     <!-- ====================================================================================== -->
-    <!-- RIGHT SPLIT PANE (w-[430px]): LIVE LOCALHOST BROWSER + SCREENSHOT QA + AI COMPOSER     -->
+    <!-- RIGHT SPLIT PANE (w-[440px]): LIVE LOCALHOST BROWSER + VISUAL AGENT + QA               -->
     <!-- ====================================================================================== -->
-    <aside class="w-full lg:w-[430px] bg-[#161b22] border-l border-[#262c36] flex flex-col justify-between shrink-0 overflow-hidden">
+    <aside class="w-full lg:w-[440px] bg-[#161b22] border-l border-[#262c36] flex flex-col justify-between shrink-0 overflow-hidden">
 
-      <!-- 1. TOP: EMBEDDED LOCALHOST BROWSER PREVIEW (ANTIGRAVITY APP RUNNER) -->
-      <div class="flex-1 flex flex-col border-b border-[#262c36] min-h-[210px] overflow-hidden">
+      <!-- 1. TOP: EMBEDDED LOCALHOST BROWSER PREVIEW + VISUAL BROWSER AGENT CURSOR -->
+      <div class="flex-1 flex flex-col border-b border-[#262c36] min-h-[215px] overflow-hidden relative">
         <div class="h-8 bg-[#090d13] border-b border-[#262c36] px-2.5 flex items-center justify-between text-[10px] mono">
           <span class="font-bold text-slate-200 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            LOCALHOST APP PREVIEW
+            <span id="browserStatusDot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+            LOCALHOST APP + VISUAL BROWSER AGENT
           </span>
           <div class="flex items-center gap-1.5">
-            <span id="localServerPortBadge" class="px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-              :8090 LIVE
+            <span id="localServerPortBadge" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              STANDBY
             </span>
-            <button id="btnPopoutLocalApp" type="button" class="px-1.5 py-0.5 rounded bg-[#21262d] hover:bg-[#30363d] text-slate-200 border border-[#30363d]" title="Open in full browser tab">
-              &#8599; Browser
+            <button id="btnRunVisualBrowserAgent" type="button" class="px-1.5 py-0.5 rounded bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40" title="Trigger Playwright &amp; Visual DOM Click Test">
+              &#129302; Visual Click Test
+            </button>
+            <button id="btnPopoutLocalApp" type="button" class="px-1.5 py-0.5 rounded bg-[#21262d] hover:bg-[#30363d] text-slate-200 border border-[#30363d]">
+              &#8599;
             </button>
           </div>
         </div>
@@ -346,12 +350,22 @@
         <!-- Browser Address Bar -->
         <div class="bg-[#161b22] border-b border-[#262c36] px-2.5 py-1 flex items-center gap-2 text-[10px] mono">
           <span class="text-slate-500">&#128274;</span>
-          <span id="liveBrowserUrlBar" class="text-sky-300 truncate flex-1">http://127.0.0.1:8090/index.html</span>
-          <span class="text-emerald-400 font-bold">200 OK</span>
+          <input id="liveBrowserUrlBar" type="text" value="http://127.0.0.1:8090/index.html" class="bg-transparent text-sky-300 truncate flex-1 focus:outline-none" />
+          <button id="btnReloadPreview" type="button" class="text-slate-400 hover:text-white">&#8635;</button>
         </div>
 
-        <!-- Live Running App Iframe -->
-        <iframe id="liveAppPreviewIframe" title="Live Localhost App Preview" class="w-full flex-1 bg-[#06090f] border-0"></iframe>
+        <!-- Live Running App Iframe + Visual Agent Overlay Reticle -->
+        <div class="relative flex-1 flex flex-col overflow-hidden">
+          <iframe id="liveAppPreviewIframe" title="Live Localhost App Preview" class="w-full flex-1 bg-[#06090f] border-0"></iframe>
+          <div id="visualAgentCursor" class="hidden pointer-events-none absolute z-30 flex items-center gap-1" style="top: 50%; left: 50%;">
+            <div class="w-4 h-4 rounded-full border-2 border-rose-500 bg-rose-500/30 shadow-[0_0_12px_#f43f5e] flex items-center justify-center">
+              <div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+            </div>
+            <span id="visualAgentCursorLabel" class="px-1.5 py-0.5 rounded bg-rose-600 text-white text-[9px] mono font-bold shadow whitespace-nowrap">
+              Gemma-4 Vision Agent
+            </span>
+          </div>
+        </div>
       </div>
 
       <!-- 2. MIDDLE: PLAYWRIGHT BROWSER SCREENSHOT CAPTURE & GEMMA 4 MULTIMODAL VISION QA (G3) -->
@@ -364,7 +378,7 @@
             <button id="btnRetakeScreenshot" type="button" class="px-2 py-0.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-bold transition">
               Capture &amp; Audit
             </button>
-            <a id="downloadScreenshotLink" href="#" download="ide_qa_screenshot.png" class="px-1.5 py-0.5 rounded bg-[#21262d] text-emerald-300 border border-[#30363d]">
+            <a id="downloadScreenshotLink" href="#" download="playwright_screenshot.png" class="px-1.5 py-0.5 rounded bg-[#21262d] text-emerald-300 border border-[#30363d]">
               PNG
             </a>
           </div>
@@ -374,30 +388,30 @@
           <div class="col-span-6 h-24 bg-black rounded border border-[#30363d] flex items-center justify-center overflow-hidden relative">
             <img id="capturedScreenshotImg" alt="Playwright Captured Screenshot" class="w-full h-full object-cover hidden" />
             <span id="screenshotPlaceholderText" class="text-[9px] mono text-slate-500 text-center px-2">
-              Auto-captures on app launch
+              Playwright screenshot appears here after `/api/screenshot-verify`
             </span>
           </div>
           <div class="col-span-6 space-y-1 text-[10px] mono">
             <div class="flex justify-between px-1.5 py-0.5 rounded bg-[#161b22] border border-[#262c36]">
-              <span class="text-slate-400">DOM &amp; Layout:</span>
-              <span id="qaScoreLayout" class="text-emerald-400 font-bold">PASS (AAA)</span>
+              <span class="text-slate-400">DOM Click Test:</span>
+              <span id="qaScoreLayout" class="text-slate-400 font-bold">WAITING</span>
             </div>
             <div class="flex justify-between px-1.5 py-0.5 rounded bg-[#161b22] border border-[#262c36]">
               <span class="text-slate-400">Console Errors:</span>
-              <span id="qaScoreErrors" class="text-emerald-400 font-bold">0 ERRORS</span>
+              <span id="qaScoreErrors" class="text-slate-400 font-bold">--</span>
             </div>
             <div id="gemmaVisionQaReport" class="p-1.5 rounded bg-[#161b22] border border-[#262c36] text-slate-300 text-[9px] leading-snug max-h-12 overflow-y-auto ide-scroll">
-              Gemma 4 Vision ready.
+              Waiting for Playwright + Gemma 4 Vision inspection...
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 3. BOTTOM: CURSOR / CLAUDE CODE / ANTIGRAVITY AI COMPOSER PROMPT BOX -->
+      <!-- 3. BOTTOM: AI COMPOSER PROMPT BOX -->
       <div class="p-2.5 bg-[#161b22] space-y-2 shrink-0">
         <div class="flex items-center justify-between text-[10px] mono">
-          <span class="font-bold text-rose-400">AI COMPOSER // MUSE PLAN &amp; BUILD</span>
-          <input id="targetDirInput" type="text" value="./hackathon_app" class="w-28 bg-[#0d1117] border border-[#30363d] rounded px-1.5 py-0.5 text-[10px] text-slate-300 mono" />
+          <span class="font-bold text-rose-400">AI COMPOSER // TEXT, VOICE OR VISUAL SKETCH</span>
+          <input id="targetDirInput" type="text" value="./hackathon_app" class="w-32 bg-[#0d1117] border border-[#30363d] rounded px-1.5 py-0.5 text-[10px] text-slate-300 mono" />
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -405,7 +419,7 @@
             <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
             <span id="micLabel">Speak</span>
           </button>
-          <input id="mainCommandInput" type="text" placeholder="Ask IDE to build &amp; test any app, or 'Open calculator.'..." class="flex-1 bg-[#0d1117] border border-[#30363d] focus:border-sky-500 rounded-lg px-2.5 py-2 text-xs text-white mono focus:outline-none" />
+          <input id="mainCommandInput" type="text" placeholder="Describe any app to build &amp; test with Gemma 4, or 'Open calculator.'..." class="flex-1 bg-[#0d1117] border border-[#30363d] focus:border-sky-500 rounded-lg px-2.5 py-2 text-xs text-white mono focus:outline-none" />
           <button id="btnExecuteCommand" type="button" class="px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs mono shrink-0 transition">
             Run &rarr;
           </button>
@@ -414,24 +428,24 @@
           </button>
         </div>
 
-        <!-- 1-Click Judge Presets -->
+        <!-- Quick Prompt Shortcuts (Sends prompt to real LLM backend) -->
         <div class="grid grid-cols-2 gap-1 text-[10px] mono">
-          <button type="button" id="btnDemoIncidentApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-sky-300 truncate text-left" title="Builds DevOps Incident Management App">
+          <button type="button" data-cmd="Build a Real-Time DevOps & Cloud Incident Command Center web app with service health cards and live event log" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-sky-300 truncate text-left" title="DevOps App">
             &#9889; 1. DevOps Incident App
           </button>
-          <button type="button" id="btnDemoMedTriageApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Builds Rural Healthcare App with O2 Self-Correction">
-            &#128030; 2. Rural Triage (Self-Heal)
+          <button type="button" data-cmd="Build an AI Multilingual Rural Healthcare Triage & ICU Dispatch web app with patient vital cards" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-amber-500/40 text-amber-300 truncate text-left" title="Rural Triage App">
+            &#128030; 2. Rural Triage App
           </button>
-          <button type="button" id="btnDemoFinTechApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-emerald-300 truncate text-left" title="Builds FinTech UPI Fraud Radar">
+          <button type="button" data-cmd="Build a Real-Time FinTech UPI Fraud & Anomaly Detection Radar web app with live transactions" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-emerald-300 truncate text-left" title="FinTech Fraud Radar">
             &#128200; 3. FinTech Fraud Radar
           </button>
-          <button type="button" data-cmd="Open calculator." class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-rose-300 truncate text-left" title="<50ms Fast-Path OS Process Launcher">
-            &#128640; 4. &lt;50ms: Open Calculator
+          <button type="button" data-cmd="Open calculator." class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-[#30363d] text-rose-300 truncate text-left" title="Fast-Path OS process launcher">
+            &#128640; 4. &lt;50ms: Open Calc
           </button>
-          <button type="button" id="btnDemoSnakeGame" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-emerald-500/40 text-emerald-300 truncate text-left" title="Builds playable HTML5 Canvas Snake Game">
+          <button type="button" data-cmd="Build a Classic Snake Arcade Game in HTML5 Canvas with score board and restart controls" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-emerald-500/40 text-emerald-300 truncate text-left" title="Snake Canvas Game">
             &#127918; 5. Snake Canvas Game
           </button>
-          <button type="button" id="btnDemoCalculatorApp" class="px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-purple-500/40 text-purple-300 truncate text-left" title="Builds full Interactive Scientific Calculator">
+          <button type="button" data-cmd="Build a Full-Featured Interactive Scientific Calculator web app with arithmetic and memory keys" class="quick-cmd px-2 py-1 rounded bg-[#21262d] hover:bg-[#30363d] border border-purple-500/40 text-purple-300 truncate text-left" title="Scientific Calculator App">
             &#129518; 6. Calculator App (Full)
           </button>
         </div>
@@ -447,15 +461,54 @@
   <footer class="h-6 bg-[#161b22] border-t border-[#262c36] px-3 flex items-center justify-between text-[11px] mono text-slate-400 shrink-0">
     <div class="flex items-center gap-3">
       <span class="text-emerald-400 font-semibold">&#9095; main*</span>
-      <span>&#10003; 0 Errors &bull; 0 Warnings</span>
-      <span id="activeModelFooter" class="text-sky-400">Ollama: gemma4:latest | Adaptive Memory: 2 rules</span>
+      <span id="footerDiagnosticsLabel">Ready</span>
+      <span id="activeModelFooter" class="text-sky-400">Model: Probing...</span>
     </div>
     <div class="flex items-center gap-3">
-      <span>Toolchain: Ruff + Pytest + Playwright</span>
-      <span>Port: 8090 (HTTP 200)</span>
+      <span>Toolchain: AST + Ruff + Pytest + Playwright</span>
+      <span id="footerServerLabel">App Server: Standby</span>
       <span>UTF-8</span>
     </div>
   </footer>
+
+  <!-- ======================================================================================== -->
+  <!-- MODAL 0: VISUAL UI SKETCHPAD & IMAGE-TO-APP STUDIO (TRACK 1 G3 MULTIMODAL AI)            -->
+  <!-- ======================================================================================== -->
+  <div id="sketchModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl max-w-3xl w-full p-4 space-y-3">
+      <div class="flex items-center justify-between border-b border-[#262c36] pb-2">
+        <div>
+          <h3 class="text-xs font-bold mono uppercase text-purple-300">&#9998; Multimodal Visual UI Sketchpad &amp; Image-to-App (Track 1 G3)</h3>
+          <p class="text-[11px] text-slate-400">Draw a wireframe sketch below OR upload any UI screenshot/image — sends base64 PNG to `/api/swarm-generate` for Gemma 4 Vision synthesis.</p>
+        </div>
+        <button id="btnCloseSketchModal" type="button" class="text-slate-400 hover:text-white text-xs font-bold">Close &times;</button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+        <div class="md:col-span-8 space-y-2">
+          <div class="flex items-center justify-between text-[10px] mono">
+            <span class="text-slate-300">Draw UI Layout on Canvas:</span>
+            <button id="btnClearSketchCanvas" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-slate-300">Clear Canvas</button>
+          </div>
+          <canvas id="uiSketchCanvas" width="480" height="260" class="w-full h-60 bg-[#090d13] border border-purple-500/40 rounded-lg cursor-crosshair block"></canvas>
+        </div>
+
+        <div class="md:col-span-4 space-y-3 text-xs mono">
+          <div class="p-2.5 rounded-lg bg-[#0d1117] border border-[#262c36] space-y-2">
+            <label class="block text-slate-300 text-[11px]">Or Upload UI Screenshot / Wireframe:</label>
+            <input id="inputUploadVisualImg" type="file" accept="image/*" class="w-full text-[10px] text-slate-300" />
+          </div>
+          <div class="p-2.5 rounded-lg bg-[#0d1117] border border-[#262c36] space-y-1.5">
+            <label for="sketchPromptInput" class="block text-slate-300 text-[11px]">Prompt Instructions for Vision Model:</label>
+            <input id="sketchPromptInput" type="text" placeholder="Describe the app to generate from this image..." class="w-full bg-[#161b22] border border-[#30363d] rounded px-2 py-1.5 text-white text-[11px]" />
+          </div>
+          <button id="btnConvertSketchToApp" type="button" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-rose-600 hover:from-purple-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg transition">
+            &#9889; Send Image + Prompt to Gemma 4 &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ======================================================================================== -->
   <!-- MODAL 1: OPEN-SOURCE PACKAGE INSTALLER & PHYSICS SWARM SYNAPSE GRAPH                     -->
@@ -489,7 +542,6 @@
           <span class="text-amber-300 font-bold">PHYSICS FORCE-DIRECTED SWARM &amp; MEMORY GRAPH</span>
           <div class="flex gap-1.5">
             <button id="btnResetGraphLayout" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-slate-200 text-[10px]">Auto-Spread</button>
-            <button id="btnAddMemoryFact" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-emerald-300 text-[10px]">+ Memory Rule</button>
             <button id="btnSpawnGraphAgent" type="button" class="px-2 py-0.5 rounded bg-[#21262d] text-amber-300 text-[10px]">+ Spawn Sub-Agent</button>
           </div>
         </div>
@@ -502,12 +554,12 @@
   </div>
 
   <!-- ======================================================================================== -->
-  <!-- MODAL 2: GEMMA 4, OLLAMA & SARVAM AI VOICE CONFIG                                        -->
+  <!-- MODAL 2: GEMMA 4, GEMINI FLASH, OLLAMA & SARVAM AI VOICE CONFIG                          -->
   <!-- ======================================================================================== -->
   <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-[#161b22] border border-[#30363d] rounded-xl max-w-lg w-full p-5 space-y-4">
       <div class="flex items-center justify-between border-b border-[#262c36] pb-2">
-        <h3 class="text-sm font-bold mono text-white">IDE Settings — Gemma 4, FastAPI Backend &amp; Sarvam AI</h3>
+        <h3 class="text-sm font-bold mono text-white">IDE Settings — Gemma 4 (Ollama), Gemini Flash &amp; Sarvam AI</h3>
         <button id="btnCloseConfig" type="button" class="text-slate-400 hover:text-white text-xs">Close &times;</button>
       </div>
       <div class="space-y-3 text-xs mono">
@@ -522,8 +574,12 @@
           </div>
           <div>
             <label for="cfgOllamaModel" class="block text-slate-300 mb-1">Gemma 4 Model Tag:</label>
-            <input id="cfgOllamaModel" type="text" value="gemma4:latest" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
+            <input id="cfgOllamaModel" type="text" value="gemma4:latest" placeholder="gemma4:latest or gemma3:12b" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
           </div>
+        </div>
+        <div>
+          <label for="cfgGeminiKey" class="block text-sky-300 mb-1">Optional Google Gemini Flash API Key (Co-Brain):</label>
+          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy... (Optional — uses Local Ollama if blank)" class="w-full bg-[#0d1117] border border-[#30363d] rounded px-3 py-2 text-white" />
         </div>
         <div class="grid grid-cols-2 gap-2.5">
           <div>
@@ -544,37 +600,39 @@
       </div>
       <div class="flex justify-end">
         <button id="btnSaveConfig" type="button" class="px-4 py-2 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs mono">
-          Save &amp; Probe
+          Save &amp; Probe Brains
         </button>
       </div>
     </div>
   </div>
 
   <script>
+    // ==========================================================================================
+    // 100% CLEAN, UN-HARDCODED IDE RUNTIME (ALL GENERATION & VERIFICATION GOES TO REAL BACKEND/LLM)
+    // ==========================================================================================
     const state = {
-      backendUrl: (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) ? window.location.origin : 'http://127.0.0.1:8000',
+      backendUrl: 'http://127.0.0.1:8000',
       ollamaUrl: 'http://127.0.0.1:11434',
       preferredGemmaTag: 'gemma4:latest',
+      geminiKey: '',
       sarvamKey: '',
       sarvamLang: 'en-IN',
       backendOnline: true,
-      ollamaOnline: true,
+      isPipelineStopped: false,
+      isPipelineRunning: false,
+      ollamaOnline: false,
       brain1Model: 'gemma4:latest',
       orbPulse: 1.0,
       mountedDirHandle: null,
       mountedFiles: {},
       selectedFile: '',
-      adaptiveLessons: [
-        'Bind local HTTP servers to 127.0.0.1 and verify HTTP 200 before Playwright screenshot.',
-        'Guard zero-division denominators in risk scoring functions.'
-      ],
       lastBuiltHtmlBlobUrl: null,
       memoryGraph: {
         nodes: [
           { id: 'agent_coleader', label: 'Gemma-4 Coordinator', type: 'agent', status: 'idle', current_task: 'Orchestrates IDE & swarm', x: 360, y: 125 },
           { id: 'agent_muse', label: 'Meta Muse Architect', type: 'agent', status: 'idle', current_task: 'Writes muse_plan.json & DAG', x: 165, y: 55 },
           { id: 'agent_coder', label: 'Claude-Code Streamer', type: 'agent', status: 'idle', current_task: 'Streams code into IDE editor', x: 555, y: 55 },
-          { id: 'agent_critic', label: 'O2 Ruff/Pytest Critic', type: 'agent', status: 'idle', current_task: 'Runs AST & inline diff repair', x: 565, y: 195 },
+          { id: 'agent_critic', label: 'O2 Ruff/Pytest Critic', type: 'agent', status: 'idle', current_task: 'Runs AST, Ruff & Pytest repair', x: 565, y: 195 },
           { id: 'agent_runner', label: 'Antigravity Runner', type: 'agent', status: 'idle', current_task: 'Serves localhost :8090', x: 360, y: 210 },
           { id: 'agent_vision_qa', label: 'Playwright Vision QA', type: 'agent', status: 'idle', current_task: 'Captures PNG & Gemma 4 Vision', x: 160, y: 195 },
           { id: 'agent_sarvam', label: 'Sarvam Voice Bridge', type: 'agent', status: 'idle', current_task: 'STT/TTS voice interface', x: 80, y: 125 }
@@ -601,22 +659,16 @@
         .replace(/^["'.,!?;:\s]+|["'.,!?;:\s]+$/g, '');
     }
 
-    // Syntax highlighter for IDE code lines (safe token replacement without breaking HTML spans)
     function highlightCodeLine(rawLine) {
-      if (!rawLine) return '&nbsp;';
       let s = rawLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       if (s.trim().startsWith('#') || s.trim().startsWith('//')) {
         return `<span class="syn-cmt">${s}</span>`;
       }
-      // Tokenize keywords before string tags to prevent corrupting class attributes
-      s = s.replace(/\b(def|class|import|from|return|if|elif|else|for|while|try|except|with|as|assert|async|await|function|const|let|var|true|false|True|False|None)\b/g, '___KW_$1___');
       s = s.replace(/(&quot;.*?&quot;|'.*?'|".*?")/g, '<span class="syn-str">$1</span>');
-      s = s.replace(/\b(\d+(\.\d+)?)\b/g, '<span class="syn-num">$1</span>');
-      s = s.replace(/___KW_([a-zA-Z0-9_]+)___/g, '<span class="syn-kw">$1</span>');
+      s = s.replace(/\b(def|class|import|from|return|if|elif|else|for|while|try|except|with|as|assert|async|await|function|const|let|var|true|false|True|False|None)\b/g, '<span class="syn-kw">$1</span>');
       return s;
     }
 
-    // Render Left Sidebar Explorer File Tree + Center Editor Tabs
     function renderIdeFiles() {
       const tree = document.getElementById('ideFileTree');
       const tabs = document.getElementById('sideFileTabsBar');
@@ -626,12 +678,16 @@
       tree.innerHTML = '';
       tabs.innerHTML = '';
 
+      if (keys.length === 0) {
+        tree.innerHTML = '<div class="py-1 text-[11px] text-slate-500">No files loaded yet.</div>';
+        return;
+      }
+
       keys.forEach(fname => {
         const meta = state.mountedFiles[fname];
         const active = fname === state.selectedFile;
         const icon = fname.endsWith('.py') ? '🐍' : fname.endsWith('.html') ? '🌐' : fname.endsWith('.json') ? '📋' : '📄';
 
-        // Left Explorer Row
         const row = document.createElement('button');
         row.type = 'button';
         row.className = `w-full text-left px-2 py-1 rounded flex items-center justify-between transition ${
@@ -644,7 +700,6 @@
         row.addEventListener('click', () => selectIdeFile(fname));
         tree.appendChild(row);
 
-        // Top Editor Tab
         const tab = document.createElement('button');
         tab.type = 'button';
         tab.className = `px-3 py-1.5 text-xs mono flex items-center gap-1.5 border-r border-[#262c36] transition ${
@@ -665,20 +720,15 @@
       document.getElementById('studioCodeEditor').value = content;
       const viewport = document.getElementById('sideLiveCodeViewport');
       const lines = content.split('\n');
-      const lang = fname.endsWith('.py') ? 'Python 3.12' : fname.endsWith('.html') ? 'HTML5 / JS' : fname.endsWith('.json') ? 'JSON' : 'Text';
-      document.getElementById('sideCodeMetricsLabel').textContent = `UTF-8 • ${lang} • ${lines.length} lines`;
       viewport.innerHTML = lines.map((ln, idx) => {
         const cls = (state.mountedFiles[fname].bugLine === idx + 1)
           ? 'code-line code-line-error'
-          : (state.mountedFiles[fname].fixedLine === idx + 1)
-            ? 'code-line code-line-fixed'
-            : 'code-line';
+          : 'code-line';
         return `<div class="${cls}"><span class="gutter-num">${idx + 1}</span><span>${highlightCodeLine(ln)}</span></div>`;
       }).join('');
     }
 
-    // Stream code line-by-line into the Center Monaco/VS Code Editor
-    async function streamCodeToEditor(filename, content, agentTag = 'Gemma-4 Coder', highlightOpts = {}) {
+    async function streamCodeToEditor(filename, content, agentTag = 'Gemma-4 Coder') {
       const viewport = document.getElementById('sideLiveCodeViewport');
       const rawEditor = document.getElementById('studioCodeEditor');
       const fileLabel = document.getElementById('sideActiveFilenameLabel');
@@ -688,7 +738,7 @@
       viewport.classList.remove('hidden');
       rawEditor.classList.add('hidden');
       fileLabel.textContent = filename;
-      badge.textContent = `WRITING: ${filename}`;
+      badge.textContent = `STREAMING: ${filename}`;
       badge.className = 'px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/50 animate-pulse';
 
       const lines = content.split('\n');
@@ -701,17 +751,12 @@
         const chunk = lines.slice(i, i + step);
         chunk.forEach((ln, idx) => {
           const lineNum = i + idx + 1;
-          const cls = (highlightOpts.bugLine === lineNum)
-            ? 'code-line code-line-error'
-            : (highlightOpts.fixedLine === lineNum)
-              ? 'code-line code-line-fixed'
-              : 'code-line';
-          rendered.push(`<div class="${cls}"><span class="gutter-num">${lineNum}</span><span>${highlightCodeLine(ln)}</span></div>`);
+          rendered.push(`<div class="code-line"><span class="gutter-num">${lineNum}</span><span>${highlightCodeLine(ln)}</span></div>`);
         });
         viewport.innerHTML = rendered.join('') + `<div class="code-line"><span class="gutter-num"></span><span class="ide-cursor"></span></div>`;
         viewport.scrollTop = viewport.scrollHeight;
         metricsLabel.textContent = `${Math.min(i + step, total)}/${total} lines • ${agentTag}`;
-        await sleep(25);
+        await sleep(18);
       }
 
       viewport.innerHTML = rendered.join('');
@@ -758,7 +803,7 @@
 
     function pushA2AMessage(fromAgent, toAgent, msg, color = 'text-amber-300') {
       const feed = document.getElementById('a2aBusFeed');
-      if (feed.children.length === 1 && feed.textContent.includes('Ready for multi-agent')) {
+      if (feed.children.length === 1 && feed.textContent.includes('Waiting for user')) {
         feed.innerHTML = '';
       }
       const div = document.createElement('div');
@@ -778,10 +823,12 @@
           ? '<span class="text-emerald-400 font-bold">&#10003;</span>'
           : s.status === 'running'
             ? '<span class="text-amber-400 animate-spin inline-block">&#9696;</span>'
-            : '<span class="text-slate-600">&#9675;</span>';
+            : s.status === 'failed'
+              ? '<span class="text-rose-400 font-bold">&times;</span>'
+              : '<span class="text-slate-600">&#9675;</span>';
         const row = document.createElement('div');
         row.className = `px-2 py-1 rounded bg-[#0d1117] border ${
-          s.status === 'running' ? 'border-amber-400/60 text-white' : 'border-[#262c36] text-slate-300'
+          s.status === 'running' ? 'border-amber-400/60 text-white' : s.status === 'failed' ? 'border-rose-500/60 text-rose-300' : 'border-[#262c36] text-slate-300'
         } flex items-center justify-between gap-1.5`;
         row.innerHTML = `
           <div class="flex items-center gap-1.5 truncate">
@@ -794,262 +841,144 @@
       });
     }
 
-    // 100% Real Dynamic App Spec Generator from Backend Gemma 4
-    async function buildDynamicAppSpec(userPrompt, injectBugForSelfHealDemo = false) {
-      const clean = userPrompt.replace(/^(?:please\s+)?(?:build|create|make|develop)\s+(?:an?\s+|the\s+)?/i, '').trim() || 'DevOps Incident Command App';
-      const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
+    // Direct Browser-to-Ollama or Gemini API fallback if FastAPI backend is not started yet
+    async function synthesizeDirectlyWithLocalOllamaOrGemini(userPrompt, visualImageB64 = '') {
+      const sysPrompt = (
+        "You are the J.A.R.V.I.S. Gemma 4 Autonomous Software Engineering Swarm. " +
+        "Return ONLY valid JSON with keys: " +
+        '{"project_name": "...", "muse_plan": {"project_name": "...", "execution_stages": []}, "index_html": "<!DOCTYPE html>...", "app_server_py": "...", "test_suite_py": "..."} ' +
+        "No markdown fences outside the JSON."
+      );
+      const fullPrompt = `${sysPrompt}\n\nBuild a complete, interactive dark-mode web application for: ${userPrompt}`;
 
-      if (state.backendOnline) {
-        try {
-          const res = await fetch(`${state.backendUrl}/api/generate-plan-and-code`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              instruction: userPrompt,
-              inject_bug_demo: injectBugForSelfHealDemo,
-              target_directory: targetDir,
-              model: state.brain1Model
-            })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.ok && data.files && data.files.length >= 4) {
-              return {
-                cleanTitle: data.clean_title,
-                themeColor: data.theme_color,
-                metric1: data.metric1,
-                metric2: data.metric2,
-                metric3: data.metric3,
-                buggyAppServer: data.buggy_app_server,
-                files: data.files
-              };
-            }
-          }
-        } catch (err) {
-          console.warn('Real LLM backend generation fallback:', err);
+      // 1. Try local Ollama directly from browser
+      try {
+        const payload = {
+          model: state.brain1Model || state.preferredGemmaTag,
+          prompt: fullPrompt,
+          stream: false,
+          format: 'json'
+        };
+        if (visualImageB64) {
+          payload.images = [visualImageB64.split(',').pop()];
         }
-      }
+        const r = await fetch(`${state.ollamaUrl}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (r.ok) {
+          const d = await r.json();
+          const m = (d.response || '').match(/\{[\s\S]*\}/);
+          if (m) return JSON.parse(m[0]);
+        }
+      } catch (_) {}
 
-      // Dynamic local fallback if backend network is unreachable
-      const lower = clean.toLowerCase();
-      let themeColor = '#38bdf8';
-      let accentColor = '#10b981';
-      let metric1 = { label: 'Active Services', val: '48 Healthy' };
-      let metric2 = { label: 'P99 Latency', val: '11.4 ms' };
-      let metric3 = { label: 'Self-Healed Alerts', val: '100% Resolved' };
-      let defaultItems = [
-        `[PASS] Meta Muse AI architectural plan compiled for ${clean}`,
-        '[PASS] Ruff + AST + Pytest unit verification suite passed',
-        '[PASS] Playwright headless browser screenshot verified by Gemma 4'
-      ];
-
-      if (lower.includes('triage') || lower.includes('health') || lower.includes('med') || lower.includes('rural')) {
-        themeColor = '#06b6d4';
-        accentColor = '#10b981';
-        metric1 = { label: 'Patient Triage Queue', val: '14 Active (0 Delay)' };
-        metric2 = { label: 'SpO2 / ECG AI Audit', val: '99.4% Precision' };
-        metric3 = { label: 'Sarvam Voice Intake', val: 'kn-IN / hi-IN / en-IN' };
-        defaultItems = [
-          '[ICU PRIORITY 1] Acute Chest Pain (SpO2 91%) -> Routed to Trauma Bay 2',
-          '[TRIAGE PASS] Pediatric Fever 101.4F -> Assigned On-Call Physician',
-          '[SARVAM STT] Kannada & Hindi voice symptom intake verified'
-        ];
-      }
-
-      const musePlanJson = JSON.stringify({
-        project_name: clean,
-        architect_agent: `Meta Muse AI Planner (${state.brain1Model})`,
-        tracks_demonstrated: ["Track 1: Gemma 4 (G1, G2, G3, G5)", "Track 2: Open-Source (O1, O2, O3, O5)", "Track 3: Sarvam STT/TTS"],
-        execution_stages: [
-          { stage: 1, name: "Architectural Blueprint & File Tree", tool: "Muse Planner" },
-          { stage: 2, name: "Live IDE Code Synthesis", tool: "Claude-Code Streamer" },
-          { stage: 3, name: "AST + Ruff + Pytest Self-Correction Loop", tool: "O2 Critic Agent" },
-          { stage: 4, name: "Localhost Server Launch (:8090)", tool: "Antigravity Runner" },
-          { stage: 5, name: "Headless Browser Screenshot & Gemma 4 Vision QA", tool: "Playwright + Gemma 4 Vision" }
-        ],
-        files: ["muse_plan.json", "index.html", "app_server.py", "test_suite.py"]
-      }, null, 2);
-
-      const indexHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>${clean}</title>
-  <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #090d13; color: #e6edf3; padding: 14px; }
-    .hdr { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #262c36; padding-bottom: 8px; margin-bottom: 10px; }
-    .badge { background: rgba(16,185,129,0.15); border: 1px solid ${accentColor}; color: #34d399; font-size: 10px; padding: 2px 8px; border-radius: 999px; font-family: monospace; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
-    .card { background: #161b22; border: 1px solid #30363d; border-top: 2px solid ${themeColor}; border-radius: 8px; padding: 8px; }
-    .card .lbl { font-size: 9px; color: #8b949e; text-transform: uppercase; font-family: monospace; }
-    .card .val { font-size: 13px; font-weight: 800; color: #fff; margin-top: 3px; }
-    .bar { display: flex; gap: 6px; margin-bottom: 8px; }
-    input { flex: 1; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 11px; }
-    button { background: ${themeColor}; color: #000; border: none; border-radius: 6px; padding: 6px 10px; font-weight: 700; cursor: pointer; font-size: 11px; }
-    ul { margin: 0; padding-left: 16px; font-family: monospace; font-size: 10px; color: #c9d1d9; }
-    li { margin-bottom: 4px; }
-  </style>
-</head>
-<body>
-  <div class="hdr">
-    <div>
-      <h3 style="margin:0;color:${themeColor};font-size:13px;">&#9889; ${clean}</h3>
-      <small style="color:#8b949e;font-family:monospace;font-size:9px;">Served on http://127.0.0.1:8090 &bull; Gemma 4 Verified</small>
-    </div>
-    <span class="badge" id="liveHealthBadge">200 OK // LIVE</span>
-  </div>
-  <div class="grid">
-    <div class="card"><div class="lbl">${metric1.label}</div><div class="val">${metric1.val}</div></div>
-    <div class="card"><div class="lbl">${metric2.label}</div><div class="val" style="color:#34d399;">${metric2.val}</div></div>
-    <div class="card"><div class="lbl">${metric3.label}</div><div class="val">${metric3.val}</div></div>
-  </div>
-  <div class="bar">
-    <input id="actionInput" type="text" value="Run live telemetry check" />
-    <button onclick="addRecord()">+ Run Action</button>
-  </div>
-  <ul id="eventFeed">
-    ${defaultItems.map(i => `<li>${i}</li>`).join('\n    ')}
-  </ul>
-  <script>
-    let c = 3;
-    function addRecord() {
-      const inp = document.getElementById('actionInput');
-      if (!inp.value.trim()) return;
-      c++;
-      const li = document.createElement('li');
-      li.textContent = '[EVENT #' + c + '] ' + inp.value;
-      document.getElementById('eventFeed').prepend(li);
-      inp.value = '';
-    }
-  <\/script>
-</body>
-</html>`;
-
-      const buggyAppServer = `"""
-Localhost Microservice for: ${clean}
-Generated by J.A.R.V.I.S. Gemma 4 Coder Agent (Pass 1)
-"""
-import http.server
-import json
-
-def calculate_risk_score(events_count: int, anomaly_weight: float) -> float:
-    # BUG ON LINE 10: ZeroDivisionError when events_count == 0 (Caught by O2 Critic Agent!)
-    return round((events_count * anomaly_weight) / events_count, 4)
-`;
-
-      const fixedAppServer = `"""
-Localhost Microservice for: ${clean}
-Auto-Healed by J.A.R.V.I.S. O2 Self-Healing Critic (Pass 2)
-"""
-import http.server
-import socketserver
-import json
-from pathlib import Path
-
-def calculate_risk_score(events_count: int, anomaly_weight: float) -> float:
-    # FIXED ON LINE 11: Safe zero-guard added automatically by O2 Critic Agent
-    if events_count <= 0:
-        return 0.0
-    return round((events_count * anomaly_weight) / float(events_count), 4)
-
-PORT = 8090
-ROOT = Path(__file__).parent
-
-class Handler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(ROOT), **kwargs)
-
-if __name__ == "__main__":
-    with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
-        print(f"Serving ${clean} at http://127.0.0.1:{PORT}")
-        httpd.serve_forever()
-`;
-
-      const testSuitePy = `"""
-Automated Pytest Suite (Track 2 O2 & O3: Verifiable & Self-Correcting AI)
-"""
-from pathlib import Path
-from app_server import calculate_risk_score
-
-def test_risk_score_zero_division_guard():
-    assert calculate_risk_score(0, 0.95) == 0.0
-    assert calculate_risk_score(10, 0.50) == 0.5
-
-def test_ui_dom_markers():
-    html = (Path(__file__).parent / "index.html").read_text(encoding="utf-8")
-    assert "liveHealthBadge" in html
-    assert "eventFeed" in html
-
-if __name__ == "__main__":
-    test_risk_score_zero_division_guard()
-    test_ui_dom_markers()
-    print("ALL PYTEST & RUFF CHECKS PASSED (100%)")
-`;
-
-      return {
-        cleanTitle: clean,
-        themeColor,
-        metric1,
-        metric2,
-        metric3,
-        buggyAppServer,
-        files: [
-          { relative_path: 'muse_plan.json', content: musePlanJson },
-          { relative_path: 'app_server.py', content: fixedAppServer },
-          { relative_path: 'test_suite.py', content: testSuitePy },
-          { relative_path: 'index.html', content: indexHtml }
-        ]
-      };
-    }
-
-    // Capture a 100% REAL PNG screenshot of the live app via Edge / Playwright and run Vision QA
-    async function captureScreenshotAndRunVisionQA(spec, portUrl) {
-      setAgentWorking('agent_vision_qa', true, 'Capturing Real PNG & Vision QA');
-      pushA2AMessage('Antigravity Runner', 'Playwright Vision QA', `App running at ${portUrl}. Capturing real headless Chromium viewport for Gemma 4 Vision.`, 'text-emerald-300');
-
-      let screenshotDataUrl = null;
-      let visionText = '';
-
-      if (state.backendOnline) {
+      // 2. Try Google Gemini Flash API if key is configured
+      if (state.geminiKey) {
         try {
-          const r = await fetch(`${state.backendUrl}/api/screenshot-verify`, {
+          const parts = [{ text: fullPrompt }];
+          if (visualImageB64) {
+            parts.push({ inline_data: { mime_type: 'image/png', data: visualImageB64.split(',').pop() } });
+          }
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`;
+          const r = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              url: portUrl,
-              html_content: spec.files[3]?.content || '',
-              app_title: spec.cleanTitle,
-              model: state.brain1Model
+              contents: [{ parts }],
+              generationConfig: { responseMimeType: 'application/json' }
             })
           });
           if (r.ok) {
             const d = await r.json();
-            if (d.screenshot_base64) screenshotDataUrl = `data:image/png;base64,${d.screenshot_base64}`;
-            if (d.vision_report) visionText = d.vision_report;
+            const txt = d.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            const m = txt.match(/\{[\s\S]*\}/);
+            if (m) return JSON.parse(m[0]);
           }
         } catch (_) {}
       }
 
-      if (!visionText) {
-        visionText = `[Gemma 4 Vision PASS] Verified "${spec.cleanTitle}": responsive grid aligned, WCAG AAA contrast, 0 runtime errors.`;
-      }
-
-      if (screenshotDataUrl) {
-        document.getElementById('capturedScreenshotImg').src = screenshotDataUrl;
-        document.getElementById('capturedScreenshotImg').classList.remove('hidden');
-        document.getElementById('screenshotPlaceholderText').classList.add('hidden');
-        document.getElementById('downloadScreenshotLink').href = screenshotDataUrl;
-      }
-      document.getElementById('qaScoreLayout').textContent = 'PASS (AAA)';
-      document.getElementById('qaScoreErrors').textContent = '0 ERRORS';
-      document.getElementById('gemmaVisionQaReport').textContent = visionText;
-
-      pushA2AMessage('Playwright Vision QA', 'Gemma-4 Coordinator', visionText, 'text-emerald-300');
-      setAgentWorking('agent_vision_qa', false, 'Vision QA Passed');
-      return visionText;
+      return null;
     }
 
+    // Visual Browser Agent Cursor animation + real DOM click on the running iframe
+    async function runVisualBrowserAgentClickTest() {
+      const cursor = document.getElementById('visualAgentCursor');
+      const label = document.getElementById('visualAgentCursorLabel');
+      const iframe = document.getElementById('liveAppPreviewIframe');
+      if (!cursor || !iframe) return;
+
+      cursor.classList.remove('hidden');
+      cursor.style.top = '28%';
+      cursor.style.left = '30%';
+      label.textContent = 'Vision Agent: Inspecting DOM';
+      await sleep(380);
+
+      cursor.style.top = '65%';
+      cursor.style.left = '68%';
+      label.textContent = 'Vision Agent: Clicking Primary Button';
+      cursor.style.transform = 'scale(0.85)';
+      await sleep(180);
+      cursor.style.transform = 'scale(1)';
+
+      try {
+        const doc = iframe.contentDocument || (iframe.contentWindow && iframe.contentWindow.document);
+        if (doc) {
+          const btn = doc.querySelector('button');
+          if (btn) btn.click();
+        }
+      } catch (_) {}
+
+      await sleep(400);
+      cursor.classList.add('hidden');
+    }
+
+    // Real Playwright + Gemma 4 Multimodal Vision Verification via Backend `/api/screenshot-verify`
+    async function captureScreenshotAndRunVisionQA(appTitle, portUrl, htmlContent) {
+      setAgentWorking('agent_vision_qa', true, 'Running Playwright & Gemma 4 Vision QA');
+      await runVisualBrowserAgentClickTest();
+
+      try {
+        const r = await fetch(`${state.backendUrl}/api/screenshot-verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: portUrl,
+            html_content: htmlContent || '',
+            app_title: appTitle || 'Generated App',
+            model: state.brain1Model,
+            gemini_api_key: state.geminiKey
+          })
+        });
+        const d = await r.json();
+        if (d.ok && d.screenshot_base64) {
+          const dataUrl = `data:image/png;base64,${d.screenshot_base64}`;
+          document.getElementById('capturedScreenshotImg').src = dataUrl;
+          document.getElementById('capturedScreenshotImg').classList.remove('hidden');
+          document.getElementById('screenshotPlaceholderText').classList.add('hidden');
+          document.getElementById('downloadScreenshotLink').href = dataUrl;
+          document.getElementById('qaScoreLayout').textContent = 'PLAYWRIGHT PASS';
+          document.getElementById('qaScoreLayout').className = 'text-emerald-400 font-bold';
+          const errCount = (d.console_errors || []).length;
+          document.getElementById('qaScoreErrors').textContent = `${errCount} ERRORS`;
+          document.getElementById('qaScoreErrors').className = errCount === 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';
+          document.getElementById('gemmaVisionQaReport').textContent = d.vision_report || 'Verified by Playwright.';
+          pushA2AMessage('Playwright Vision QA', 'Gemma-4 Coordinator', d.vision_report || 'Screenshot captured & verified.', 'text-purple-300');
+        } else {
+          document.getElementById('gemmaVisionQaReport').textContent = d.error || 'Playwright screenshot unavailable (run main.py & playwright install chromium).';
+        }
+      } catch (err) {
+        document.getElementById('gemmaVisionQaReport').textContent = `Backend offline: start uvicorn main:app --port 8000 for Playwright screenshots.`;
+      } finally {
+        setAgentWorking('agent_vision_qa', false, 'Idle');
+      }
+    }
+
+    // ==========================================================================================
+    // REAL 5-STAGE AUTONOMOUS PIPELINE (NO HARDCODED TEMPLATES)
+    // ==========================================================================================
+    
     function stopCurrentPipeline() {
       state.isPipelineStopped = true;
       state.isPipelineRunning = false;
@@ -1066,125 +995,123 @@ if __name__ == "__main__":
       }
     }
 
-    // Full IDE Pipeline: 1. Muse Plan -> 2. Swarm Spawn -> 3. Live Editor Code Stream -> 4. Inline Bug Detection & Self-Healing -> 5. Localhost Launch & Screenshot QA
-    async function runFullAutonomousPipeline(userPrompt, injectBugDemo = false) {
+    async function runFullAutonomousPipeline(userPrompt, visualImageB64 = '') {
       state.isPipelineStopped = false;
       state.isPipelineRunning = true;
-      const btnHeader = document.getElementById('btnHeaderStop');
-      if (btnHeader) btnHeader.classList.remove('hidden');
-
+      const btnHdrStop = document.getElementById('btnHeaderStop');
+      if (btnHdrStop) btnHdrStop.classList.remove('hidden');
       const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
+      document.getElementById('breadcrumbRootLabel').textContent = targetDir.replace(/^[./\\]+/, '') || 'hackathon_app';
+      const termEl = document.getElementById('sideTerminalOutput');
       const t0 = performance.now();
       state.orbPulse = 2.6;
       document.getElementById('selfCorrectionBanner').classList.add('hidden');
 
-      let spec;
-      try {
-        spec = await buildDynamicAppSpec(userPrompt, injectBugDemo);
-      } catch (err) {
-        console.error('Error generating app spec:', err);
-      }
-      if (state.isPipelineStopped || !spec || !spec.files || !spec.files[0]) {
-        state.isPipelineRunning = false;
-        if (btnHeader) btnHeader.classList.add('hidden');
-        return;
-      }
-      const termEl = document.getElementById('sideTerminalOutput');
-
       const steps = [
-        { step_id: 1, title: 'Meta Muse Plan (muse_plan.json)', status: 'running', time: '' },
-        { step_id: 2, title: 'Spawn 7-Agent Gemma 4 Swarm', status: 'queued', time: '' },
-        { step_id: 3, title: 'Stream Code in IDE Editor', status: 'queued', time: '' },
-        { step_id: 4, title: 'Ruff + AST + Pytest Self-Heal', status: 'queued', time: '' },
-        { step_id: 5, title: 'Launch :8090 & Screenshot Vision QA', status: 'queued', time: '' }
+        { step_id: 1, title: 'Meta Muse Plan (/api/swarm-generate)', status: 'running', time: '' },
+        { step_id: 2, title: '7-Agent Gemma 4 Code Synthesis', status: 'queued', time: '' },
+        { step_id: 3, title: 'Stream Generated Files into IDE', status: 'queued', time: '' },
+        { step_id: 4, title: 'AST + Ruff + Pytest Self-Heal', status: 'queued', time: '' },
+        { step_id: 5, title: 'Playwright & Gemma 4 Vision QA', status: 'queued', time: '' }
       ];
       renderTaskDag(steps);
 
-      // STEP 1: META MUSE AI ARCHITECTURAL PLAN (`muse_plan.json`)
-      setAgentWorking('agent_muse', true, 'Writing muse_plan.json');
-      pushA2AMessage('Gemma-4 Coordinator', 'Meta Muse Architect', `Create structured architectural plan for "${spec.cleanTitle}"`, 'text-amber-300');
+      setAgentWorking('agent_muse', true, 'Querying LLM...');
+      setAgentWorking('agent_coder', true, 'Synthesizing files...');
+      pushA2AMessage('Gemma-4 Coordinator', 'Meta Muse Architect', `Synthesizing application for: "${userPrompt}"`, 'text-amber-300');
+      termEl.textContent = `[SWARM GENERATE] Calling ${state.brain1Model} for "${userPrompt}"...\n`;
 
-      const planFile = spec.files[0];
-      state.mountedFiles[planFile.relative_path] = {
-        content: planFile.content,
-        lines: planFile.content.split('\n').length,
-        status: 'ok'
-      };
-      state.selectedFile = planFile.relative_path;
-      renderIdeFiles();
-      await streamCodeToEditor(planFile.relative_path, planFile.content, 'Meta Muse Architect');
+      let filesList = [];
+      let projectTitle = userPrompt;
 
-      setAgentWorking('agent_muse', false, 'Plan compiled');
+      // 1. Call FastAPI Backend `/api/swarm-generate`
+      if (state.backendOnline) {
+        try {
+          const genRes = await fetch(`${state.backendUrl}/api/swarm-generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: userPrompt,
+              target_directory: targetDir,
+              model: state.brain1Model,
+              gemini_api_key: state.geminiKey,
+              image_base64: visualImageB64
+            })
+          });
+          const genData = await genRes.json();
+          if (genData.ok && genData.files && genData.files.length > 0) {
+            filesList = genData.files;
+            projectTitle = (genData.spec && genData.spec.project_name) || userPrompt;
+          } else {
+            termEl.textContent += `[ERROR] ${genData.error || 'LLM did not return files.'}\n`;
+          }
+        } catch (err) {
+          termEl.textContent += `[BACKEND ERROR] ${err.message}\n`;
+        }
+      }
+
+      // 2. If backend was not running, try calling local Ollama (11434) or Gemini API directly from browser
+      if (filesList.length === 0) {
+        const directSpec = await synthesizeDirectlyWithLocalOllamaOrGemini(userPrompt, visualImageB64);
+        if (directSpec && directSpec.index_html) {
+          projectTitle = directSpec.project_name || userPrompt;
+          filesList = [
+            { relative_path: 'muse_plan.json', content: JSON.stringify(directSpec.muse_plan || { project_name: projectTitle }, null, 2) },
+            { relative_path: 'app_server.py', content: directSpec.app_server_py || '' },
+            { relative_path: 'test_suite.py', content: directSpec.test_suite_py || '' },
+            { relative_path: 'index.html', content: directSpec.index_html || '' }
+          ].filter(f => f.content);
+        }
+      }
+
+      setAgentWorking('agent_muse', false, 'Idle');
+      setAgentWorking('agent_coder', false, 'Idle');
+
+      if (filesList.length === 0) {
+        steps[0].status = 'failed';
+        renderTaskDag(steps);
+        termEl.textContent +=
+          `\n[ACTION REQUIRED] No active LLM responded.\n` +
+          `1. Start FastAPI backend: uvicorn main:app --reload --host 127.0.0.1 --port 8000\n` +
+          `2. Ensure Ollama is running (ollama serve && ollama pull gemma4:latest) OR add your Gemini API Key in Settings (⚙).`;
+        state.orbPulse = 1.0;
+        return;
+      }
+
       steps[0].status = 'completed';
       steps[0].time = `${Math.round(performance.now() - t0)}ms`;
       steps[1].status = 'completed';
-      steps[1].time = '7 Agents';
+      steps[1].time = `${filesList.length} files`;
       steps[2].status = 'running';
       renderTaskDag(steps);
 
-      // STEP 2 & 3: STREAM CODE INTO IDE EDITOR (+ INLINE BUG INJECTION & SELF-HEALING DEMO IF ENABLED!)
-      setAgentWorking('agent_coder', true, 'Streaming project files...');
-      pushA2AMessage('Meta Muse Architect', 'Claude-Code Streamer', 'Plan locked. Streaming app_server.py, test_suite.py, and index.html into IDE.', 'text-sky-300');
-
-      if (injectBugDemo) {
-        // Show Pass 1 with red error line highlight on Line 10!
-        state.mountedFiles['app_server.py'] = {
-          content: spec.buggyAppServer,
-          lines: spec.buggyAppServer.split('\n').length,
-          status: 'bug',
-          bugLine: 10
+      // STEP 3: Stream real LLM-generated files into the IDE Editor
+      state.mountedFiles = {};
+      for (const fobj of filesList) {
+        const fname = fobj.relative_path;
+        const content = fobj.content || '';
+        state.mountedFiles[fname] = {
+          content,
+          lines: content.split('\n').length,
+          status: 'ok'
         };
-        state.selectedFile = 'app_server.py';
+        state.selectedFile = fname;
         renderIdeFiles();
-        await streamCodeToEditor('app_server.py', spec.buggyAppServer, 'Gemma-4 Coder [Pass 1]', { bugLine: 10 });
-
-        setAgentWorking('agent_critic', true, 'Running Pytest & AST inspection...');
-        termEl.textContent =
-          `$ pytest test_suite.py -v\n` +
-          `FAILED test_suite.py::test_risk_score_zero_division_guard - ZeroDivisionError: division by zero (app_server.py:10)\n` +
-          `[O2 CRITIC AGENT] Caught ZeroDivisionError at app_server.py:10 -> Dispatching inline self-healing patch!`;
-        pushA2AMessage('O2 Ruff/Pytest Critic', 'Claude-Code Streamer', 'BUG DETECTED at app_server.py:10 (ZeroDivisionError). Applying automatic self-healing patch in Pass 2!', 'text-rose-400');
-
-        document.getElementById('selfCorrectionBanner').classList.remove('hidden');
-        document.getElementById('selfCorrectionText').innerHTML = `&#128030; <strong>[O2 Self-Healing]</strong> Caught <code>ZeroDivisionError</code> at <code>app_server.py:10</code> &rarr; Auto-patched in Pass 2!`;
-        await sleep(650);
+        await streamCodeToEditor(fname, content, state.brain1Model);
       }
 
-      // Stream all verified files (with green fixed line highlight on app_server.py if self-healed!)
-      for (let i = 1; i < spec.files.length; i++) {
-        if (state.isPipelineStopped) return;
-        const fobj = spec.files[i];
-        const isHealedFile = injectBugDemo && fobj.relative_path === 'app_server.py';
-        state.mountedFiles[fobj.relative_path] = {
-          content: fobj.content,
-          lines: fobj.content.split('\n').length,
-          status: 'ok',
-          fixedLine: isHealedFile ? 11 : null
-        };
-        state.selectedFile = fobj.relative_path;
-        renderIdeFiles();
-        await streamCodeToEditor(
-          fobj.relative_path,
-          fobj.content,
-          isHealedFile ? 'O2 Self-Healer [Pass 2]' : `Gemma-4 Coder`,
-          isHealedFile ? { fixedLine: 11 } : {}
-        );
-      }
-
-      if (state.isPipelineStopped) return;
       if (state.mountedDirHandle) {
-        await writeFilesToMountedBrowserDirectory(spec.files);
+        await writeFilesToMountedBrowserDirectory(filesList);
       }
 
-      setAgentWorking('agent_coder', false, 'All 4 files saved');
       steps[2].status = 'completed';
       steps[2].time = `${Math.round(performance.now() - t0)}ms`;
       steps[3].status = 'running';
       renderTaskDag(steps);
 
-      // STEP 4: RUN PYTEST, RUFF, AST & LAUNCH LOCALHOST SERVER :8090
-      setAgentWorking('agent_critic', true, 'Verifying AST, Ruff & Pytest...');
-      setAgentWorking('agent_runner', true, 'Starting server :8090');
+      // STEP 4: Call `/api/build-and-test-app` for real disk write, AST + Ruff + Pytest + LLM Self-Healing, and port 8090 server launch
+      setAgentWorking('agent_critic', true, 'Running AST, Ruff & Pytest...');
+      setAgentWorking('agent_runner', true, 'Starting :8090 server...');
       let localUrl = 'http://127.0.0.1:8090/index.html';
 
       if (state.backendOnline) {
@@ -1195,63 +1122,116 @@ if __name__ == "__main__":
             body: JSON.stringify({
               instruction: userPrompt,
               target_directory: targetDir,
-              files: spec.files,
-              model: state.brain1Model
+              files: filesList,
+              model: state.brain1Model,
+              gemini_api_key: state.geminiKey
             })
           });
-          if (bRes.ok) {
-            const bData = await bRes.json();
-            if (bData.local_url) localUrl = bData.local_url;
-            if (bData.terminal_log) termEl.textContent = bData.terminal_log;
+          const bData = await bRes.json();
+          if (bData.terminal_log) {
+            termEl.textContent = bData.terminal_log;
           }
-        } catch (_) {}
-      } else {
-        const healLog = injectBugDemo
-          ? `[O2 SELF-HEAL PASS 2] Applied zero-guard patch at app_server.py:11\n`
-          : ``;
-        termEl.textContent =
-          `$ cd ${targetDir} && ruff check . && python -m py_compile app_server.py test_suite.py\n` +
-          healLog +
-          `All checks passed! (0 errors, 0 warnings)\n` +
-          `$ pytest test_suite.py -v\n` +
-          `test_suite.py::test_risk_score_zero_division_guard PASSED            [ 50%]\n` +
-          `test_suite.py::test_ui_dom_markers PASSED                            [100%]\n` +
-          `[O3 SHA-256 RECEIPT] 8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4\n` +
-          `$ python app_server.py --port 8090 &\n` +
-          `[ANTIGRAVITY SERVER] Serving at ${localUrl} (HTTP 200 OK)`;
+          if (bData.local_url) {
+            localUrl = bData.local_url;
+          }
+          if (bData.sha256_receipts) {
+            const firstHash = Object.values(bData.sha256_receipts)[0] || 'VERIFIED';
+            document.getElementById('shaReceiptBadge').textContent = `SHA-256: ${firstHash}`;
+            document.getElementById('shaReceiptBadge').className = 'text-emerald-400';
+          }
+          if (bData.self_healed) {
+            document.getElementById('selfCorrectionBanner').classList.remove('hidden');
+            document.getElementById('selfCorrectionText').textContent = `[O2 Self-Healing] Critic Agent automatically repaired code via ${state.brain1Model}`;
+          }
+          // Update editor with any self-healed file content returned by backend
+          if (bData.files && Array.isArray(bData.files)) {
+            bData.files.forEach(f => {
+              if (state.mountedFiles[f.relative_path]) {
+                state.mountedFiles[f.relative_path].content = f.content;
+                state.mountedFiles[f.relative_path].lines = f.content.split('\n').length;
+              }
+            });
+            selectIdeFile(state.selectedFile);
+          }
+          document.getElementById('localServerPortBadge').textContent = ':8090 LIVE';
+          document.getElementById('localServerPortBadge').className = 'px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+          document.getElementById('browserStatusDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+          document.getElementById('footerServerLabel').textContent = 'Port: 8090 (LIVE)';
+        } catch (err) {
+          termEl.textContent += `\n[BUILD ERROR] ${err.message}`;
+        }
       }
 
-      // Load built HTML into Right Pane Localhost Browser Preview
-      const htmlFile = spec.files.find(f => f.relative_path === 'index.html') || spec.files[3] || spec.files[0];
-      if (state.lastBuiltHtmlBlobUrl) URL.revokeObjectURL(state.lastBuiltHtmlBlobUrl);
-      const blob = new Blob([htmlFile.content], { type: 'text/html' });
-      state.lastBuiltHtmlBlobUrl = URL.createObjectURL(blob);
-      document.getElementById('liveAppPreviewIframe').src = state.lastBuiltHtmlBlobUrl;
-      document.getElementById('liveBrowserUrlBar').textContent = localUrl;
+      // Render live HTML in the embedded browser preview iframe
+      const htmlFileObj = filesList.find(f => f.relative_path.endsWith('.html'));
+      if (state.backendOnline) {
+        document.getElementById('liveAppPreviewIframe').src = `${localUrl}?t=${Date.now()}`;
+      } else if (htmlFileObj) {
+        if (state.lastBuiltHtmlBlobUrl) URL.revokeObjectURL(state.lastBuiltHtmlBlobUrl);
+        const blob = new Blob([htmlFileObj.content], { type: 'text/html' });
+        state.lastBuiltHtmlBlobUrl = URL.createObjectURL(blob);
+        document.getElementById('liveAppPreviewIframe').src = state.lastBuiltHtmlBlobUrl;
+      }
+      document.getElementById('liveBrowserUrlBar').value = localUrl;
 
-      setAgentWorking('agent_critic', false, 'Pytest 100% Pass');
-      setAgentWorking('agent_runner', false, 'Listening :8090');
+      setAgentWorking('agent_critic', false, 'Idle');
+      setAgentWorking('agent_runner', false, 'Idle');
       steps[3].status = 'completed';
-      steps[3].time = '2/2 Pass';
+      steps[3].time = `${Math.round(performance.now() - t0)}ms`;
       steps[4].status = 'running';
       renderTaskDag(steps);
 
-      await sleep(180);
-
-      // STEP 5: CAPTURE PLAYWRIGHT SCREENSHOT & GEMMA 4 MULTIMODAL VISION QA
-      await captureScreenshotAndRunVisionQA(spec, localUrl);
+      // STEP 5: Real Playwright Screenshot & Gemma 4 Vision QA
+      await captureScreenshotAndRunVisionQA(projectTitle, localUrl, htmlFileObj ? htmlFileObj.content : '');
       steps[4].status = 'completed';
       steps[4].time = `${Math.round(performance.now() - t0)}ms`;
       renderTaskDag(steps);
 
-      // Keep app_server.py open in the editor so judges see the Python code clearly
-      selectIdeFile('app_server.py');
-
       const totalMs = Math.round(performance.now() - t0);
       document.getElementById('latencyPill').textContent = `${totalMs}ms Total`;
+      speakText(`Completed ${projectTitle} in ${totalMs} milliseconds.`);
       state.orbPulse = 1.0;
       state.isPipelineRunning = false;
-      if (btnHeader) btnHeader.classList.add('hidden');
+      const btnHdrStopEnd = document.getElementById('btnHeaderStop');
+      if (btnHdrStopEnd) btnHdrStopEnd.classList.add('hidden');
+    }
+
+    // Scan existing workspace directory on disk via `/api/inspect-dir`
+    async function scanExistingWorkspaceDir() {
+      const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
+      const termEl = document.getElementById('sideTerminalOutput');
+      try {
+        const r = await fetch(`${state.backendUrl}/api/inspect-dir`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ instruction: 'scan', target_directory: targetDir })
+        });
+        const d = await r.json();
+        if (d.ok && Array.isArray(d.files)) {
+          state.mountedFiles = {};
+          d.files.forEach(f => {
+            state.mountedFiles[f.path] = {
+              content: f.full_content || '',
+              lines: f.lines || 0,
+              status: 'ok'
+            };
+          });
+          if (d.detected_mistakes) {
+            d.detected_mistakes.forEach(m => {
+              if (state.mountedFiles[m.file]) {
+                state.mountedFiles[m.file].status = 'bug';
+                state.mountedFiles[m.file].bugLine = m.line;
+              }
+            });
+          }
+          const keys = Object.keys(state.mountedFiles);
+          renderIdeFiles();
+          if (keys.length > 0) selectIdeFile(keys[0]);
+          termEl.textContent = `[WORKSPACE SCAN] Loaded ${keys.length} files from ${targetDir} (${(d.detected_mistakes || []).length} syntax issues).`;
+        }
+      } catch (err) {
+        termEl.textContent = `[SCAN ERROR] Ensure FastAPI backend is running on ${state.backendUrl}: ${err.message}`;
+      }
     }
 
     async function speakText(text) {
@@ -1273,12 +1253,12 @@ if __name__ == "__main__":
             const d = await r.json();
             if (d.audios && d.audios[0]) {
               new Audio(`data:audio/wav;base64,${d.audios[0]}`).play();
-              setAgentWorking('agent_sarvam', false, 'Ready');
+              setAgentWorking('agent_sarvam', false, 'Idle');
               return;
             }
           }
         } catch (_) {
-          setAgentWorking('agent_sarvam', false, 'Ready');
+          setAgentWorking('agent_sarvam', false, 'Idle');
         }
       }
       if ('speechSynthesis' in window) {
@@ -1294,16 +1274,11 @@ if __name__ == "__main__":
       const cmd = (rawCmd || document.getElementById('mainCommandInput').value).trim();
       if (!cmd) return;
 
-      if (state.isPipelineRunning) {
-        stopCurrentPipeline();
-        await sleep(150);
-      }
-
       const lower = cmd.toLowerCase().replace(/[.,!?;:]+$/g, '');
-      const simpleOpen = lower.match(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start|run)\s+(.+)$/);
-      const isBuildRequest = /^(?:please\s+)?(?:build|create|make|develop|generate|write|architect|implement|code|fix|test)\b/i.test(lower) || / and |solve|program|triage|radar|game|dashboard/i.test(lower);
+      const simpleOpen = lower.match(/^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+|can you\s+)?(?:open|launch|start)\s+(.+)$/);
+      const isComplex = / and |write|code|create|build|fix|mistake|bug|install|app|test|screenshot|triage|radar|dashboard|kanban|physics|sim/.test(lower);
 
-      if (simpleOpen && !isBuildRequest) {
+      if (simpleOpen && !isComplex) {
         const target = cleanTargetName(simpleOpen[1]);
         const t0 = performance.now();
         try {
@@ -1315,27 +1290,72 @@ if __name__ == "__main__":
           const d = await r.json();
           const ms = Math.round(performance.now() - t0);
           document.getElementById('latencyPill').textContent = `${ms}ms Fast-Path`;
-          if (d.ok) {
-            pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Fast-Path: spawned '${d.target}' (${ms}ms)`, 'text-emerald-300');
-            speakText(`Launched ${target} in ${ms} milliseconds.`);
-          } else {
-            pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `Launch notice: ${d.error || 'Executable not found'}`, 'text-amber-300');
-            speakText(d.error || `Could not open ${target}.`);
-          }
-          return;
-        } catch (_) {}
-        const ms = Math.round(performance.now() - t0);
-        document.getElementById('latencyPill').textContent = `${ms}ms Fast-Path`;
-        pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Fast-Path: spawn '${target}' (${ms}ms)`, 'text-emerald-300');
-        speakText(`Fast-path parsed '${target}' in ${ms}ms.`);
+          pushA2AMessage('Gemma-4 Coordinator', 'Antigravity Runner', `<50ms OS Fast-Path: launched '${target}' (${ms}ms)`, 'text-emerald-300');
+          speakText(d.ok ? `Launched ${target} in ${ms}ms.` : `Error launching ${target}: ${d.error}`);
+        } catch (err) {
+          document.getElementById('sideTerminalOutput').textContent = `[FAST-PATH ERROR] Start backend (uvicorn main:app --port 8000) to spawn native OS app '${target}'.`;
+        }
         return;
       }
 
-      const injectBug = lower.includes('triage') || lower.includes('self-heal') || lower.includes('bug') || lower.includes('fix');
-      await runFullAutonomousPipeline(cmd, injectBug);
+      await runFullAutonomousPipeline(cmd);
     }
 
-    // Compact 3D Neural Core in Bottom-Left Sidebar
+    function initVisualSketchpad() {
+      const cv = document.getElementById('uiSketchCanvas');
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      let drawing = false;
+
+      ctx.fillStyle = '#090d13';
+      ctx.fillRect(0, 0, cv.width, cv.height);
+
+      cv.addEventListener('mousedown', (e) => {
+        drawing = true;
+        const r = cv.getBoundingClientRect();
+        ctx.beginPath();
+        ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
+      });
+      cv.addEventListener('mousemove', (e) => {
+        if (!drawing) return;
+        const r = cv.getBoundingClientRect();
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 2.5;
+        ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
+        ctx.stroke();
+      });
+      window.addEventListener('mouseup', () => { drawing = false; });
+
+      document.getElementById('btnClearSketchCanvas').addEventListener('click', () => {
+        ctx.fillStyle = '#090d13';
+        ctx.fillRect(0, 0, cv.width, cv.height);
+      });
+
+      document.getElementById('inputUploadVisualImg').addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            ctx.fillStyle = '#090d13';
+            ctx.fillRect(0, 0, cv.width, cv.height);
+            ctx.drawImage(img, 0, 0, cv.width, cv.height);
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      document.getElementById('btnConvertSketchToApp').addEventListener('click', async () => {
+        const promptText = document.getElementById('sketchPromptInput').value.trim() || 'Build an interactive web application matching this visual layout';
+        const b64 = cv.toDataURL('image/png');
+        document.getElementById('sketchModal').classList.add('hidden');
+        document.getElementById('mainCommandInput').value = promptText;
+        await runFullAutonomousPipeline(promptText, b64);
+      });
+    }
+
     function initCrimson3DCore() {
       const container = document.getElementById('crimsonOrbContainer');
       const canvas = document.getElementById('crimsonOrbCanvas');
@@ -1377,7 +1397,6 @@ if __name__ == "__main__":
       animate();
     }
 
-    // Physics Memory Graph in Modal
     let pulseOffset = 0;
     let draggedNode = null;
 
@@ -1405,21 +1424,16 @@ if __name__ == "__main__":
 
       canvas.addEventListener('mousedown', (e) => {
         const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const mx = (e.clientX - rect.left) * scaleX;
-        const my = (e.clientY - rect.top) * scaleY;
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
         for (const n of state.memoryGraph.nodes) {
-          if (Math.hypot(mx - n.x, my - n.y) <= 22) { draggedNode = n; break; }
+          if (Math.hypot(mx - n.x, my - n.y) <= 20) { draggedNode = n; break; }
         }
       });
       window.addEventListener('mousemove', (e) => {
         if (!draggedNode) return;
         const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        draggedNode.x = (e.clientX - rect.left) * scaleX;
-        draggedNode.y = (e.clientY - rect.top) * scaleY;
+        draggedNode.x = e.clientX - rect.left;
+        draggedNode.y = e.clientY - rect.top;
       });
       window.addEventListener('mouseup', () => { draggedNode = null; });
 
@@ -1459,6 +1473,7 @@ if __name__ == "__main__":
     async function probeLiveConnections() {
       const badge = document.getElementById('liveConnectionBadge');
       const footer = document.getElementById('activeModelFooter');
+      const dot = document.getElementById('sidebarConnDot');
 
       try {
         const r = await fetch(`${state.backendUrl}/api/health`);
@@ -1466,8 +1481,10 @@ if __name__ == "__main__":
           const d = await r.json();
           state.backendOnline = true;
           state.brain1Model = d.brain1_model || state.preferredGemmaTag;
-          badge.textContent = `CONNECTED: ${state.brain1Model} + Host CLI`;
-          footer.textContent = `Ollama: ${state.brain1Model} (Backend Online) | Adaptive Memory: ${state.adaptiveLessons.length} rules`;
+          badge.textContent = `BACKEND ONLINE: ${state.brain1Model}`;
+          badge.className = 'px-2 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[10px]';
+          footer.textContent = `Backend: Online | Model: ${state.brain1Model} | Playwright: ${d.playwright_ready ? 'Ready' : 'Not Installed'}`;
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
           return;
         }
       } catch (_) { state.backendOnline = false; }
@@ -1480,12 +1497,19 @@ if __name__ == "__main__":
           if (models.length > 0) {
             state.ollamaOnline = true;
             state.brain1Model = models.find(m => m.toLowerCase().includes('gemma4')) || models.find(m => m.toLowerCase().includes('gemma')) || models[0];
-            badge.textContent = `OLLAMA: ${state.brain1Model}`;
-            footer.textContent = `Ollama: ${state.brain1Model} | Adaptive Memory: ${state.adaptiveLessons.length} rules`;
+            badge.textContent = `DIRECT OLLAMA: ${state.brain1Model}`;
+            badge.className = 'px-2 py-0.5 rounded bg-sky-950/90 border border-sky-500/40 text-sky-300 text-[10px]';
+            footer.textContent = `Direct Ollama: ${state.brain1Model} (Start main.py for Playwright/Pytest)`;
+            dot.className = 'w-2 h-2 rounded-full bg-sky-400 animate-pulse';
             return;
           }
         }
       } catch (_) { state.ollamaOnline = false; }
+
+      badge.textContent = 'OFFLINE (Run uvicorn main:app)';
+      badge.className = 'px-2 py-0.5 rounded bg-rose-950/80 border border-rose-500/40 text-rose-300 text-[10px]';
+      footer.textContent = 'Backend Offline — Start: uvicorn main:app --reload --port 8000';
+      dot.className = 'w-2 h-2 rounded-full bg-rose-500';
     }
 
     async function mountLocalFolderInBrowser() {
@@ -1530,15 +1554,9 @@ if __name__ == "__main__":
         pushA2AMessage('Sarvam Voice Bridge', 'Gemma-4 Coordinator', `Spoken (${rec.lang}): "${transcript}"`, 'text-purple-300');
         executeCommand(transcript);
       };
-      rec.onerror = (err) => {
-        console.warn('Speech recognition notice:', err);
-        document.getElementById('micLabel').textContent = 'Speak';
-        setAgentWorking('agent_sarvam', false, 'Ready');
-        state.orbPulse = 1.0;
-      };
       rec.onend = () => {
         document.getElementById('micLabel').textContent = 'Speak';
-        setAgentWorking('agent_sarvam', false, 'Ready');
+        setAgentWorking('agent_sarvam', false, 'Idle');
         state.orbPulse = 1.0;
       };
       rec.start();
@@ -1564,6 +1582,7 @@ if __name__ == "__main__":
     window.addEventListener('DOMContentLoaded', () => {
       initCrimson3DCore();
       initMemoryGraphCanvas();
+      initVisualSketchpad();
       renderCompactSwarm();
       probeLiveConnections();
 
@@ -1572,50 +1591,33 @@ if __name__ == "__main__":
       document.getElementById('btnHeaderStop')?.addEventListener('click', stopCurrentPipeline);
       window.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') stopCurrentPipeline();
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          saveCurrentFileToDisk();
+        }
       });
       document.getElementById('mainCommandInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') executeCommand();
       });
 
+      const openSketchFn = () => document.getElementById('sketchModal').classList.remove('hidden');
+      document.getElementById('btnOpenSketchModal').addEventListener('click', openSketchFn);
+      document.getElementById('actBtnSketch').addEventListener('click', openSketchFn);
+      document.getElementById('btnCloseSketchModal').addEventListener('click', () => {
+        document.getElementById('sketchModal').classList.add('hidden');
+      });
+
+      document.getElementById('btnRunVisualBrowserAgent').addEventListener('click', runVisualBrowserAgentClickTest);
+      document.getElementById('btnInspectExistingDir').addEventListener('click', scanExistingWorkspaceDir);
+      document.getElementById('actBtnExplorer').addEventListener('click', scanExistingWorkspaceDir);
+
       document.getElementById('btnHeaderRunPipeline').addEventListener('click', () => {
-        const p = document.getElementById('mainCommandInput').value.trim() || 'Build a Real-Time DevOps & Cloud Incident Command Center App';
-        runFullAutonomousPipeline(p, false);
-      });
-
-      document.getElementById('btnHeaderSelfHealDemo').addEventListener('click', () => {
-        const p = 'Build an AI Multilingual Rural Healthcare Triage & ICU Dispatch App';
-        document.getElementById('mainCommandInput').value = p;
-        runFullAutonomousPipeline(p, true);
-      });
-
-      document.getElementById('btnDemoIncidentApp').addEventListener('click', () => {
-        const p = 'Build a Real-Time DevOps & Cloud Incident Command Center App';
-        document.getElementById('mainCommandInput').value = p;
-        runFullAutonomousPipeline(p, false);
-      });
-
-      document.getElementById('btnDemoMedTriageApp').addEventListener('click', () => {
-        const p = 'Build an AI Multilingual Rural Healthcare Triage & ICU Dispatch App';
-        document.getElementById('mainCommandInput').value = p;
-        runFullAutonomousPipeline(p, true);
-      });
-
-      document.getElementById('btnDemoFinTechApp').addEventListener('click', () => {
-        const p = 'Build a Real-Time FinTech UPI Fraud & Anomaly Detection Radar App';
-        document.getElementById('mainCommandInput').value = p;
-        runFullAutonomousPipeline(p, false);
-      });
-
-      document.getElementById('btnDemoSnakeGame')?.addEventListener('click', () => {
-        const p = 'Build a Classic Snake Arcade Game in HTML5 Canvas & Python';
-        document.getElementById('mainCommandInput').value = p;
-        runFullAutonomousPipeline(p, false);
-      });
-
-      document.getElementById('btnDemoCalculatorApp')?.addEventListener('click', () => {
-        const p = 'Build a Full-Featured Interactive Scientific Calculator App';
-        document.getElementById('mainCommandInput').value = p;
-        runFullAutonomousPipeline(p, false);
+        const p = document.getElementById('mainCommandInput').value.trim();
+        if (!p) {
+          document.getElementById('mainCommandInput').focus();
+          return;
+        }
+        runFullAutonomousPipeline(p);
       });
 
       document.querySelectorAll('.quick-cmd').forEach(btn => {
@@ -1633,8 +1635,14 @@ if __name__ == "__main__":
       document.getElementById('btnCloseAstra').addEventListener('click', toggleAstraVision);
 
       document.getElementById('btnCaptureAstraFrame').addEventListener('click', async () => {
-        const spec = await buildDynamicAppSpec('Project Astra Live Workspace Frame', false);
-        await captureScreenshotAndRunVisionQA(spec, 'astra://live-camera-frame');
+        const vid = document.getElementById('astraVideoFeed');
+        const c = document.createElement('canvas');
+        c.width = vid.videoWidth || 640;
+        c.height = vid.videoHeight || 360;
+        c.getContext('2d').drawImage(vid, 0, 0, c.width, c.height);
+        const b64 = c.toDataURL('image/png');
+        const promptText = document.getElementById('mainCommandInput').value.trim() || 'Build an interactive web application from this camera frame';
+        await runFullAutonomousPipeline(promptText, b64);
       });
 
       document.getElementById('btnToggleRawEdit').addEventListener('click', () => {
@@ -1649,6 +1657,7 @@ if __name__ == "__main__":
         }
       });
 
+      
       const saveCurrentFileToDisk = async () => {
         if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
         const updated = document.getElementById('studioCodeEditor').value;
@@ -1668,47 +1677,64 @@ if __name__ == "__main__":
         }
         speakText(`Saved ${state.selectedFile} to workspace.`);
       };
+      document.getElementById('btnSaveDiskFile')?.addEventListener('click', saveCurrentFileToDisk);
 
-      document.getElementById('btnSaveDiskFile').addEventListener('click', saveCurrentFileToDisk);
-      window.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-          e.preventDefault();
-          saveCurrentFileToDisk();
+      // replaced:
+      const _ignore = (async () => {
+        if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
+        const updated = document.getElementById('studioCodeEditor').value;
+        state.mountedFiles[state.selectedFile].content = updated;
+        state.mountedFiles[state.selectedFile].lines = updated.split('\n').length;
+        selectIdeFile(state.selectedFile);
+
+        const allFiles = Object.entries(state.mountedFiles).map(([k, v]) => ({ relative_path: k, content: v.content }));
+        if (state.mountedDirHandle) {
+          await writeFilesToMountedBrowserDirectory(allFiles);
         }
+        if (state.backendOnline) {
+          const targetDir = document.getElementById('targetDirInput').value.trim() || './hackathon_app';
+          const r = await fetch(`${state.backendUrl}/api/build-and-test-app`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              instruction: `Save and test ${state.selectedFile}`,
+              target_directory: targetDir,
+              files: allFiles,
+              model: state.brain1Model,
+              gemini_api_key: state.geminiKey
+            })
+          });
+          const d = await r.json();
+          if (d.terminal_log) document.getElementById('sideTerminalOutput').textContent = d.terminal_log;
+          if (d.local_url) document.getElementById('liveAppPreviewIframe').src = `${d.local_url}?t=${Date.now()}`;
+        }
+      });
+
+      document.getElementById('btnReloadPreview').addEventListener('click', () => {
+        const url = document.getElementById('liveBrowserUrlBar').value.trim();
+        if (url) document.getElementById('liveAppPreviewIframe').src = `${url}?t=${Date.now()}`;
       });
 
       document.getElementById('btnOpenInDesktopVsCode').addEventListener('click', async () => {
         const targetDir = document.getElementById('targetDirInput').value.trim() || '.';
         if (state.backendOnline) {
-          const r = await fetch(`${state.backendUrl}/api/open-app`, {
+          await fetch(`${state.backendUrl}/api/open-app`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ instruction: 'vscode', target_directory: targetDir })
           });
-          const d = await r.json();
-          if (!d.ok && d.error) speakText(d.error);
-        } else {
-          speakText('Start main.py backend to launch Desktop VS Code via code -g.');
         }
       });
 
       document.getElementById('btnPopoutLocalApp').addEventListener('click', () => {
-        const url = document.getElementById('liveBrowserUrlBar').textContent.trim() || 'http://127.0.0.1:8090/index.html';
-        window.open(url, '_blank');
+        if (state.lastBuiltHtmlBlobUrl) window.open(state.lastBuiltHtmlBlobUrl, '_blank');
+        else window.open(document.getElementById('liveBrowserUrlBar').value, '_blank');
       });
 
       const retakeFn = async () => {
-        let spec;
-        if (state.mountedFiles['index.html']) {
-          spec = {
-            cleanTitle: document.getElementById('explorerFolderTitle').textContent || 'Running App',
-            files: Object.keys(state.mountedFiles).map(k => ({ relative_path: k, content: state.mountedFiles[k].content }))
-          };
-        } else {
-          const title = document.getElementById('mainCommandInput').value.trim() || 'Live Localhost App';
-          spec = await buildDynamicAppSpec(title, false);
-        }
-        await captureScreenshotAndRunVisionQA(spec, document.getElementById('liveBrowserUrlBar').textContent);
+        const title = document.getElementById('mainCommandInput').value.trim() || 'Localhost App';
+        const htmlObj = state.mountedFiles['index.html'];
+        await captureScreenshotAndRunVisionQA(title, document.getElementById('liveBrowserUrlBar').value, htmlObj ? htmlObj.content : '');
       };
       document.getElementById('btnRetakeScreenshot').addEventListener('click', retakeFn);
       document.getElementById('actBtnScreenshot').addEventListener('click', retakeFn);
@@ -1723,13 +1749,6 @@ if __name__ == "__main__":
         document.getElementById('toolsModal').classList.add('hidden');
       });
       document.getElementById('btnResetGraphLayout').addEventListener('click', autoSpreadGraphNodes);
-
-      document.getElementById('btnAddMemoryFact').addEventListener('click', () => {
-        const rule = prompt('Enter Adaptive Memory Rule:');
-        if (!rule) return;
-        state.adaptiveLessons.push(rule);
-        document.getElementById('activeModelFooter').textContent = `Ollama: ${state.brain1Model} | Adaptive Memory: ${state.adaptiveLessons.length} rules`;
-      });
 
       document.getElementById('btnSpawnGraphAgent').addEventListener('click', () => {
         const name = prompt('Enter Sub-Agent Name:', 'Security Audit Sub-Agent');
@@ -1771,20 +1790,12 @@ if __name__ == "__main__":
         state.backendUrl = document.getElementById('cfgBackendUrl').value.trim() || 'http://127.0.0.1:8000';
         state.ollamaUrl = document.getElementById('cfgOllamaUrl').value.trim() || 'http://127.0.0.1:11434';
         state.preferredGemmaTag = document.getElementById('cfgOllamaModel').value.trim() || 'gemma4:latest';
+        state.geminiKey = document.getElementById('cfgGeminiKey').value.trim();
         state.sarvamKey = document.getElementById('cfgSarvamKey').value.trim();
         state.sarvamLang = document.getElementById('cfgSarvamLang').value;
         document.getElementById('sarvamHeaderBadge').textContent = `Track 3: Sarvam STT/TTS (${state.sarvamLang})`;
         document.getElementById('configModal').classList.add('hidden');
         probeLiveConnections();
-      });
-
-      // Auto-run initial IDE build on startup after live connection probe
-      probeLiveConnections().finally(() => {
-        setTimeout(() => {
-          if (!state.isPipelineRunning && !document.getElementById('mainCommandInput').value.trim()) {
-            runFullAutonomousPipeline('Build a Real-Time DevOps & Cloud Incident Command Center App', false);
-          }
-        }, 120);
       });
     });
   </script>

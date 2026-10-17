@@ -45,3 +45,12 @@ notion_*.txt
 # Autonomous Agent Workspaces
 workspaces/*
 !workspaces/.gitkeep
+backend/hackathon_app/
+backend/generated_projects/
+backend/*.png
+backend/j
+backend/test_*
+backend/check_*
+backend/fix_*
+backend/solution.py
+backend/swap_variables.py

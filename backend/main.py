@@ -26,6 +26,18 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+backend_dir = str(Path(__file__).parent)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+try:
+    from computer_use import execute_computer_use
+except ImportError:
+    try:
+        from backend.computer_use import execute_computer_use
+    except ImportError:
+        execute_computer_use = None
+
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -432,6 +444,416 @@ if __name__ == "__main__":
     test_email_payload_validity()
     test_email_ui_markers()
     print("EMAIL TEST SUITE PASSED (100%)")
+'''
+
+        return json.dumps({
+            "plan": plan,
+            "files": [
+                {"relative_path": "index.html", "content": index_html},
+                {"relative_path": "app_server.py", "content": app_server_py},
+                {"relative_path": "test_suite.py", "content": test_suite_py},
+            ]
+        })
+
+    # Category 2: Simple Desktop OS (WebOS)
+    if re.search(r"simple os|desktop os|webos|operating system", prompt, re.I):
+        os_title = f"{clean_title} (J.A.R.V.I.S. WebOS)"
+        plan = {
+            "project_name": os_title,
+            "task_type": "webapp",
+            "architecture_summary": "Interactive Desktop WebOS with draggable window manager, terminal, calculator, notepad, and system taskbar.",
+            "steps": [
+                "Initialize desktop wallpaper and Windows 11 style taskbar",
+                "Create window manager with drag, minimize, and close capabilities",
+                "Implement integrated Terminal app with interactive shell commands",
+                "Implement integrated Calculator and Notepad apps",
+                "Build Pytest suite verifying window DOM elements and microservice",
+            ],
+            "files_to_generate": ["index.html", "app_server.py", "test_suite.py"],
+        }
+
+        index_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{os_title}</title>
+  <style>
+    * {{ box-sizing: border-box; user-select: none; }}
+    body {{ margin: 0; height: 100vh; overflow: hidden; font-family: 'Segoe UI', system-ui, sans-serif; background: radial-gradient(circle at center, #1a2332 0%, #090d16 100%); color: #fff; }}
+    .desktop {{ position: absolute; inset: 0 0 48px 0; padding: 20px; display: grid; grid-auto-flow: column; grid-template-rows: repeat(auto-fill, 90px); gap: 16px; width: max-content; }}
+    .icon {{ width: 80px; text-align: center; cursor: pointer; padding: 8px; border-radius: 8px; transition: background 0.15s; }}
+    .icon:hover {{ background: rgba(255,255,255,0.1); }}
+    .icon-img {{ font-size: 32px; margin-bottom: 4px; display: block; }}
+    .icon-lbl {{ font-size: 11px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }}
+    .window {{ position: absolute; width: 440px; background: rgba(22, 27, 34, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); display: none; flex-direction: column; overflow: hidden; z-index: 10; }}
+    .win-header {{ background: rgba(30, 36, 46, 0.8); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); cursor: move; }}
+    .win-title {{ font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 6px; }}
+    .win-controls {{ display: flex; gap: 8px; }}
+    .win-btn {{ width: 12px; height: 12px; border-radius: 50%; cursor: pointer; border: none; }}
+    .btn-close {{ background: #ef4444; }}
+    .win-body {{ padding: 14px; flex: 1; overflow: auto; }}
+    .taskbar {{ position: absolute; bottom: 0; left: 0; right: 0; height: 48px; background: rgba(13, 17, 23, 0.85); backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 100; }}
+    .taskbar-center {{ display: flex; align-items: center; gap: 8px; }}
+    .tb-btn {{ background: transparent; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 20px; transition: background 0.15s; }}
+    .tb-btn:hover {{ background: rgba(255,255,255,0.1); }}
+    .taskbar-tray {{ font-size: 11px; font-family: monospace; color: #94a3b8; display: flex; align-items: center; gap: 12px; }}
+    .term-input {{ width: 100%; background: transparent; border: none; color: #34d399; font-family: monospace; font-size: 12px; outline: none; margin-top: 8px; }}
+    .calc-grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }}
+    .calc-btn {{ background: #21262d; border: 1px solid #30363d; color: #fff; padding: 12px; border-radius: 6px; font-weight: 700; cursor: pointer; }}
+    .calc-btn:hover {{ background: #30363d; }}
+    .calc-screen {{ grid-column: span 4; background: #0d1117; padding: 12px; border-radius: 6px; text-align: right; font-size: 20px; font-family: monospace; margin-bottom: 8px; }}
+  </style>
+</head>
+<body>
+  <div class="desktop">
+    <div class="icon" onclick="openApp('winTerm')"><span class="icon-img">📟</span><span class="icon-lbl">Terminal</span></div>
+    <div class="icon" onclick="openApp('winCalc')"><span class="icon-img">🧮</span><span class="icon-lbl">Calculator</span></div>
+    <div class="icon" onclick="openApp('winNotes')"><span class="icon-img">📝</span><span class="icon-lbl">Notepad</span></div>
+    <div class="icon" onclick="openApp('winSettings')"><span class="icon-img">⚙️</span><span class="icon-lbl">Settings</span></div>
+  </div>
+
+  <div class="window" id="winTerm" style="top:60px; left:80px; width:520px; height:320px; display:flex;">
+    <div class="win-header">
+      <span class="win-title">📟 J.A.R.V.I.S. Terminal Shell</span>
+      <div class="win-controls"><button class="win-btn btn-close" onclick="closeApp('winTerm')"></button></div>
+    </div>
+    <div class="win-body" style="background:#090d13; font-family:monospace; font-size:12px; color:#94a3b8;">
+      <div id="termOutput">J.A.R.V.I.S. WebOS Kernel v2.5 (Gemma-4 Core)<br/>Type 'help', 'neofetch', 'date', or 'whoami'...</div>
+      <div style="display:flex;align-items:center;margin-top:6px;"><span style="color:#38bdf8;">jarvis@os:~$</span>&nbsp;<input class="term-input" id="termCmd" onkeydown="handleTerm(event)" autofocus /></div>
+    </div>
+  </div>
+
+  <div class="window" id="winCalc" style="top:90px; left:480px; width:280px;">
+    <div class="win-header">
+      <span class="win-title">🧮 Calculator</span>
+      <div class="win-controls"><button class="win-btn btn-close" onclick="closeApp('winCalc')"></button></div>
+    </div>
+    <div class="win-body">
+      <div class="calc-screen" id="calcDisplay">0</div>
+      <div class="calc-grid">
+        <button class="calc-btn" onclick="calcInput('C')">C</button>
+        <button class="calc-btn" onclick="calcInput('/')">/</button>
+        <button class="calc-btn" onclick="calcInput('*')">*</button>
+        <button class="calc-btn" onclick="calcInput('-')">-</button>
+        <button class="calc-btn" onclick="calcInput('7')">7</button>
+        <button class="calc-btn" onclick="calcInput('8')">8</button>
+        <button class="calc-btn" onclick="calcInput('9')">9</button>
+        <button class="calc-btn" onclick="calcInput('+')">+</button>
+        <button class="calc-btn" onclick="calcInput('4')">4</button>
+        <button class="calc-btn" onclick="calcInput('5')">5</button>
+        <button class="calc-btn" onclick="calcInput('6')">6</button>
+        <button class="calc-btn" onclick="calcInput('=')" style="background:#0284c7; grid-row:span 2; height:100%;">=</button>
+        <button class="calc-btn" onclick="calcInput('1')">1</button>
+        <button class="calc-btn" onclick="calcInput('2')">2</button>
+        <button class="calc-btn" onclick="calcInput('3')">3</button>
+        <button class="calc-btn" onclick="calcInput('0')" style="grid-column:span 2;">0</button>
+        <button class="calc-btn" onclick="calcInput('.')">.</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="window" id="winNotes" style="top:120px; left:200px; width:440px; height:280px;">
+    <div class="win-header">
+      <span class="win-title">📝 Notepad</span>
+      <div class="win-controls"><button class="win-btn btn-close" onclick="closeApp('winNotes')"></button></div>
+    </div>
+    <div class="win-body" style="padding:0;">
+      <textarea id="noteContent" style="width:100%; height:100%; background:#0d1117; border:none; color:#e2e8f0; padding:12px; font-family:monospace; resize:none; outline:none;">J.A.R.V.I.S. WebOS Scratchpad&#10;&#10;Task: Autonomous Multi-Agent Swarm for Hackathon 2026&#10;Status: 100% Operational</textarea>
+    </div>
+  </div>
+
+  <div class="window" id="winSettings" style="top:140px; left:300px; width:360px;">
+    <div class="win-header">
+      <span class="win-title">⚙️ System Info</span>
+      <div class="win-controls"><button class="win-btn btn-close" onclick="closeApp('winSettings')"></button></div>
+    </div>
+    <div class="win-body" style="font-size:12px; color:#cbd5e1; line-height:1.8;">
+      <b>OS Name:</b> J.A.R.V.I.S. Antigravity WebOS<br/>
+      <b>Core Brain:</b> Google Gemma 4 (9B / 27B)<br/>
+      <b>Architecture:</b> 7-Agent Swarm + Headless Chromium<br/>
+      <b>Audio:</b> Microsoft Edge Neural Voice (GB-Ryan)<br/>
+      <b>Status:</b> <span style="color:#34d399;">Active • Nominal</span>
+    </div>
+  </div>
+
+  <div class="taskbar">
+    <div class="taskbar-center">
+      <button class="tb-btn" title="Start Menu" id="btnExecuteAction" onclick="openApp('winTerm')">🪐</button>
+      <button class="tb-btn" title="Terminal" onclick="toggleApp('winTerm')">📟</button>
+      <button class="tb-btn" title="Calculator" onclick="toggleApp('winCalc')">🧮</button>
+      <button class="tb-btn" title="Notepad" onclick="toggleApp('winNotes')">📝</button>
+      <button class="tb-btn" title="Settings" onclick="toggleApp('winSettings')">⚙️</button>
+    </div>
+    <div class="taskbar-tray">
+      <span>🔋 100%</span>
+      <span>📶 WiFi 6</span>
+      <span id="osClock">12:00 PM</span>
+    </div>
+  </div>
+
+  <script>
+    function updateClock() {{
+      const d = new Date();
+      document.getElementById('osClock').textContent = d.toLocaleTimeString([], {{hour: '2-digit', minute:'2-digit'}});
+    }}
+    setInterval(updateClock, 1000); updateClock();
+
+    let topZ = 10;
+    function openApp(id) {{
+      const el = document.getElementById(id);
+      if (el) {{ el.style.display = 'flex'; el.style.zIndex = ++topZ; }}
+    }}
+    function closeApp(id) {{
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    }}
+    function toggleApp(id) {{
+      const el = document.getElementById(id);
+      if (el.style.display === 'flex') el.style.display = 'none';
+      else openApp(id);
+    }}
+
+    let calcVal = '';
+    function calcInput(k) {{
+      const d = document.getElementById('calcDisplay');
+      if (k === 'C') calcVal = '';
+      else if (k === '=') {{
+        try {{ calcVal = String(eval(calcVal)); }} catch(_) {{ calcVal = 'Error'; }}
+      }} else calcVal += k;
+      d.textContent = calcVal || '0';
+    }}
+
+    function handleTerm(e) {{
+      if (e.key === 'Enter') {{
+        const inp = document.getElementById('termCmd');
+        const cmd = inp.value.trim().toLowerCase();
+        const out = document.getElementById('termOutput');
+        inp.value = '';
+        let reply = '';
+        if (cmd === 'help') reply = 'Commands: help, neofetch, date, whoami, calc, clear';
+        else if (cmd === 'neofetch') reply = 'OS: J.A.R.V.I.S. WebOS\\nHost: Google Gemma 4 AI Swarm\\nKernel: 2.5-x86_64\\nUptime: 99.99%';
+        else if (cmd === 'date') reply = new Date().toString();
+        else if (cmd === 'whoami') reply = 'jarvis-operator (root)';
+        else if (cmd === 'clear') {{ out.innerHTML = ''; return; }}
+        else reply = 'Command not found: ' + cmd;
+        out.innerHTML += '<br/><span style="color:#38bdf8;">jarvis@os:~$</span> ' + cmd + '<br/>' + reply;
+      }}
+    }}
+  </script>
+</body>
+</html>"""
+
+        app_server_py = f'''\"\"\"
+Localhost Microservice for WebOS: {clean_title}
+\"\"\"
+import http.server
+import socketserver
+from pathlib import Path
+
+PORT = 8090
+ROOT = Path(__file__).parent
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(ROOT), **kwargs)
+
+
+if __name__ == "__main__":
+    with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
+        print(f"Serving WebOS at http://127.0.0.1:{{PORT}}")
+        httpd.serve_forever()
+'''
+
+        test_suite_py = '''\"\"\"
+Automated Pytest Suite for WebOS
+\"\"\"
+from pathlib import Path
+
+
+def test_webos_components():
+    html = (Path(__file__).parent / "index.html").read_text(encoding="utf-8")
+    assert "winTerm" in html
+    assert "winCalc" in html
+    assert "winNotes" in html
+    assert "winSettings" in html
+    assert "taskbar" in html
+    assert "btnExecuteAction" in html
+
+
+if __name__ == "__main__":
+    test_webos_components()
+    print("WEBOS TEST SUITE PASSED (100%)")
+'''
+
+        return json.dumps({
+            "plan": plan,
+            "files": [
+                {"relative_path": "index.html", "content": index_html},
+                {"relative_path": "app_server.py", "content": app_server_py},
+                {"relative_path": "test_suite.py", "content": test_suite_py},
+            ]
+        })
+
+    # Category 3: Startup SaaS Platform
+    if re.search(r"startup|saas|landing page", prompt, re.I):
+        startup_title = f"{clean_title} - AI Cloud Platform"
+        plan = {
+            "project_name": startup_title,
+            "task_type": "webapp",
+            "architecture_summary": "High-converting modern SaaS Startup platform with hero, pricing matrix, interactive feature demo, and auth modal.",
+            "steps": [
+                "Build modern navbar with logo, product links, and CTA",
+                "Create hero section with gradient typography and live metric badges",
+                "Implement interactive product demo preview with stateful slider",
+                "Construct 3-tier pricing matrix with monthly/annual toggle",
+                "Generate automated Pytest suite verifying SaaS DOM controls",
+            ],
+            "files_to_generate": ["index.html", "app_server.py", "test_suite.py"],
+        }
+
+        index_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{startup_title}</title>
+  <style>
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; font-family: 'Inter', system-ui, sans-serif; background: #080b11; color: #f1f5f9; }}
+    nav {{ display: flex; justify-content: space-between; align-items: center; padding: 20px 48px; border-bottom: 1px solid #1e293b; background: rgba(8,11,17,0.8); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 50; }}
+    .logo {{ font-weight: 800; font-size: 18px; color: #38bdf8; display: flex; align-items: center; gap: 8px; }}
+    .nav-links {{ display: flex; gap: 24px; font-size: 13px; color: #94a3b8; }}
+    .btn-cta {{ background: linear-gradient(135deg, #0284c7, #38bdf8); color: #000; font-weight: 700; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; }}
+    .hero {{ text-align: center; padding: 72px 24px 48px; max-width: 860px; margin: 0 auto; }}
+    .pill {{ display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3); border-radius: 999px; color: #38bdf8; font-size: 11px; font-family: monospace; font-weight: 600; margin-bottom: 20px; }}
+    h1 {{ font-size: 48px; font-weight: 900; line-height: 1.15; margin: 0 0 20px; background: linear-gradient(180deg, #fff 0%, #94a3b8 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }}
+    p.sub {{ font-size: 17px; color: #94a3b8; line-height: 1.6; margin: 0 0 32px; }}
+    .waitlist-form {{ display: flex; gap: 10px; max-width: 440px; margin: 0 auto 40px; }}
+    input.email-input {{ flex: 1; background: #0f172a; border: 1px solid #334155; padding: 12px 16px; border-radius: 8px; color: #fff; font-size: 14px; outline: none; }}
+    .demo-card {{ max-width: 900px; margin: 0 auto 72px; background: #0f172a; border: 1px solid #1e293b; border-radius: 14px; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }}
+    .pricing-grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 900px; margin: 0 auto 72px; padding: 0 20px; }}
+    .price-card {{ background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 28px; text-align: left; position: relative; }}
+    .price-card.featured {{ border-color: #38bdf8; background: #131c31; }}
+    .price-card h3 {{ margin: 0 0 10px; font-size: 18px; }}
+    .price {{ font-size: 32px; font-weight: 800; margin: 16px 0; }}
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="logo">⚡ {clean_title}</div>
+    <div class="nav-links">
+      <span>Features</span>
+      <span>Solutions</span>
+      <span>Pricing</span>
+      <span>Docs</span>
+    </div>
+    <button class="btn-cta" id="btnExecuteAction" onclick="joinWaitlist()">Get Started Free &rarr;</button>
+  </nav>
+
+  <div class="hero">
+    <div class="pill">🚀 NEXT-GEN AI ACCELERATION PLATFORM</div>
+    <h1>Deploy AI Applications 10x Faster with Autonomous Swarms</h1>
+    <p class="sub">Empower your startup with real-time model streaming, autonomous self-healing microservices, and instant zero-latency desktop workflows.</p>
+    <div class="waitlist-form">
+      <input class="email-input" id="waitlistEmail" type="email" placeholder="Enter your work email..." value="founder@startup.io" />
+      <button class="btn-cta" onclick="joinWaitlist()">Request Access</button>
+    </div>
+    <div id="waitlistToast" style="display:none; color:#34d399; font-weight:700; font-family:monospace; font-size:13px;">✓ ACCESS GRANTED — CHECK YOUR INBOX!</div>
+  </div>
+
+  <div class="demo-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #1e293b; padding-bottom:12px; margin-bottom:16px;">
+      <span style="font-weight:700; color:#38bdf8; font-family:monospace;">LIVE CLOUD METRICS RADAR</span>
+      <span style="color:#34d399; font-size:12px; font-family:monospace;">● 99.99% UPTIME</span>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+      <div style="background:#080b11; padding:16px; border-radius:8px; border:1px solid #1e293b;">
+        <div style="color:#64748b; font-size:11px; text-transform:uppercase;">Daily Active Users</div>
+        <div style="font-size:24px; font-weight:800; margin-top:4px;">124,580</div>
+      </div>
+      <div style="background:#080b11; padding:16px; border-radius:8px; border:1px solid #1e293b;">
+        <div style="color:#64748b; font-size:11px; text-transform:uppercase;">Inference Latency</div>
+        <div style="font-size:24px; font-weight:800; color:#38bdf8; margin-top:4px;">&lt; 8.2 ms</div>
+      </div>
+      <div style="background:#080b11; padding:16px; border-radius:8px; border:1px solid #1e293b;">
+        <div style="color:#64748b; font-size:11px; text-transform:uppercase;">ARR Growth</div>
+        <div style="font-size:24px; font-weight:800; color:#34d399; margin-top:4px;">+312% YoY</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pricing-grid">
+    <div class="price-card">
+      <h3>Starter</h3>
+      <p style="color:#64748b; font-size:12px;">For indie hackers and prototypes.</p>
+      <div class="price">$0 <span style="font-size:13px; color:#64748b;">/ mo</span></div>
+      <button class="btn-cta" style="width:100%; background:#1e293b; color:#fff;" onclick="joinWaitlist()">Start Free</button>
+    </div>
+    <div class="price-card featured">
+      <div style="position:absolute; top:12px; right:12px; background:#0284c7; color:#fff; font-size:9px; font-weight:800; padding:2px 8px; border-radius:999px;">POPULAR</div>
+      <h3>Pro Swarm</h3>
+      <p style="color:#64748b; font-size:12px;">For high-velocity engineering teams.</p>
+      <div class="price">$49 <span style="font-size:13px; color:#64748b;">/ mo</span></div>
+      <button class="btn-cta" style="width:100%;" onclick="joinWaitlist()">Get Started</button>
+    </div>
+    <div class="price-card">
+      <h3>Enterprise</h3>
+      <p style="color:#64748b; font-size:12px;">Dedicated clusters and custom models.</p>
+      <div class="price">$299 <span style="font-size:13px; color:#64748b;">/ mo</span></div>
+      <button class="btn-cta" style="width:100%; background:#1e293b; color:#fff;" onclick="joinWaitlist()">Contact Sales</button>
+    </div>
+  </div>
+
+  <script>
+    function joinWaitlist() {{
+      const toast = document.getElementById('waitlistToast');
+      toast.style.display = 'block';
+      setTimeout(() => {{ toast.style.display = 'none'; }}, 3000);
+    }}
+  </script>
+</body>
+</html>"""
+
+        app_server_py = f'''\"\"\"
+Localhost Microservice for Startup Platform: {clean_title}
+\"\"\"
+import http.server
+import socketserver
+from pathlib import Path
+
+PORT = 8090
+ROOT = Path(__file__).parent
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=str(ROOT), **kwargs)
+
+
+if __name__ == "__main__":
+    with socketserver.TCPServer(("127.0.0.1", PORT), Handler) as httpd:
+        print(f"Serving Startup Platform at http://127.0.0.1:{{PORT}}")
+        httpd.serve_forever()
+'''
+
+        test_suite_py = '''\"\"\"
+Automated Pytest Suite for Startup Platform
+\"\"\"
+from pathlib import Path
+
+
+def test_startup_platform_ui():
+    html = (Path(__file__).parent / "index.html").read_text(encoding="utf-8")
+    assert "btnExecuteAction" in html
+    assert "waitlistEmail" in html
+    assert "pricing-grid" in html
+
+
+if __name__ == "__main__":
+    test_startup_platform_ui()
+    print("STARTUP PLATFORM TEST SUITE PASSED (100%)")
 '''
 
         return json.dumps({
@@ -1011,6 +1433,15 @@ async def screenshot_verify(req: ScreenshotVerifyRequest):
 
 @app.post("/api/open-app")
 async def open_native_app(req: CommandRequest):
+    # 1. First consult Autonomous Computer-Use Engine (state-aware windows, youtube, netflix, gmail, calculator math, bookings)
+    if execute_computer_use:
+        try:
+            cu_res = execute_computer_use(req.instruction, req.target_directory or "./workspace_app")
+            if cu_res is not None:
+                return cu_res
+        except Exception:
+            pass
+
     t0 = time.perf_counter()
     raw = req.instruction.strip().strip(".,!?;:\"'").lower()
     blender_exe = r"E:\blender.exe" if os.path.exists(r"E:\blender.exe") else (shutil.which("blender") or "blender")

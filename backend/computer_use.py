@@ -45,6 +45,9 @@ CHROME_PATH = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
 EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 
 BLENDER_EXE = r"E:\blender.exe" if os.path.exists(r"E:\blender.exe") else (shutil.which("blender") or "blender")
+ANTIGRAVITY_IDE_EXE = r"C:\Users\Jeevan\AppData\Local\Programs\Antigravity IDE\Antigravity IDE.exe"
+if not os.path.exists(ANTIGRAVITY_IDE_EXE):
+    ANTIGRAVITY_IDE_EXE = shutil.which("code") or shutil.which("antigravity-ide") or ""
 
 
 def get_best_browser() -> str:
@@ -122,18 +125,41 @@ def activate_window_by_name(window_title: str) -> bool:
 
 
 def open_url_in_browser(url: str) -> bool:
-    """Launches URL in user's browser (Brave, Chromium, Edge) in <50ms."""
+    """Launches URL in user's active browser and brings it to foreground."""
+    switch_to_default_desktop()
+    # 1. Primary: Windows ShellExecute opens in user's active default browser window on screen
+    try:
+        import os
+        os.startfile(url)
+        return True
+    except Exception:
+        pass
+
+    # 2. Secondary: webbrowser with autoraise
+    try:
+        import webbrowser
+        webbrowser.open(url, new=2, autoraise=True)
+        return True
+    except Exception:
+        pass
+
+    # 3. Tertiary: start command
+    try:
+        subprocess.Popen(f'start "" "{url}"', shell=True)
+        return True
+    except Exception:
+        pass
+
+    # 4. Fallback to browser binary
     try:
         browser_bin = get_best_browser()
         if browser_bin and os.path.exists(browser_bin):
             subprocess.Popen([browser_bin, url])
             return True
-        else:
-            import webbrowser
-            webbrowser.open(url)
-            return True
     except Exception:
-        return False
+        pass
+
+    return False
 
 
 def safe_eval_math(expr: str) -> Optional[float]:
@@ -305,10 +331,14 @@ Your capabilities and tools:
 8. "launch_app": User wants to launch or focus an application (e.g. notepad, calc, blender, code, terminal). Parameters:
    - "app_name": "notepad" | "calc" | "blender" | "code" | "terminal"
    - "action": "focus_or_spawn"
+9. "code_and_open": User wants to write code, create an algorithm, build an app, or code something on their system (e.g. "code a binary search in python", "code snake game", "code an app for startup", "code a simple os", "write code for..."). Parameters:
+   - "file_name": appropriate filename with extension (e.g. "binary_search.py", "snake_game.py", "startup_app.py", "simple_os.py")
+   - "code_content": complete, fully-functional, executable source code written by you
+   - "summary": concise summary of what was coded
 
 Analyze the user's instruction and return ONLY a valid JSON object matching this schema:
 {{
-  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app",
+  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app",
   "thought": "<concise reasoning why you chose this tool>",
   "speech": "<concise spoken response for voice feedback to user>",
   "parameters": {{}}
@@ -678,6 +708,46 @@ print("Model '{model_name}' generated successfully.")
                 "target": win_title,
                 "speech": speech or f"{'Focused existing ' if is_running else 'Launched '}{win_title}.",
                 "message": f"[Gemma 4 ({model_used})] {msg}",
+                "thought": thought,
+                "model": model_used,
+                "latency_ms": latency,
+            }
+
+        # -------------------------------------------------------------
+        # 9. TOOL: CODE AND OPEN IN SYSTEM IDE
+        # -------------------------------------------------------------
+        if tool == "code_and_open":
+            file_name = params.get("file_name", "solution.py")
+            code_content = params.get("code_content", "")
+            summary = params.get("summary", f"Generated code for {file_name}")
+
+            out_dir = Path(target_directory).resolve()
+            out_dir.mkdir(parents=True, exist_ok=True)
+            file_path = out_dir / file_name
+            file_path.write_text(code_content, encoding="utf-8")
+
+            opened_in = "Notepad"
+            switch_to_default_desktop()
+            if os.path.exists(ANTIGRAVITY_IDE_EXE):
+                subprocess.Popen([ANTIGRAVITY_IDE_EXE, str(file_path)])
+                opened_in = "Antigravity IDE"
+            elif shutil.which("code"):
+                subprocess.Popen(["code", str(file_path)], shell=True)
+                opened_in = "VS Code"
+            else:
+                subprocess.Popen(["notepad.exe", str(file_path)])
+
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            return {
+                "ok": True,
+                "action": "code_generated_and_opened",
+                "file_name": file_name,
+                "file_path": str(file_path),
+                "code": code_content,
+                "opened_in": opened_in,
+                "target": opened_in,
+                "speech": f"I've written the complete code for {file_name} and opened it in your {opened_in}, sir.",
+                "message": f"[Gemma 4 ({model_used})] Synthesized {file_name} ({len(code_content)} chars). Opened in {opened_in}.",
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,

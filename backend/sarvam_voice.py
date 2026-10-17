@@ -28,7 +28,12 @@ class SarvamVoicePipeline:
         Supports `transcribe`, `codemix` (Hinglish/Kanglish), and `translate`.
         """
         if not self.api_key:
-            raise ValueError("SARVAM_API_KEY is not configured.")
+            return {
+                "transcript": "",
+                "error": "SARVAM_API_KEY is not configured. WebSpeech API active fallback.",
+                "model": "client_fallback",
+                "mode": mode,
+            }
 
         headers = {"api-subscription-key": self.api_key}
         files = {"file": (filename, audio_bytes, "audio/wav")}
@@ -68,7 +73,11 @@ class SarvamVoicePipeline:
         Calls Sarvam AI /text-to-speech using `bulbul:v4-flash` for low-latency J.A.R.V.I.S. responses.
         """
         if not self.api_key:
-            raise ValueError("SARVAM_API_KEY is not configured.")
+            return {
+                "audio_base64": "",
+                "error": "SARVAM_API_KEY is not configured. Browser SpeechSynthesis active fallback.",
+                "model": "client_fallback"
+            }
 
         headers = {
             "api-subscription-key": self.api_key,

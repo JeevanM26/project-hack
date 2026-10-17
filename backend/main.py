@@ -36,6 +36,7 @@ def serve_jarvis_frontend():
     return FileResponse(INDEX_PATH)
 
 @app.get("/jarvis_command_center.html")
+@app.get("/index.html")
 def serve_command_center():
     return FileResponse(INDEX_PATH)
 
@@ -51,7 +52,7 @@ REPO_DIR = os.getenv("JARVIS_REPO_DIR", os.path.join(os.path.dirname(__file__), 
 swarm = JarvisMultiAgentSwarm(repo_dir=REPO_DIR)
 voice = SarvamVoicePipeline()
 hw = HardwareOptimizer()
-gui_agent = JarvisGUIComputerAgent()
+gui_agent = swarm.gui_agent
 
 
 class TelemetryConnectionManager:
@@ -156,6 +157,20 @@ class TerminalRunRequest(BaseModel):
     command: str
     cwd: Optional[str] = None
     timeout: int = 60
+
+
+class DirectoryAuditRequest(BaseModel):
+    directory: Optional[str] = None
+    command: Optional[str] = None
+    synthesize_voice: bool = True
+    language_code: str = "en-IN"
+
+
+class WriteCodeRequest(BaseModel):
+    prompt: str
+    target_filename: Optional[str] = None
+    synthesize_voice: bool = True
+    language_code: str = "en-IN"
 
 
 @app.websocket("/ws/telemetry")
@@ -311,7 +326,60 @@ async def run_terminal_command(req: TerminalRunRequest):
         })
     except Exception:
         pass
-    return res
+@app.post("/api/audit-directory")
+async def run_directory_audit(req: DirectoryAuditRequest):
+    """Audits real files in the directory for syntax errors, bugs, and test failures."""
+    cmd = req.command or f"Audit directory {req.directory or '.'}"
+    target_dir = swarm.directory_auditor.resolve_target_directory(cmd, default_dir=req.directory or REPO_DIR)
+    audit_res = swarm.directory_auditor.audit_directory(target_dir, objective=cmd)
+
+    spoken = audit_res.get("spoken_response")
+    if req.synthesize_voice and voice.api_key and spoken:
+        try:
+            audit_res["tts_audio"] = voice.synthesize_speech(spoken, language_code=req.language_code)
+        except Exception:
+            pass
+
+    try:
+        await telemetry_manager.broadcast({
+            "event": "directory_audit_complete",
+            "payload": build_telemetry_payload(),
+            "audit": {
+                "target_dir": target_dir,
+                "scanned_files_count": audit_res.get("scanned_files_count", 0),
+                "issues_count": audit_res.get("issues_count", 0)
+            }
+        })
+    except Exception:
+        pass
+
+    return audit_res
+
+
+@app.post("/api/write-code")
+async def run_code_creation(req: WriteCodeRequest):
+    """Writes requested code to disk, validates AST syntax, and registers in workspace."""
+    code_res = swarm.workspace_agent.write_code_for_user(req.prompt, target_filename=req.target_filename)
+    spoken = code_res.get("spoken_response")
+    if req.synthesize_voice and voice.api_key and spoken:
+        try:
+            code_res["tts_audio"] = voice.synthesize_speech(spoken, language_code=req.language_code)
+        except Exception:
+            pass
+
+    try:
+        await telemetry_manager.broadcast({
+            "event": "code_creation_complete",
+            "payload": build_telemetry_payload(),
+            "code_res": {
+                "filename": code_res.get("filename"),
+                "ast_syntax_valid": code_res.get("ast_syntax_valid", True)
+            }
+        })
+    except Exception:
+        pass
+
+    return code_res
 
 
 @app.get("/api/workspace-files")
@@ -382,7 +450,7 @@ async def run_text_or_transcribed_mission(req: CommandRequest):
         simulate_hallucination=req.simulate_hallucination
     )
 
-    if req.execute_on_desktop_gui:
+    if req.execute_on_desktop_gui and result.get("type") == "gui_action" and "gui_res" not in result:
         try:
             result["gui_trace"] = gui_agent.execute_gui_command(req.command)
         except Exception as e:
@@ -434,17 +502,20 @@ async def run_audio_mission(
         keyterms=repo_files + ["pytest", "idempotency", "GST", "webhook", "Gemma", "YouTube", "Kesariya"],
     )
     
-    mission_res = swarm.execute_voice_mission(
-        stt_res["transcript"],
-        simulate_hallucination=simulate_hallucination
-    )
-    
+    transcript = stt_res.get("transcript", "").strip()
+    mission_res = None
     tts_res = None
-    if voice.api_key:
-        try:
-            tts_res = voice.synthesize_speech(mission_res["spoken_response"], language_code=language_code)
-        except Exception:
-            pass
+
+    if transcript:
+        mission_res = swarm.execute_voice_mission(
+            transcript,
+            simulate_hallucination=simulate_hallucination
+        )
+        if voice.api_key and mission_res.get("spoken_response"):
+            try:
+                tts_res = voice.synthesize_speech(mission_res["spoken_response"], language_code=language_code)
+            except Exception:
+                pass
 
     return {
         "stt": stt_res,

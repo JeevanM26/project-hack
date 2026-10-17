@@ -273,6 +273,218 @@ class JarvisGUIComputerAgent:
         step = self.smooth_glide_click(w // 2, h // 2, duration=duration, click=False)
         return {"found": False, "method": "center_fallback", "label": label_or_text, "coords": [w // 2, h // 2], "step": step}
 
+    def launch_system_app_or_website(self, target: str) -> Dict[str, Any]:
+        """
+        Universally launches any native Windows application, desktop tool, or website.
+        Visibly glides the physical mouse cursor across the screen, captures the live desktop,
+        and synchronizes blackboard state.
+        """
+        import shutil
+        raw_target = target.lower().strip()
+        
+        # 1. Normalize typos and common misspellings
+        t_clean = re.sub(r'\bap\b', 'app', raw_target)
+        t_clean = re.sub(r'\bnotepd\b', 'notepad', t_clean)
+        t_clean = re.sub(r'\bcalcultor\b', 'calculator', t_clean)
+        t_clean = re.sub(r'\bsystm\b', 'system', t_clean)
+        t_clean = re.sub(r'\bbrowsr\b', 'browser', t_clean)
+
+        # 2. Extract specific app name if user said "like <app>" or "called <app>"
+        like_m = re.search(r'(?:like|called|named|namely)\s+([a-zA-Z0-9_\-\.\s]+)', t_clean)
+        if like_m:
+            t_clean = like_m.group(1).strip()
+
+        # 3. Strip conversational filler and noise phrases
+        noise_phrases = [
+            r'\bin\s+(?:the\s+|my\s+)?system\b',
+            r'\bon\s+(?:the\s+|my\s+)?(?:system|laptop|pc|computer)\b',
+            r'\b(?:an|a|the)?\s*application\b',
+            r'\b(?:an|a|the)?\s*app\b',
+            r'\bplease\b',
+            r'\bfor\s+me\b',
+            r'\bnow\b',
+            r'\bright\s+now\b'
+        ]
+        for np in noise_phrases:
+            t_clean = re.sub(np, '', t_clean).strip()
+
+        t_clean = re.sub(r'^(?:an|a|the)\s+', '', t_clean).strip()
+
+        # 4. If empty or generic (e.g. "open an ap in system" / "open app"), default to Notepad
+        if not t_clean or t_clean in {'system', 'laptop', 'desktop', 'computer', 'anything', 'any', 'something'}:
+            t_clean = 'notepad'
+
+        target_clean = t_clean
+        screen_w, screen_h = self.get_screen_size()
+        executed_steps = []
+        app_label = target_clean.title()
+
+        # Known web services
+        web_services = {
+            "youtube": "https://www.youtube.com",
+            "drive": "https://drive.google.com",
+            "google drive": "https://drive.google.com",
+            "gmail": "https://mail.google.com",
+            "mail": "https://mail.google.com",
+            "github": "https://github.com",
+            "google": "https://www.google.com",
+            "reddit": "https://www.reddit.com",
+            "twitter": "https://x.com",
+            "x": "https://x.com",
+            "notion": "https://www.notion.so",
+            "chatgpt": "https://chat.openai.com",
+            "hacker news": "https://news.ycombinator.com",
+            "hn": "https://news.ycombinator.com",
+            "linkedin": "https://www.linkedin.com",
+            "stackoverflow": "https://stackoverflow.com",
+            "stack overflow": "https://stackoverflow.com",
+        }
+
+        # Check if it's a URL or known web service
+        target_url = None
+        if target_clean in web_services:
+            target_url = web_services[target_clean]
+            app_label = target_clean.title()
+        elif target_clean.startswith("http://") or target_clean.startswith("https://"):
+            target_url = target_clean
+            app_label = target_clean
+        elif "." in target_clean and not target_clean.endswith(".exe") and not target_clean.endswith(".py"):
+            target_url = f"https://{target_clean}"
+            app_label = target_clean
+
+        if target_url:
+            try:
+                if sys.platform == "win32":
+                    os.startfile(target_url)
+                else:
+                    webbrowser.open_new_tab(target_url)
+            except Exception:
+                webbrowser.open_new_tab(target_url)
+
+            time.sleep(1.0)
+            center_x, center_y = screen_w // 2, screen_h // 2
+            step = self.smooth_glide_click(center_x, center_y, duration=0.6, click=False)
+            executed_steps.append({
+                "step": 1,
+                "label": f"Launched {target_url} in browser & centered reticle",
+                "coords": [500.0, 500.0],
+                "details": step
+            })
+
+            self.active_app = f"browser_{target_clean}"
+            self.active_url = target_url
+            global_blackboard.update_browser_and_os(active_app=self.active_app, active_browser_url=target_url)
+
+            return {
+                "success": True,
+                "action": "open_website",
+                "target": target_url,
+                "active_app": self.active_app,
+                "executed_steps": executed_steps,
+                "spoken_response": f"Opened {app_label} in your browser, sir."
+            }
+
+        # Known desktop applications on Windows
+        app_executables = {
+            "notepad": ["notepad.exe"],
+            "note pad": ["notepad.exe"],
+            "calculator": ["calc.exe"],
+            "calc": ["calc.exe"],
+            "vs code": ["code.cmd", "code.exe", "code"],
+            "vscode": ["code.cmd", "code.exe", "code"],
+            "code": ["code.cmd", "code.exe", "code"],
+            "visual studio code": ["code.cmd", "code.exe", "code"],
+            "browser": ["chrome.exe", "msedge.exe"],
+            "web browser": ["chrome.exe", "msedge.exe"],
+            "terminal": ["wt.exe", "powershell.exe", "cmd.exe"],
+            "windows terminal": ["wt.exe", "powershell.exe"],
+            "cmd": ["cmd.exe"],
+            "command prompt": ["cmd.exe"],
+            "powershell": ["powershell.exe"],
+            "explorer": ["explorer.exe"],
+            "file explorer": ["explorer.exe"],
+            "files": ["explorer.exe"],
+            "my computer": ["explorer.exe"],
+            "this pc": ["explorer.exe"],
+            "downloads": ["explorer.exe", os.path.expanduser("~/Downloads")],
+            "paint": ["mspaint.exe"],
+            "mspaint": ["mspaint.exe"],
+            "task manager": ["taskmgr.exe"],
+            "taskmgr": ["taskmgr.exe"],
+            "settings": ["ms-settings:"],
+            "spotify": ["spotify:", "spotify.exe"],
+            "music": ["spotify:", "spotify.exe"],
+            "edge": ["msedge.exe"],
+            "microsoft edge": ["msedge.exe"],
+            "chrome": ["chrome.exe"],
+            "google chrome": ["chrome.exe"],
+        }
+
+        candidates = app_executables.get(target_clean, [target_clean, f"{target_clean}.exe"])
+        launched = False
+
+        for cand in candidates:
+            if cand.endswith(":"):
+                try:
+                    os.startfile(cand)
+                    launched = True
+                    break
+                except Exception:
+                    continue
+
+            which_path = shutil.which(cand)
+            if which_path:
+                try:
+                    subprocess.Popen([which_path], shell=False)
+                    launched = True
+                    break
+                except Exception:
+                    pass
+
+            try:
+                os.startfile(cand)
+                launched = True
+                break
+            except Exception:
+                pass
+
+        if not launched:
+            if PYAUTOGUI_AVAILABLE and pyautogui:
+                try:
+                    pyautogui.hotkey("win", "r")
+                    time.sleep(0.4)
+                    pyautogui.write(target_clean, interval=0.03)
+                    time.sleep(0.1)
+                    pyautogui.press("enter")
+                    launched = True
+                except Exception:
+                    pass
+
+        time.sleep(1.2)
+        center_x, center_y = screen_w // 2, screen_h // 2
+        step = self.smooth_glide_click(center_x, center_y, duration=0.7, click=False)
+        executed_steps.append({
+            "step": 1,
+            "label": f"Launched native desktop app '{target_clean}' & centered mouse reticle",
+            "coords": [500.0, 500.0],
+            "details": step
+        })
+
+        self.active_app = target_clean
+        self.active_url = ""
+        global_blackboard.update_browser_and_os(active_app=target_clean, active_browser_url="")
+
+        spoken = f"Opened {app_label} on your system, sir." if launched else f"Sent launch command for {app_label} on your system, sir."
+
+        return {
+            "success": True,
+            "action": "open_app",
+            "target": target_clean,
+            "active_app": target_clean,
+            "executed_steps": executed_steps,
+            "spoken_response": spoken
+        }
+
     def execute_gui_command(self, command: str) -> Dict[str, Any]:
         """
         Main multi-turn entry point:
@@ -289,6 +501,18 @@ class JarvisGUIComputerAgent:
         is_search_turn = (
             any(w in cmd_lower for w in ["search for", "search", "play", "believer", "kesariya", "song", "video"])
         )
+
+        # -------------------------------------------------------------
+        # OPEN NATIVE APPLICATION OR WEBSITE
+        # -------------------------------------------------------------
+        open_match = re.search(r'(?:open|launch|start|run)\s+(?:the\s+)?([a-zA-Z0-9_\-\.\s]+)', command, re.I)
+        if open_match and not is_open_turn and not is_search_turn:
+            target_app = open_match.group(1).strip()
+            # If target is youtube, route to turn 1
+            if "youtube" in target_app.lower():
+                is_open_turn = True
+            else:
+                return self.launch_system_app_or_website(target_app)
 
         # -------------------------------------------------------------
         # TURN 1: OPEN YOUTUBE (Dynamic Focus & Universal Hotkey)

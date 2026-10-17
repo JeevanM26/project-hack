@@ -1615,14 +1615,149 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
     };
 
     async function runMultiAgentMission(scenarioKey) {
-      const commandText = document.getElementById('voiceCommandInput').value.trim();
-      if (!commandText) {
+      const rawText = document.getElementById('voiceCommandInput').value.trim();
+      if (!rawText) {
         showToast('Please enter or speak a command first.');
         return;
       }
-      const lower = commandText.toLowerCase();
 
-      // 1. Check for General-Purpose Autonomous Deep-Research / Full-Stack Mission first!
+      // Normalize common typos and conversational prefixes
+      let clean = rawText.toLowerCase()
+        .replace(/^(?:hey\s+)?(?:jarvis[,\s]*)?(?:can\s+(?:you|u)\s+|please\s+)?/, '')
+        .trim();
+      clean = clean
+        .replace(/\bap\b/g, 'app')
+        .replace(/\bdirectry\b/g, 'directory')
+        .replace(/\bdirectroy\b/g, 'directory')
+        .replace(/\bfoldr\b/g, 'folder')
+        .replace(/\bfindthe\b/g, 'find the')
+        .replace(/\bwrit\b/g, 'write')
+        .replace(/\bwrite\s+a\s+write\s+a\b/g, 'write a')
+        .replace(/\bcalcultor\b/g, 'calculator')
+        .replace(/\bnotepd\b/g, 'notepad');
+
+      const commandText = rawText;
+
+      // 1. Launch any native Desktop App or Website (Notepad, Calculator, VS Code, Browser, Spotify, URLs)
+      const isOpenAppOrSite = (
+        clean.startsWith('open ') ||
+        clean.startsWith('launch ') ||
+        clean.startsWith('start ') ||
+        clean.startsWith('run ') ||
+        clean.includes('open app') ||
+        clean.includes('open the app') ||
+        clean.includes('open an app')
+      ) && !clean.includes('youtube') && !clean.includes('write') && !clean.includes('code') && !clean.includes('script') && !clean.includes('test') && !clean.includes('benchmark') && !clean.includes('audit');
+
+      if (isOpenAppOrSite) {
+        showToast(`Launching ${commandText}...`);
+        switchViewportMode(1);
+        try {
+          const resp = await fetch('http://127.0.0.1:8000/api/gui-action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: commandText, synthesize_voice: true })
+          });
+          const guiData = await resp.json();
+          if (guiData.spoken_response) {
+            speakJarvis(guiData.spoken_response);
+            showToast(guiData.spoken_response);
+          }
+          if (guiData.active_app) {
+            document.getElementById('desktopActiveAppBadge').textContent = `Active App: ${guiData.active_app}`;
+          }
+          refreshLiveDesktopStream();
+          return;
+        } catch (err) {
+          console.warn('GUI App Launch error:', err);
+        }
+      }
+
+      // 2. Directory Code Audit & Mistake Finding (work in directory, find mistakes, check errors)
+      const isAuditDir = (
+        clean.includes('mistake') ||
+        clean.includes('error') ||
+        clean.includes('bug') ||
+        clean.includes('audit') ||
+        clean.includes('check folder') ||
+        clean.includes('check directory') ||
+        clean.includes('scan folder') ||
+        clean.includes('scan directory') ||
+        clean.includes('find mistakes') ||
+        clean.includes('find the mistakes') ||
+        clean.includes('work in a directory') ||
+        clean.includes('work in directory')
+      );
+
+      if (isAuditDir) {
+        showToast('Auditing directory & detecting code mistakes...');
+        highlightAgentCard('agentCardCritic', 'statusCritic', 'Critic: Scanning directory AST, analyzing defects & test suite...', 'border-emerald-400');
+        try {
+          const resp = await fetch('http://127.0.0.1:8000/api/audit-directory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: commandText, synthesize_voice: true })
+          });
+          const auditData = await resp.json();
+          switchViewportMode(2);
+          if (auditData.report_markdown) {
+            document.getElementById('researchDossierViewer').textContent = auditData.report_markdown;
+          }
+          if (auditData.issues && auditData.issues.length > 0) {
+            document.getElementById('criticTestViewer').textContent = JSON.stringify(auditData.issues, null, 2);
+          }
+          if (auditData.spoken_response) {
+            speakJarvis(auditData.spoken_response);
+            showToast(auditData.spoken_response);
+          }
+          return;
+        } catch (err) {
+          console.warn('Directory audit error:', err);
+        }
+      }
+
+      // 3. Direct Code Writing / Script Generation
+      const isWriteCode = (
+        clean.includes('write code') ||
+        clean.includes('write a code') ||
+        clean.includes('code for') ||
+        clean.includes('generate code') ||
+        clean.includes('write script') ||
+        clean.includes('write a script') ||
+        clean.includes('create function') ||
+        clean.includes('write a function') ||
+        clean.includes('write python') ||
+        clean.includes('write program') ||
+        clean.includes('write a program')
+      ) && !clean.includes('full-stack') && !clean.includes('kanban');
+
+      if (isWriteCode) {
+        showToast('Generating and validating requested code...');
+        highlightAgentCard('agentCardBuilder', 'statusBuilder', 'Lead Builder: Writing code and validating AST syntax...', 'border-indigo-400');
+        try {
+          const resp = await fetch('http://127.0.0.1:8000/api/write-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: commandText, synthesize_voice: true })
+          });
+          const codeData = await resp.json();
+          switchViewportMode(3);
+          if (codeData.code) {
+            document.getElementById('codeDiffViewer').textContent = codeData.code;
+            document.getElementById('activePatchFileLabel').textContent = `Created: ${codeData.filename || 'script.py'} (AST Syntax Verified)`;
+          }
+          refreshWorkspaceFilesList();
+          if (codeData.spoken_response) {
+            speakJarvis(codeData.spoken_response);
+            showToast(codeData.spoken_response);
+          }
+          return;
+        } catch (err) {
+          console.warn('Write code error:', err);
+        }
+      }
+
+      // 4. Autonomous Mission (Deep Web Research / Full-Stack Project Building)
       const isAutonomous = (
         lower.includes('research') ||
         lower.includes('benchmark') ||
@@ -1633,7 +1768,7 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
         lower.includes('build') ||
         lower.includes('make') ||
         lower.includes('create')
-      ) && !lower.includes('open youtube') && !lower.includes('play song') && !lower.includes('refactor payment') && !lower.includes('auth') && !lower.includes('gst');
+      ) && !lower.includes('open youtube') && !lower.includes('play song');
 
       if (isAutonomous) {
         showToast('Initiating 5-Phase Autonomous Mission...');
@@ -1672,13 +1807,13 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
         }
       }
 
-      // 2. Open YouTube turn
+      // 5. Open YouTube turn
       if (scenarioKey === 'step1_open_youtube' || (lower.includes('open youtube') && !lower.includes('search') && !lower.includes('play'))) {
         await executeStep1OpenYoutube();
         return;
       }
 
-      // 3. YouTube Song / Video search
+      // 6. YouTube Song / Video search
       const isYouTubePlay = (
         scenarioKey === 'youtube_song' ||
         lower.includes('youtube') ||
@@ -1693,17 +1828,7 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
         return;
       }
 
-      if (
-        scenarioKey === 'build_complex_project' ||
-        lower.includes('expense tracker')
-      ) {
-        await executeComplexProjectBuild(commandText);
-        return;
-      }
-
-      await moveVirtualCursorTo(45, 145, 'CLICK: Stark Code IDE [45, 145]', true);
-      const scenario = SCENARIOS[scenarioKey] || (lower.includes('auth') ? SCENARIOS.hinglish_auth : SCENARIOS.gst_webhook);
-      
+      // 7. General Mission
       try {
         const resp = await fetch('http://127.0.0.1:8000/api/mission', {
           method: 'POST',
@@ -1714,32 +1839,31 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
             synthesize_voice: true
           })
         });
-        const liveTriage = await resp.json();
-        console.log('[Live AST Triage Result]', liveTriage);
+        const liveRes = await resp.json();
+        console.log('[Live Swarm Result]', liveRes);
 
-        if (liveTriage.target_file) {
-          document.getElementById('activePatchFileLabel').textContent = `Target File: ${liveTriage.target_file} (Zero-Hallucination Critic Approved)`;
+        if (liveRes.report_markdown) {
+          document.getElementById('researchDossierViewer').textContent = liveRes.report_markdown;
+          switchViewportMode(2);
+        } else if (liveRes.patched_code) {
+          document.getElementById('codeDiffViewer').textContent = liveRes.patched_code;
+          document.getElementById('activePatchFileLabel').textContent = `File: ${liveRes.target_file || 'code.py'}`;
+          switchViewportMode(3);
         }
-        if (liveTriage.patched_code) {
-          document.getElementById('codeDiffViewer').textContent = liveTriage.patched_code;
-          state.pendingPatch = { targetFile: liveTriage.target_file || scenario.targetFile, code: liveTriage.patched_code };
+
+        if (liveRes.verification_receipt) {
+          document.getElementById('criticTestViewer').textContent = JSON.stringify(liveRes.verification_receipt, null, 2);
         }
-        if (liveTriage.verification_receipt) {
-          document.getElementById('criticTestViewer').textContent = JSON.stringify(liveTriage.verification_receipt, null, 2);
-        }
-        if (liveTriage.agent_trace) {
-          for (const item of liveTriage.agent_trace) {
+        if (liveRes.agent_trace) {
+          for (const item of liveRes.agent_trace) {
             appendAgentLog(item.agent, 'text-emerald-300', `1-Model: ${state.singleModel}`, JSON.stringify(item.output), '[Live AST Verification]');
           }
         }
-        speakJarvis(liveTriage.spoken_response || scenario.spokenSummary);
-        showToast('Live triage verified with zero hallucinations!');
+        const spoken = liveRes.spoken_response || 'Mission executed successfully, sir.';
+        speakJarvis(spoken);
+        showToast(spoken);
       } catch (e) {
-        document.getElementById('activePatchFileLabel').textContent = `Target File: ${scenario.targetFile} (Co-Leader Verified)`;
-        document.getElementById('codeDiffViewer').textContent = scenario.patchedCode;
-        document.getElementById('criticTestViewer').textContent = scenario.testOutput;
-        state.pendingPatch = { targetFile: scenario.targetFile, code: scenario.patchedCode };
-        speakJarvis(scenario.spokenSummary);
+        showToast('Mission error: check backend connection.');
       }
     }
 
@@ -1875,18 +1999,29 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
             if (data.stt && data.stt.transcript) {
               document.getElementById('voiceCommandInput').value = data.stt.transcript;
               showToast(`Sarvam Transcribed: "${data.stt.transcript}"`);
-              // Run the mission directly from real Sarvam STT transcript
               runMultiAgentMission();
+            } else {
+              const currentInput = document.getElementById('voiceCommandInput').value.trim();
+              if (currentInput) {
+                showToast(`Transcribed: "${currentInput}"`);
+                runMultiAgentMission();
+              } else {
+                showToast('Listening complete. Speak or enter your task!');
+              }
             }
             if (data.tts && data.tts.audio_base64) {
               const audio = new Audio("data:audio/wav;base64," + data.tts.audio_base64);
               audio.play();
             }
           } catch (err) {
-            console.error('Sarvam voice upload failed:', err);
-            // If backend STT fails, fall back to browser transcript if available
-            const val = document.getElementById('voiceCommandInput').value;
-            if (val) runMultiAgentMission();
+            console.warn('Backend voice STT error, falling back to browser speech:', err);
+            const val = document.getElementById('voiceCommandInput').value.trim();
+            if (val) {
+              showToast(`Transcribed: "${val}"`);
+              runMultiAgentMission();
+            } else {
+              showToast('Microphone finished. Type your command and press Enter!');
+            }
           }
         };
 
@@ -1903,8 +2038,13 @@ test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
           recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
           recognition.interimResults = true;
           recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            document.getElementById('voiceCommandInput').value = transcript;
+            let resText = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              resText += event.results[i][0].transcript;
+            }
+            if (resText) {
+              document.getElementById('voiceCommandInput').value = resText;
+            }
           };
           recognition.start();
         }

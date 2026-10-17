@@ -22,6 +22,8 @@ from os_actions import VoiceOSActions
 from blackboard import global_blackboard, SharedBlackboard
 from research_agent import DeepResearchAgent
 from workspace_coder_agent import WorkspaceCoderAgent
+from directory_audit_agent import DirectoryAuditAgent
+from gui_computer_agent import JarvisGUIComputerAgent
 
 
 class SingleGemma4Engine:
@@ -238,19 +240,130 @@ class JarvisMultiAgentSwarm:
         self.current_blackboard: Optional[SharedProjectBlackboard] = None
         self.research_agent = DeepResearchAgent(gemma_engine=self.engine)
         self.workspace_agent = WorkspaceCoderAgent(gemma_engine=self.engine)
+        self.directory_auditor = DirectoryAuditAgent(gemma_engine=self.engine)
+        self.gui_agent = JarvisGUIComputerAgent()
 
     def execute_voice_mission(self, spoken_command: str, simulate_hallucination: bool = False) -> Dict[str, Any]:
         """
-        Executes a voice command across the single-model dynamic agent swarm:
-        1. Checks for Voice OS Actions (YouTube song playback, terminal commands).
-        2. If project build request -> activates dynamic recursive swarm with shared blackboard.
-        3. If codebase debug/audit request -> executes Co-Leader -> Explorer -> Builder -> Critic loop.
+        Executes an open-ended voice or text command across the single-model dynamic agent swarm:
+        1. Checks for System App Launching / GUI Control (Notepad, Calculator, VS Code, Browser, Spotify, URLs).
+        2. Checks for Directory Audits & Mistake Finding across codebases.
+        3. Checks for Code Generation / Writing requests.
+        4. Checks for Deep Research or Full-Stack Project Scaffolding.
+        5. Performs dynamic AST bug triage on real files without hardcoding payment_service.py.
         """
         cmd_clean = spoken_command.strip()
-        
-        # 1. Check for Voice OS Actions (e.g. YouTube playback)
+        lower_cmd = cmd_clean.lower()
+        res: Dict[str, Any] = {}
+
+        # Normalize common typos and colloquial patterns
+        norm_cmd = lower_cmd
+        norm_cmd = re.sub(r'\bap\b', 'app', norm_cmd)
+        norm_cmd = re.sub(r'\bdirectry\b', 'directory', norm_cmd)
+        norm_cmd = re.sub(r'\bdirectroy\b', 'directory', norm_cmd)
+        norm_cmd = re.sub(r'\bfoldr\b', 'folder', norm_cmd)
+        norm_cmd = re.sub(r'\bfindthe\b', 'find the', norm_cmd)
+        norm_cmd = re.sub(r'\bwrit\b', 'write', norm_cmd)
+        norm_cmd = re.sub(r'\bwrite\s+a\s+write\s+a\b', 'write a', norm_cmd)
+        norm_cmd = re.sub(r'\bcalcultor\b', 'calculator', norm_cmd)
+        norm_cmd = re.sub(r'\bnotepd\b', 'notepad', norm_cmd)
+
+        # 1. System App & Web Launching (e.g. "open notepad", "open an ap in system", "launch calculator", "open vs code", "open chrome")
+        is_open_app_cmd = (
+            any(w in norm_cmd for w in ["open app", "open website", "launch app", "open the app", "open the browser", "open an app", "open system app", "open ap"]) or
+            (any(norm_cmd.startswith(p) for p in ["open ", "launch ", "start ", "run "]) and
+             not any(w in norm_cmd for w in ["write", "code", "defect", "error", "bug", "mistake", "test", "audit", "benchmark", "research"])) or
+            bool(re.search(r'\b(?:open|launch|start|run)\s+(?:an?\s+)?(?:app|application|system app|program)\b', norm_cmd))
+        )
+
+        # 2. Directory Code Audit & Mistake Finding (e.g. "work in a directory and find mistakes", "findthe mistakes in folder", "check errors in directory")
+        is_audit_dir = (
+            any(w in norm_cmd for w in ["directory", "folder", "repo", "repository", "codebase", "files"]) and
+            any(w in norm_cmd for w in ["mistake", "error", "bug", "find", "check", "audit", "scan", "analyze", "review"])
+        ) or any(w in norm_cmd for w in [
+            "find mistakes", "find the mistakes", "check errors", "audit directory", "scan folder",
+            "find bugs", "check mistakes", "find mistakes in directory", "work in directory", "work in a directory"
+        ])
+
+        # 3. Direct Code Writing (e.g. "write a code for...", "write a script that...", "code for...")
+        is_write_code = (
+            any(w in norm_cmd for w in [
+                "write a code", "write code", "code for", "generate code", "write script",
+                "create function", "write a function", "write a script", "code a", "implement",
+                "write python", "write program", "write a program"
+            ])
+        ) and not any(w in norm_cmd for w in ["full-stack", "complex project", "entire app", "kanban", "benchmark"])
+
+        # 4. Voice OS Actions (YouTube song playback, terminal commands)
         os_action_res = self.os_actions.detect_and_handle_os_action(cmd_clean)
-        if os_action_res:
+
+        if is_open_app_cmd:
+            gui_res = self.gui_agent.execute_gui_command(cmd_clean)
+            res = {
+                "type": "gui_action",
+                "spoken_command": cmd_clean,
+                "spoken_response": gui_res.get("spoken_response", f"Executed command: {cmd_clean}"),
+                "gui_res": gui_res,
+                "agent_trace": [
+                    {
+                        "agent": "Lead Builder & GUI Operator",
+                        "output": {
+                            "action": gui_res.get("action"),
+                            "active_app": gui_res.get("active_app"),
+                            "executed_steps": gui_res.get("executed_steps", [])
+                        }
+                    }
+                ]
+            }
+        elif is_audit_dir:
+            target_dir = self.directory_auditor.resolve_target_directory(cmd_clean, default_dir=self.repo_dir)
+            audit_res = self.directory_auditor.audit_directory(target_dir, objective=cmd_clean)
+            res = {
+                "type": "directory_audit",
+                "spoken_command": cmd_clean,
+                "target_dir": target_dir,
+                "scanned_files_count": audit_res.get("scanned_files_count", 0),
+                "issues_count": audit_res.get("issues_count", 0),
+                "issues": audit_res.get("issues", []),
+                "report_markdown": audit_res.get("report_markdown", ""),
+                "test_results": audit_res.get("test_results", {}),
+                "spoken_response": audit_res.get("spoken_response"),
+                "agent_trace": [
+                    {
+                        "agent": "Zero-Hallucination Critic",
+                        "output": {
+                            "action": "Directory Code Audit",
+                            "target_dir": target_dir,
+                            "scanned_files": audit_res.get("scanned_files_count", 0),
+                            "issues_found": audit_res.get("issues_count", 0)
+                        }
+                    }
+                ]
+            }
+        elif is_write_code:
+            code_res = self.workspace_agent.write_code_for_user(cmd_clean)
+            res = {
+                "type": "code_creation",
+                "spoken_command": cmd_clean,
+                "target_file": code_res.get("filename"),
+                "patched_code": code_res.get("code"),
+                "generated_files": {code_res.get("filename"): code_res.get("code")},
+                "ast_syntax_valid": code_res.get("ast_syntax_valid", True),
+                "full_path": code_res.get("full_path"),
+                "spoken_response": code_res.get("spoken_response"),
+                "agent_trace": [
+                    {
+                        "agent": "Lead Builder Agent",
+                        "output": {
+                            "action": "Generated source code",
+                            "filename": code_res.get("filename"),
+                            "size_bytes": code_res.get("size"),
+                            "ast_syntax_valid": code_res.get("ast_syntax_valid", True)
+                        }
+                    }
+                ]
+            }
+        elif os_action_res:
             res = {
                 "type": "os_action",
                 "spoken_command": cmd_clean,
@@ -268,17 +381,33 @@ class JarvisMultiAgentSwarm:
                 ]
             }
         else:
-            # Check if user wants to build a new project
-            lower_cmd = cmd_clean.lower()
             is_build_project = (
-                any(k in lower_cmd for k in ["build", "make", "create", "scaffold", "generate"]) and
-                any(k in lower_cmd for k in ["project", "app", "application", "task manager", "service", "system"])
-            ) or any(k in lower_cmd for k in ["build a project", "make a project", "create project", "scaffold", "new project"])
+                any(k in norm_cmd for k in ["build", "make", "create", "scaffold", "generate"]) and
+                any(k in norm_cmd for k in ["project", "app", "application", "task manager", "service", "system"])
+            ) or any(k in norm_cmd for k in ["build a project", "make a project", "create project", "scaffold", "new project"])
+
+            is_explicit_repo_triage = any(k in norm_cmd for k in ["payment_service", "auth_middleware", "issue_router", "gst webhook", "jwt auth", "razorpay"])
             
             if is_build_project:
                 res = self._execute_build_project_swarm(cmd_clean)
-            else:
+            elif is_explicit_repo_triage:
                 res = self._execute_repo_triage_swarm(cmd_clean, simulate_hallucination)
+            else:
+                # Dynamic open-ended general intelligence response via Gemma 4
+                gen_prompt = f"User instruction: '{cmd_clean}'. Provide a direct, professional, and helpful response acknowledging action or answering their query directly as J.A.R.V.I.S."
+                gemma_ans = self.engine.call_agent("Co-Leader", "System Coordinator", gen_prompt)
+                ans_text = gemma_ans.get("content") or gemma_ans.get("output_data") or f"Understood, sir. Processing: {cmd_clean}"
+                res = {
+                    "type": "general_response",
+                    "spoken_command": cmd_clean,
+                    "spoken_response": ans_text,
+                    "agent_trace": [
+                        {
+                            "agent": "Co-Leader & Chief Coordinator",
+                            "output": {"response": ans_text}
+                        }
+                    ]
+                }
 
         res["inference_meta"] = {
             "source": self.engine.last_inference_source,

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. MARK LXXXV — 3D Holographic Cockpit, Mouse Agent &amp; Gemma 4 Swarm</title>
+  <title>J.A.R.V.I.S. CRIMSON OS — 3D Red Particle Core, Neural Memory Graph &amp; Antigravity Directory Studio</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,2550 +11,1195 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --neon-cyan: #00f0ff;
-      --stark-gold: #f59e0b;
-      --deep-space: #020611;
+      --crimson-core: #ff1e27;
+      --crimson-glow: #dc2626;
+      --ember-orange: #ff5500;
+      --pitch-black: #000000;
     }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #020611;
+      background-color: #000000;
       background-image:
-        radial-gradient(circle at 50% -10%, rgba(0, 240, 255, 0.22) 0%, transparent 55%),
-        radial-gradient(circle at 12% 35%, rgba(99, 102, 241, 0.14) 0%, transparent 45%),
-        radial-gradient(circle at 88% 25%, rgba(245, 158, 11, 0.12) 0%, transparent 45%),
-        linear-gradient(rgba(0, 240, 255, 0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 240, 255, 0.04) 1px, transparent 1px);
-      background-size: 100% 100%, 100% 100%, 100% 100%, 38px 38px, 38px 38px;
-      color: #e2f1ff;
+        radial-gradient(circle at 50% 42%, rgba(255, 30, 39, 0.14) 0%, rgba(120, 0, 10, 0.05) 42%, #000000 75%);
+      color: #ffe4e6;
       overflow-x: hidden;
-      perspective: 1600px;
     }
-    .font-hud {
-      font-family: 'Orbitron', sans-serif;
-    }
-    .mono {
-      font-family: 'JetBrains Mono', monospace;
-    }
+    .font-hud { font-family: 'Orbitron', sans-serif; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* 3D Helmet Cockpit Tilt Mode for Entire Dashboard */
-    #cockpitWrapper {
-      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-      transform-style: preserve-3d;
-    }
-    .cockpit-3d-engaged {
-      transform: rotateX(4deg) scale(0.985);
-    }
-
-    /* Advanced 3D Holographic Glass Panel with Multi-Layer Depth */
-    .stark-panel {
-      position: relative;
-      background: linear-gradient(145deg, rgba(8, 22, 44, 0.82) 0%, rgba(3, 10, 22, 0.92) 100%);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(0, 240, 255, 0.32);
+    /* Crimson Glass Panels */
+    .crimson-panel {
+      background: linear-gradient(155deg, rgba(20, 4, 7, 0.88) 0%, rgba(5, 1, 2, 0.96) 100%);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 30, 39, 0.35);
       box-shadow:
-        0 24px 50px -12px rgba(0, 0, 0, 0.85),
-        0 0 32px rgba(0, 240, 255, 0.11),
-        inset 0 1px 1px rgba(255, 255, 255, 0.18),
-        inset 0 0 28px rgba(0, 240, 255, 0.06);
-      transform-style: preserve-3d;
-      transition: transform 0.18s ease-out, border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-    .stark-panel::before {
-      content: '';
-      position: absolute;
-      top: -2px; left: -2px;
-      width: 18px; height: 18px;
-      border-top: 2.5px solid #00f0ff;
-      border-left: 2.5px solid #00f0ff;
-      border-top-left-radius: 14px;
-      pointer-events: none;
-      box-shadow: -3px -3px 10px rgba(0, 240, 255, 0.45);
-    }
-    .stark-panel::after {
-      content: '';
-      position: absolute;
-      bottom: -2px; right: -2px;
-      width: 18px; height: 18px;
-      border-bottom: 2.5px solid #f59e0b;
-      border-right: 2.5px solid #f59e0b;
-      border-bottom-right-radius: 14px;
-      pointer-events: none;
-      box-shadow: 3px 3px 10px rgba(245, 158, 11, 0.45);
+        0 20px 50px rgba(0, 0, 0, 0.95),
+        0 0 30px rgba(255, 30, 39, 0.12),
+        inset 0 1px 0 rgba(255, 120, 120, 0.18);
     }
 
-    /* Interactive 3D Perspective Cards with Floating Z-Layers & Dynamic Glare */
     .card-3d {
       position: relative;
       transform-style: preserve-3d;
-      perspective: 1100px;
-      background: linear-gradient(155deg, rgba(12, 28, 56, 0.85) 0%, rgba(4, 12, 26, 0.95) 100%);
-      border: 1px solid rgba(0, 240, 255, 0.28);
-      box-shadow:
-        0 16px 32px -10px rgba(0, 0, 0, 0.8),
-        0 0 20px rgba(0, 240, 255, 0.08),
-        inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      transition: transform 0.15s ease-out, box-shadow 0.25s ease, border-color 0.25s ease;
-      will-change: transform;
+      perspective: 1000px;
+      background: linear-gradient(160deg, rgba(28, 5, 9, 0.88) 0%, rgba(8, 1, 3, 0.96) 100%);
+      border: 1px solid rgba(255, 45, 55, 0.3);
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.85), 0 0 18px rgba(255, 30, 39, 0.08);
+      transition: transform 0.15s ease-out, border-color 0.25s ease, box-shadow 0.25s ease;
     }
     .card-3d:hover {
-      border-color: rgba(0, 240, 255, 0.75);
-      box-shadow:
-        0 26px 48px -12px rgba(0, 240, 255, 0.32),
-        0 0 28px rgba(0, 240, 255, 0.22),
-        inset 0 1px 1px rgba(255, 255, 255, 0.3);
-    }
-    .z-layer-top {
-      transform: translateZ(26px);
-    }
-    .z-layer-mid {
-      transform: translateZ(14px);
+      border-color: rgba(255, 60, 70, 0.85);
+      box-shadow: 0 22px 44px rgba(255, 30, 39, 0.26), 0 0 25px rgba(255, 30, 39, 0.22);
     }
 
-    @keyframes pulseRing {
-      0% { transform: scale(0.92); opacity: 0.9; }
-      50% { transform: scale(1.08); opacity: 0.35; }
-      100% { transform: scale(0.92); opacity: 0.9; }
-    }
-    .reactor-pulse {
-      animation: pulseRing 2.2s infinite ease-in-out;
-    }
-    @keyframes spinSlow {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
-    .hud-ring-spin {
-      animation: spinSlow 16s linear infinite;
-    }
-    @keyframes waveBar {
-      0%, 100% { height: 6px; }
-      50% { height: 26px; }
-    }
-    .wave-active span {
-      animation: waveBar 0.6s infinite ease-in-out;
-    }
-    .wave-active span:nth-child(2) { animation-delay: 0.1s; }
-    .wave-active span:nth-child(3) { animation-delay: 0.2s; }
-    .wave-active span:nth-child(4) { animation-delay: 0.3s; }
-    .wave-active span:nth-child(5) { animation-delay: 0.15s; }
-    .wave-active span:nth-child(6) { animation-delay: 0.25s; }
-
-    /* Virtual Mouse Cursor Smooth Glide & Click Ripple */
-    #jarvisMouseCursor {
-      transition: left 0.68s cubic-bezier(0.22, 1, 0.36, 1), top 0.68s cubic-bezier(0.22, 1, 0.36, 1);
-      pointer-events: none;
-      z-index: 40;
-    }
-    @keyframes clickRippleEffect {
-      0% { transform: scale(0.3); opacity: 1; }
-      100% { transform: scale(2.5); opacity: 0; }
-    }
-    .cursor-ripple {
-      animation: clickRippleEffect 0.55s ease-out forwards;
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scroll::-webkit-scrollbar-track {
-      background: #040a14;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #0e3a52;
-      border-radius: 3px;
-    }
+    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #050001; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #5c0a11; border-radius: 3px; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-cyan-500/30">
+<body class="min-h-screen flex flex-col selection:bg-red-600/40">
 
-  <!-- STARK INDUSTRIES MARK LXXXV 3D HOLOGRAPHIC HEADER -->
-  <header class="border-b border-cyan-400/35 bg-[#030914]/90 backdrop-blur-2xl sticky top-0 z-30 shadow-[0_8px_32px_rgba(0,240,255,0.12)]">
-    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <!-- 3D Glowing Arc Reactor Emblem -->
-        <div id="reactorIcon" class="relative w-12 h-12 rounded-full bg-cyan-950/95 border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_32px_rgba(0,240,255,0.6)]">
-          <div class="w-9 h-9 rounded-full border border-dashed border-amber-400 hud-ring-spin"></div>
-          <div class="absolute w-5 h-5 rounded-full border-2 border-cyan-300 reactor-pulse"></div>
-          <div class="absolute w-2.5 h-2.5 rounded-full bg-white shadow-[0_0_16px_#00f0ff]"></div>
+  <!-- MINIMALIST FLOATING PILL BAR (EXACT LAYOUT FROM YOUTUBE SHORT wXc_OZS5FmM + MEMORY GRAPH TAB FROM kpBMntwPOL8) -->
+  <header class="sticky top-0 z-40 pt-3 pb-2 px-4 flex flex-wrap items-center justify-between gap-3 bg-black/80 backdrop-blur-md border-b border-red-950/60">
+    <div class="flex items-center gap-2.5">
+      <span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_14px_#ff1e27] animate-ping"></span>
+      <span class="font-hud text-sm font-black tracking-widest text-red-500">J.A.R.V.I.S. // CRIMSON CORE</span>
+      <span id="liveConnectionBadge" class="text-[10px] mono px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-red-300">
+        Probing Ollama (11434) &amp; Backend (8000)...
+      </span>
+    </div>
+
+    <!-- Center Floating Pill Navigation (Matches Video 1: Voice | Chat | Memory & Swarm | Antigravity Directory Studio) -->
+    <nav class="inline-flex items-center gap-1 rounded-full bg-[#0d0204] px-2 py-1 border border-red-500/40 shadow-[0_0_25px_rgba(255,30,39,0.22)]">
+      <button type="button" data-nav="voice" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_16px_#ff1e27] flex items-center gap-1.5 transition">
+        <span>&#9679;</span> Voice Core
+      </button>
+      <button type="button" data-nav="memory" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+        <span>&#10022;</span> Memory &amp; Swarm Graph (<span id="navNodeCount">9</span>)
+      </button>
+      <button type="button" data-nav="studio" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+        <span>&#9881;</span> Directory &amp; Code Studio
+      </button>
+      <button type="button" data-nav="chat" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+        <span>&#9993;</span> Tool &amp; Chat Trace
+      </button>
+    </nav>
+
+    <div class="flex items-center gap-2">
+      <button id="btnPickLocalDir" type="button" class="px-3 py-1.5 rounded-full text-xs font-bold bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 mono transition">
+        &#128193; Mount Local Folder
+      </button>
+      <button id="btnOpenConfig" type="button" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 border border-red-500/40 text-red-300 transition">
+        LLM &amp; Voice Config
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN STAGE -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-3 flex flex-col justify-between space-y-4">
+
+    <!-- ======================================================================================== -->
+    <!-- TAB 1: CRIMSON 3D PARTICLE, GYROSCOPIC RING & RADIAL SPIKE VOICE CORE (VIDEO 1 STYLE)    -->
+    <!-- ======================================================================================== -->
+    <section id="tabVoice" class="flex-1 flex flex-col items-center justify-between min-h-[540px] relative">
+
+      <!-- Top Floating Telemetry Strip -->
+      <div class="w-full flex flex-wrap items-center justify-between gap-2 text-xs mono z-10">
+        <div class="px-3 py-1.5 rounded-xl bg-black/80 border border-red-500/35 text-red-300">
+          Mounted Folder: <strong id="mountedDirLabel" class="text-white">. (Current Workspace)</strong>
         </div>
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="font-hud text-base sm:text-lg font-extrabold tracking-widest bg-gradient-to-r from-cyan-300 via-white to-amber-300 bg-clip-text text-transparent">
-              J.A.R.V.I.S. MARK LXXXV 3D
-            </h1>
-            <span class="text-[10px] mono font-bold uppercase px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-400/50 shadow-[0_0_12px_rgba(0,240,255,0.25)]">
-              HP HyperX i7-14th &bull; RTX 5060 &bull; 24GB
-            </span>
-            <span class="text-[10px] mono font-semibold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-400/50">
-              3D Cards + Live Mouse GUI
-            </span>
+        <div id="activeAgentBanner" class="px-3 py-1.5 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200">
+          Active Agent: <strong>Co-Leader Standby</strong>
+        </div>
+      </div>
+
+      <!-- CENTERPIECE: PURE BLACK + GLOWING RED 3D PARTICLE & SPIKE ORB (Matches YouTube Short wXc_OZS5FmM) -->
+      <div id="crimsonOrbContainer" class="relative w-full h-[390px] sm:h-[430px] flex items-center justify-center cursor-grab active:cursor-grabbing">
+        <canvas id="crimsonOrbCanvas" class="w-full h-full block"></canvas>
+
+        <!-- Subtle HUD Overlay around Orb -->
+        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 text-center pointer-events-none space-y-1 max-w-2xl px-4">
+          <div id="orbStatusTitle" class="font-hud text-xs uppercase tracking-[0.25em] text-red-400 font-bold">
+            CRIMSON NEURAL CORE ONLINE // ZERO CANNED DIALOGUES
           </div>
-          <p class="text-[11px] text-cyan-200/75 mono">
-            HOLOGRAPHIC 3D COCKPIT // MOVE MOUSE OVER ANY CARD FOR 3D DEPTH TILT
+          <p id="liveJarvisTranscript" class="text-xs sm:text-sm text-red-100/95 bg-black/85 border border-red-500/35 rounded-2xl px-4 py-2.5 shadow-[0_0_30px_rgba(255,30,39,0.2)]">
+            Speak or type any command below — e.g. "Open Calculator", "Audit my mounted folder and fix all bugs", or "Write a Python port scanner and test it".
           </p>
         </div>
       </div>
 
-      <!-- Navigation & 3D Cockpit Controls -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <div class="inline-flex rounded-xl bg-slate-950/95 p-1 border border-cyan-500/35 shadow-inner">
-          <button id="tabBtnHud" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/25 text-cyan-200 border border-cyan-400/50 transition">
-            Live Mission HUD
+      <!-- BOTTOM COMMAND BAR (SUPPORTS REAL APP LAUNCH, REAL DIRECTORY AUDIT, REAL CODE BUILD & WEB RESEARCH) -->
+      <div class="w-full crimson-panel rounded-2xl p-3.5 space-y-2.5 z-10">
+        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
+          <button id="btnVoiceMic" type="button" class="px-4 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(255,30,39,0.55)] shrink-0 transition">
+            <span id="micDot" class="w-2.5 h-2.5 rounded-full bg-white"></span>
+            <span id="micLabel">Speak to J.A.R.V.I.S.</span>
           </button>
-          <button id="tabBtnRepo" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
-            Project AST &amp; Codebase (<span id="repoFileCount">3</span>)
-          </button>
-          <button id="tabBtnBackend" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
-            Python Backend Code
-          </button>
-          <button id="tabBtnGuide" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition">
-            Step-by-Step Setup &amp; Share
+
+          <input id="targetDirInput" type="text" value="." placeholder="Target Directory Path (e.g. C:\Users\You\project or .)" class="md:w-64 bg-black border border-red-500/40 rounded-xl px-3 py-2.5 text-xs text-red-200 mono focus:outline-none focus:border-red-400" />
+
+          <input id="mainCommandInput" type="text" placeholder="Tell J.A.R.V.I.S. what to do (open any app, audit &amp; fix files in folder, research web, or write code)..." class="flex-1 bg-black border border-red-500/50 rounded-xl px-3.5 py-2.5 text-xs text-white mono focus:outline-none focus:border-red-400" />
+
+          <button id="btnExecuteCommand" type="button" class="px-5 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-hud font-bold text-xs tracking-wider shadow-[0_0_24px_rgba(255,30,39,0.5)] shrink-0 transition">
+            EXECUTE &rarr;
           </button>
         </div>
 
-        <button id="btnToggle3dCockpit" type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-500/20 border border-cyan-400/50 hover:bg-cyan-500/30 text-cyan-200 transition shadow-[0_0_15px_rgba(0,240,255,0.2)]">
-          3D Helmet Tilt: OFF
-        </button>
-
-        <button id="btnToggleMute" type="button" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950 border border-cyan-500/30 hover:border-cyan-400 text-cyan-200 flex items-center gap-1.5 transition">
-          <span id="muteStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span id="muteStatusLabel">Voice TTS: ON</span>
-        </button>
-
-        <div id="inferenceModeBadge" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/90 border border-emerald-400 text-emerald-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.3)]">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="inferenceModeText">LIVE OLLAMA GPU (jarvis-gemma:latest)</span>
+        <!-- Quick Action Triggers for Testing Real Capabilities -->
+        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] mono pt-1">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-red-400/80">Test Real Actions:</span>
+            <button type="button" data-cmd="Open Calculator and Notepad on my system" class="quick-cmd px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-200 transition">
+              Launch System App
+            </button>
+            <button type="button" data-cmd="Inspect all files in the target directory, find every syntax or logic mistake, and fix them" class="quick-cmd px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-200 transition">
+              Audit Folder &amp; Fix Mistakes
+            </button>
+            <button type="button" data-cmd="Write a complete Python CLI system monitor using psutil with unit tests and run it" class="quick-cmd px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-200 transition">
+              Write &amp; Run Code
+            </button>
+          </div>
+          <span id="activeModelFooter" class="text-red-300/80">LLM: Auto-Detecting...</span>
         </div>
-
-        <button id="btnOpenApiModal" type="button" class="px-3 py-1.5 rounded-xl text-xs font-medium bg-amber-500/20 border border-amber-400/50 hover:bg-amber-500/30 text-amber-200 transition">
-          API Keys (<span id="apiModeBadge">Sandbox + WebSpeech</span>)
-        </button>
       </div>
-    </div>
-  </header>
+    </section>
 
-  <!-- Toast Notification -->
-  <div id="toastBanner" class="hidden fixed bottom-5 right-5 z-50 max-w-sm bg-slate-950/95 border border-cyan-400 text-cyan-100 px-4 py-3 rounded-2xl shadow-[0_0_25px_rgba(0,240,255,0.35)] text-xs flex items-center gap-2.5 mono">
-    <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0 animate-ping"></span>
-    <span id="toastMessage">SYSTEM ONLINE.</span>
-  </div>
+    <!-- ======================================================================================== -->
+    <!-- TAB 2: NEURAL MEMORY CONNECTION GRAPH & LIVE AGENT TASK MONITOR (VIDEO 2 kpBMntwPOL8)    -->
+    <!-- ======================================================================================== -->
+    <section id="tabMemory" class="hidden space-y-4">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
 
-  <!-- MAIN 3D COCKPIT WRAPPER -->
-  <main id="cockpitWrapper" class="flex-1 max-w-7xl w-full mx-auto px-4 py-4 space-y-5">
-
-    <!-- VIEW 1: 3D IRON MAN HOLOGRAPHIC MISSION HUD -->
-    <section id="viewHud" class="space-y-5">
-
-      <!-- TOP ROW: 3D HOLOGRAPHIC ARC REACTOR CORE (4 COLS) + LIVE 3D DESKTOP & MOUSE VIEWPORT (8 COLS) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-
-        <!-- Left (4 cols): Interactive 3D Three.js Holographic Core with Laser-Linked Agent Nodes -->
-        <div class="lg:col-span-4 stark-panel tilt-surface rounded-2xl p-4 flex flex-col justify-between space-y-3">
-          <div class="flex items-center justify-between z-layer-top">
-            <div class="flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-ping"></span>
-              <span class="font-hud text-xs font-bold uppercase tracking-wider text-cyan-300">3D NEURAL SWARM CORE</span>
-            </div>
-            <span id="missionGlobalBadge" class="px-2 py-0.5 rounded bg-cyan-950/90 border border-cyan-400/50 text-cyan-200 text-[10px] mono font-semibold">
-              ONLINE // RTX 5060
-            </span>
-          </div>
-
-          <!-- 3D Three.js Hologram Container -->
-          <div id="jarvis3dContainer" class="relative h-60 w-full cursor-grab active:cursor-grabbing rounded-2xl bg-[#020712]/90 border border-cyan-400/35 overflow-hidden shadow-[inset_0_0_30px_rgba(0,240,255,0.15)]">
-            <canvas id="jarvis3dCanvas" class="w-full h-full block"></canvas>
-            <div class="absolute top-2 left-2.5 right-2.5 flex items-center justify-between pointer-events-none text-[10px] mono text-cyan-300">
-              <span>DRAG TO ROTATE 3D CORE</span>
-              <span id="cursorCoordBadge" class="text-amber-300 font-bold">MOUSE XY: [420, 118]</span>
-            </div>
-            <div class="absolute bottom-2 left-2.5 right-2.5 flex items-center justify-between pointer-events-none text-[10px] mono text-cyan-200 bg-slate-950/85 px-2.5 py-1 rounded-lg border border-cyan-500/30">
-              <span>CENTER: CO-LEADER</span>
-              <span id="orbitNodesLabel">ORBIT: 4 AGENTS + 0 SUB</span>
-            </div>
-          </div>
-
-          <!-- J.A.R.V.I.S. Voice Synthesis 3D Card -->
-          <div class="card-3d tilt-card rounded-xl p-3 space-y-1.5">
-            <div class="flex items-center justify-between z-layer-top">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-amber-300 mono">BULBUL V4 FLASH VOICE</span>
-              <div class="flex items-center gap-2">
-                <span id="ttsLatencyBadge" class="text-[10px] mono text-emerald-300">24kHz LIVE</span>
-                <button id="btnReplaySpeech" type="button" class="px-2 py-0.5 rounded bg-cyan-500/25 hover:bg-cyan-500/35 border border-cyan-400/50 text-cyan-200 text-[10px] mono font-semibold">
-                  Speak Again
-                </button>
-              </div>
-            </div>
-            <p id="jarvisSpokenText" class="text-xs text-cyan-50 leading-relaxed z-layer-mid">
-              "3D Holographic Cockpit active on your HP HyperX RTX 5060. Hover over any 3D card to feel the depth tilt, or click Turn 1 and Turn 2 to watch my mouse operate YouTube live."
-            </p>
-          </div>
-        </div>
-
-        <!-- Right (8 cols): 3D LIVE VISUAL LAPTOP DESKTOP & VISIBLE MOUSE OPERATOR -->
-        <div class="lg:col-span-8 stark-panel tilt-surface rounded-2xl p-4 flex flex-col justify-between space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2 z-layer-top">
+        <!-- Left (8 cols): Interactive 2D/3D Force-Directed Neural Memory & Agent Synapse Canvas -->
+        <div class="lg:col-span-8 crimson-panel rounded-2xl p-4 flex flex-col justify-between space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-400/50 mono">
-                  GEMMA 4 SCREEN POINTING + PYAUTOGUI
-                </span>
-                <h2 class="font-hud text-sm font-bold text-white tracking-wide">
-                  3D Live Desktop Viewport — Visible Mouse Movement, Clicks &amp; Typing
-                </h2>
-              </div>
-              <p class="text-[11px] text-slate-300">
-                Maintains multi-turn desktop state ("Open YouTube" &rarr; "Search for Believer" &rarr; "Click Top Video") with visible cursor trajectories.
+              <h2 class="font-hud text-sm font-bold text-red-400 tracking-wide">
+                NEURAL MEMORY &amp; MULTI-AGENT SYNAPSE TOPOLOGY
+              </h2>
+              <p class="text-xs text-red-200/70">
+                Live view of all Memory Blocks (Red Hexagons), Core Agents (Crimson Orbs), Spawned Sub-Agents (Amber Nodes), and Stored Facts — click any node to inspect its memory payload and active task.
               </p>
             </div>
-            <div class="flex items-center gap-2 text-[11px] mono">
-              <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-cyan-500/40 text-cyan-300">
-                App: <strong id="desktopActiveAppBadge" class="text-amber-300">Desktop Home</strong>
-              </span>
-              <span id="guiCurrentActionBadge" class="px-2.5 py-1 rounded-lg bg-emerald-950/90 border border-emerald-400/40 text-emerald-300">
-                Cursor Standby
-              </span>
-            </div>
-          </div>
-
-          <!-- INTERACTIVE 3D VIRTUAL LAPTOP SCREEN WITH MOVING MOUSE CURSOR -->
-          <!-- 4-MODE LIVE TELEMETRY VIEWPORT CONTAINER -->
-          <div id="virtualDesktopStage" class="relative w-full h-[380px] rounded-2xl bg-[#050d1a] border-2 border-cyan-400/50 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.9),inset_0_0_30px_rgba(0,240,255,0.12)] select-none flex flex-col">
-
-            <!-- Top Viewport Control Bar with 4 Mode Selector Tabs -->
-            <div class="h-10 bg-slate-950/95 border-b border-cyan-500/35 px-3 flex items-center justify-between text-[11px] mono shrink-0 z-20">
-              <div class="flex items-center gap-1.5">
-                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
-                <span id="virtualWindowTitle" class="text-cyan-200 font-semibold ml-2 hidden sm:inline">J.A.R.V.I.S. TELEMETRY COCKPIT</span>
-              </div>
-              <!-- 4 Viewport Tabs -->
-              <div class="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-cyan-500/30">
-                <button id="btnTabMode1" type="button" onclick="switchViewportMode(1)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 bg-cyan-500 text-slate-950 shadow">
-                  <span>🖥️</span> <span>Live Screen</span>
-                </button>
-                <button id="btnTabMode2" type="button" onclick="switchViewportMode(2)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60">
-                  <span>🌐</span> <span>Research</span>
-                </button>
-                <button id="btnTabMode3" type="button" onclick="switchViewportMode(3)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60">
-                  <span>📁</span> <span>Workspace</span>
-                </button>
-                <button id="btnTabMode4" type="button" onclick="switchViewportMode(4)" class="px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60">
-                  <span>💻</span> <span>Terminal</span>
-                </button>
-              </div>
-              <div id="virtualAddressBar" class="px-2.5 py-0.5 rounded bg-slate-900 border border-cyan-500/30 text-cyan-300 text-[10px] truncate max-w-[140px]">
-                live://stream/0
-              </div>
-            </div>
-
-            <!-- VIEWPORT MODE 1: LIVE DESKTOP SCREEN & PHYSICAL MOUSE RETICLE -->
-            <div id="viewportMode1" class="relative flex-1 w-full h-full bg-black flex items-center justify-center overflow-hidden">
-              <img id="liveDesktopStream" src="/api/screen-frame" alt="Live Screen Stream" class="w-full h-full object-contain pointer-events-none select-none" onerror="this.src='/api/screen-frame?t=' + Date.now();" />
-              <!-- Holographic Mouse Reticle -->
-              <div id="jarvisMouseCursor" style="left: 50%; top: 50%; transition: left 0.15s ease-out, top 0.15s ease-out;" class="absolute flex items-center gap-1.5 pointer-events-none z-30">
-                <div class="relative flex items-center justify-center">
-                  <div id="cursorClickRipple" class="hidden absolute w-12 h-12 rounded-full border-2 border-cyan-300 shadow-[0_0_15px_#00f0ff] animate-ping"></div>
-                  <div class="w-6 h-6 rounded-full border border-cyan-400 bg-cyan-400/20 flex items-center justify-center shadow-[0_0_15px_#00f0ff]">
-                    <div class="w-1.5 h-1.5 bg-amber-400 rounded-full"></div>
-                  </div>
-                </div>
-                <span id="cursorActionTag" class="px-2 py-0.5 rounded-md bg-cyan-950/95 border border-cyan-400 text-[10px] mono font-bold text-cyan-100 whitespace-nowrap shadow-[0_0_15px_rgba(0,240,255,0.4)]">
-                  PHYSICAL RETICLE [0, 0]
-                </span>
-              </div>
-              <!-- Stream Overlay Status Badge -->
-              <div class="absolute bottom-2 left-2 px-2 py-1 rounded-lg bg-slate-950/80 border border-cyan-500/40 text-[10px] mono text-cyan-300 flex items-center gap-1.5 backdrop-blur-md">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>REAL DESKTOP MJPEG / MSS STREAM</span>
-              </div>
-            </div>
-
-            <!-- VIEWPORT MODE 2: AUTONOMOUS WEB RESEARCH & DOCUMENTATION FEED -->
-            <div id="viewportMode2" class="hidden flex-1 w-full h-full bg-[#050e1a] p-3 overflow-hidden flex flex-col md:flex-row gap-3">
-              <!-- Left: Crawled URLs & Source Dossier Notes -->
-              <div class="w-full md:w-1/3 flex flex-col gap-2 border-r border-cyan-500/20 pr-2">
-                <div class="flex items-center justify-between text-xs font-bold text-cyan-300">
-                  <span>Crawled Web Sources</span>
-                  <span id="researchSourceCountBadge" class="px-2 py-0.5 rounded bg-cyan-950 text-[10px] border border-cyan-400/40">0 Sources</span>
-                </div>
-                <div id="researchSourcesList" class="flex-1 overflow-y-auto space-y-1.5 text-[11px] mono text-slate-300 pr-1">
-                  <div class="p-2 rounded bg-slate-950/70 border border-slate-800 text-slate-400">Waiting for research mission...</div>
-                </div>
-              </div>
-              <!-- Right: Real-time Markdown Dossier -->
-              <div class="flex-1 flex flex-col gap-1.5">
-                <div class="text-xs font-bold text-amber-300 flex items-center justify-between">
-                  <span>Synthesis Dossier (RESEARCH_DOSSIER.md)</span>
-                  <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('researchDossierViewer').innerText); alert('Copied dossier!');" class="text-[10px] text-cyan-400 hover:underline">Copy Markdown</button>
-                </div>
-                <pre id="researchDossierViewer" class="flex-1 overflow-y-auto p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-xs mono text-cyan-100 whitespace-pre-wrap leading-relaxed">No dossier generated yet. Trigger an autonomous research mission below!</pre>
-              </div>
-            </div>
-
-            <!-- VIEWPORT MODE 3: REAL WORKSPACE FILE TREE & CODE VIEWER -->
-            <div id="viewportMode3" class="hidden flex-1 w-full h-full bg-[#050e1a] p-3 overflow-hidden flex flex-col md:flex-row gap-3">
-              <!-- Left: Physical File Tree -->
-              <div class="w-full md:w-1/4 flex flex-col gap-2 border-r border-cyan-500/20 pr-2">
-                <div class="flex items-center justify-between text-xs font-bold text-cyan-300">
-                  <span>Workspace Files</span>
-                  <button type="button" onclick="refreshWorkspaceFilesList()" class="text-[10px] text-cyan-400 hover:underline">↻ Refresh</button>
-                </div>
-                <div id="workspaceFilesTree" class="flex-1 overflow-y-auto space-y-1 text-[11px] mono text-slate-300 pr-1">
-                  <div class="p-2 rounded bg-slate-950/70 border border-slate-800 text-slate-400">Loading files from disk...</div>
-                </div>
-              </div>
-              <!-- Right: Code Editor Viewer -->
-              <div class="flex-1 flex flex-col gap-1.5">
-                <div class="flex items-center justify-between text-xs font-bold">
-                  <span id="activeWorkspaceFileName" class="text-amber-300 font-hud">Select a file</span>
-                  <span id="activeWorkspaceFileSize" class="text-slate-400 text-[10px] mono">0 bytes</span>
-                </div>
-                <pre id="workspaceCodeViewer" class="flex-1 overflow-y-auto p-2.5 rounded-xl bg-slate-950 border border-cyan-500/30 text-xs mono text-emerald-300 whitespace-pre leading-relaxed select-text">Select any file on the left to inspect real generated source code.</pre>
-              </div>
-            </div>
-
-            <!-- VIEWPORT MODE 4: LIVE TERMINAL & SELF-HEALING TEST CONSOLE -->
-            <div id="viewportMode4" class="hidden flex-1 w-full h-full bg-black p-3 overflow-hidden flex flex-col gap-2">
-              <div class="flex items-center justify-between text-xs font-bold text-emerald-400 border-b border-emerald-500/30 pb-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span class="font-hud">SUBPROCESS TERMINAL &amp; SELF-HEALING CONSOLE</span>
-                </div>
-                <span id="terminalExitCodeBadge" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 text-[10px] mono border border-emerald-400/40">EXIT: 0</span>
-              </div>
-              <!-- Stream of Terminal Logs -->
-              <div id="liveTerminalOutput" class="flex-1 overflow-y-auto p-2 rounded-lg bg-slate-950/90 border border-slate-800 text-xs mono text-green-300 space-y-1 whitespace-pre-wrap select-text leading-relaxed">
-[J.A.R.V.I.S. Terminal Session Initialized]
-HP HyperX RTX 5060 Subprocess Engine Ready. Type any command below or trigger an autonomous mission.
-              </div>
-              <!-- Interactive Terminal Input -->
-              <form id="terminalCommandForm" onsubmit="event.preventDefault(); submitTerminalCommand();" class="flex items-center gap-2 pt-1 border-t border-slate-800">
-                <span class="text-xs font-bold text-cyan-400 mono">$</span>
-                <input id="terminalCmdInput" type="text" placeholder="Enter shell command (e.g. dir, python -m pytest, tree, pip list)..." class="flex-1 bg-slate-950 border border-cyan-500/30 rounded-lg px-2.5 py-1.5 text-xs text-white mono focus:outline-none focus:border-cyan-400" />
-                <button type="submit" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 text-xs font-bold mono">Run &crarr;</button>
-              </form>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      <!-- SECOND ROW: 3D VOICE COMMAND DECK & 3D INTERACTIVE MISSION CARDS -->
-      <div class="stark-panel rounded-2xl p-4 space-y-3.5">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-          <div class="lg:col-span-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-            <button id="btnMicRecord" type="button" class="px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(0,240,255,0.5)] shrink-0 transition">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
-              </svg>
-              <span id="micBtnLabel">Speak to J.A.R.V.I.S.</span>
-            </button>
-
-            <div class="flex-1 relative">
-              <textarea id="voiceCommandInput" rows="2" class="w-full bg-slate-950/95 border border-cyan-400/50 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-amber-400 mono shadow-inner" placeholder="Say 'Open YouTube', then 'Can you search for Believer', or 'Make a Smart Expense Tracker project'...">Jarvis, open YouTube</textarea>
-            </div>
-
-            <button id="btnRunMission" type="button" class="px-5 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-slate-950 font-extrabold text-xs shadow-[0_0_24px_rgba(245,158,11,0.45)] shrink-0 transition">
-              Execute Multi-Agent Mission &rarr;
-            </button>
-          </div>
-
-          <div class="lg:col-span-4 flex flex-wrap items-center justify-between gap-2">
-            <select id="selectSingleGemmaModel" aria-label="Select Single Gemma 4 Model" class="bg-slate-950 border border-cyan-500/40 rounded-lg px-2 py-1.5 text-[11px] text-cyan-200 mono">
-              <option value="gemma-4-12B-it" selected>gemma-4-12B-it (RTX 5060 Local)</option>
-              <option value="gemma-4-26B-A4B-it">gemma-4-26B-A4B-it (Cloud MoE)</option>
-              <option value="gemma-4-E4B-it">gemma-4-E4B-it (Ultra-Fast Edge)</option>
-            </select>
-            <select id="selectLanguage" aria-label="Spoken Language" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-200">
-              <option value="en-IN">English (IN)</option>
-              <option value="hi-IN">Hinglish</option>
-              <option value="kn-IN">Kannada-EN</option>
-            </select>
-            <select id="selectSpeaker" aria-label="Bulbul Speaker" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-[11px] text-slate-200">
-              <option value="shubh_enhi_ads">Shubh</option>
-              <option value="simran_en_customer">Simran</option>
-              <option value="aditya_en_narration">Aditya</option>
-            </select>
-            <div id="waveformBars" class="flex items-center gap-1 h-6 px-1">
-              <span class="w-1 bg-cyan-400 rounded-full h-2"></span>
-              <span class="w-1 bg-cyan-400 rounded-full h-3"></span>
-              <span class="w-1 bg-amber-400 rounded-full h-2"></span>
-              <span class="w-1 bg-cyan-400 rounded-full h-4"></span>
-              <span class="w-1 bg-amber-400 rounded-full h-2"></span>
-              <span class="w-1 bg-cyan-400 rounded-full h-3"></span>
-            </div>
-            <span id="voiceStateBadge" class="hidden">Standby</span>
-          </div>
-        </div>
-
-        <!-- 4 Universal Quick-Launch Template Chips -->
-        <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-cyan-500/20">
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
-            <button type="button" onclick="selectTemplateChip(1)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-cyan-400 transition">
-              <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-cyan-300">1. Deep Web Research</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-200">RESEARCH</span>
-              </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Next.js 15 vs Remix 2026 performance benchmark dossier</div>
-            </button>
-
-            <button type="button" onclick="selectTemplateChip(2)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-amber-400 transition">
-              <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-amber-300">2. Build Full-Stack App</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">SWARM</span>
-              </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Realtime Kanban Board with SQLite &amp; WebSocket backend</div>
-            </button>
-
-            <button type="button" onclick="selectTemplateChip(3)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-purple-400 transition">
-              <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-purple-300">3. Desktop Automation</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-200">DESKTOP GUI</span>
-              </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Open VS Code, create a Python script, and execute it</div>
-            </button>
-
-            <button type="button" onclick="selectTemplateChip(4)" class="scenario-btn card-3d tilt-card text-left p-3 rounded-2xl hover:border-emerald-400 transition">
-              <div class="flex items-center justify-between z-layer-top mb-1">
-                <span class="font-hud text-xs font-bold text-emerald-300">4. Web Automation</span>
-                <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-200">BROWSER</span>
-              </div>
-              <div class="text-[11px] text-slate-300 z-layer-mid">Open Hacker News, locate top AI post, and extract insights</div>
-            </button>
-          </div>
-
-          <label class="card-3d tilt-card inline-flex items-center gap-2 cursor-pointer select-none text-[11px] text-rose-200 bg-rose-950/60 border border-rose-500/50 px-3.5 py-3 rounded-2xl shrink-0">
-            <input id="chkSimulateHallucination" type="checkbox" class="rounded border-slate-600 text-rose-500 focus:ring-0" />
-            <span class="font-semibold z-layer-top">Test Co-Leader Blocking Hallucination</span>
-          </label>
-        </div>
-      </div>
-
-      <!-- THIRD ROW: 3D HOLOGRAPHIC AGENT SWARM CARDS (HOVER FOR 3D PERSPECTIVE TILT!) -->
-      <div class="stark-panel rounded-2xl p-4 space-y-3.5">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 mono">3D AGENT HOLOGRAM CARDS</span>
-              <h3 class="font-hud text-sm font-bold text-white">1 Gemma 4 Model &rarr; Co-Leader, Shared Blackboard &amp; Self-Spawning Agents</h3>
-            </div>
-            <p id="blackboardSummaryText" class="text-xs text-slate-300 mono mt-0.5">
-              Active Goal: Ready | Shared Files: 3 | Spawned Child Sub-Agents: 0 | Co-Leader Review: Active
-            </p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span id="blackboardModelBadge" class="text-[11px] mono px-2.5 py-1 rounded-xl bg-cyan-950 text-cyan-200 border border-cyan-500/40">Base Weights: gemma-4-12B-it</span>
-            <button id="btnSpawnCustomSubAgent" type="button" class="px-3 py-1.5 rounded-xl bg-purple-500/25 hover:bg-purple-500/35 border border-purple-400/50 text-purple-200 font-bold text-xs transition shadow-[0_0_15px_rgba(192,132,252,0.25)]">
-              + Agent Spawn Sub-Agent
-            </button>
-          </div>
-        </div>
-
-        <!-- 4 Interactive 3D Agent Cards with Floating Z-Layers -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          <div id="agentCardOrchestrator" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
-            <div class="flex items-center justify-between z-layer-top">
-              <span class="font-hud text-xs font-bold text-cyan-300">1. Co-Leader &amp; Reviewer</span>
-              <span class="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_12px_#00f0ff]" id="dotOrchestrator"></span>
-            </div>
-            <p class="text-[11px] text-slate-300 z-layer-mid">Breaks down complex projects, manages all agents, and audits every output.</p>
-            <div id="statusOrchestrator" class="z-layer-top text-[11px] mono text-cyan-100 bg-slate-950/90 p-2.5 rounded-xl border border-cyan-500/30 min-h-[44px] shadow-inner">
-              Managing team via single Gemma 4 model.
+              <button id="btnAddMemoryFact" type="button" class="px-3 py-1.5 rounded-xl bg-red-600/25 hover:bg-red-600/40 border border-red-500/50 text-red-200 text-xs font-semibold mono">
+                + Store Custom Memory Block
+              </button>
+              <button id="btnSpawnGraphAgent" type="button" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-xs font-semibold mono">
+                + Spawn Sub-Agent Node
+              </button>
             </div>
           </div>
 
-          <div id="agentCardExplorer" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
-            <div class="flex items-center justify-between z-layer-top">
-              <span class="font-hud text-xs font-bold text-amber-300">2. Architect &amp; GUI/AST Map</span>
-              <span class="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_12px_#f59e0b]" id="dotExplorer"></span>
-            </div>
-            <p class="text-[11px] text-slate-300 z-layer-mid">Maps live screen UI coordinates &amp; codebase AST symbols onto the Blackboard.</p>
-            <div id="statusExplorer" class="z-layer-top text-[11px] mono text-amber-100 bg-slate-950/90 p-2.5 rounded-xl border border-amber-500/30 min-h-[44px] shadow-inner">
-              Blackboard synced: 3 modules, 6 functions.
-            </div>
-          </div>
-
-          <div id="agentCardBuilder" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
-            <div class="flex items-center justify-between z-layer-top">
-              <span class="font-hud text-xs font-bold text-indigo-300">3. Lead Builder &amp; GUI Operator</span>
-              <span class="w-3 h-3 rounded-full bg-indigo-400 shadow-[0_0_12px_#818cf8]" id="dotBuilder"></span>
-            </div>
-            <p class="text-[11px] text-slate-300 z-layer-mid">Executes visible mouse/keyboard actions, writes code, and spawns sub-agents.</p>
-            <div id="statusBuilder" class="z-layer-top text-[11px] mono text-indigo-100 bg-slate-950/90 p-2.5 rounded-xl border border-indigo-500/30 min-h-[44px] shadow-inner">
-              Ready to move mouse or build project modules.
-            </div>
-          </div>
-
-          <div id="agentCardCritic" class="card-3d tilt-card p-4 rounded-2xl space-y-2">
-            <div class="flex items-center justify-between z-layer-top">
-              <span class="font-hud text-xs font-bold text-emerald-300">4. Zero-Hallucination Critic</span>
-              <span class="w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]" id="dotCritic"></span>
-            </div>
-            <p class="text-[11px] text-slate-300 z-layer-mid">Verifies screen state, AST syntax &amp; symbol provenance before sign-off.</p>
-            <div id="statusCritic" class="z-layer-top text-[11px] mono text-emerald-100 bg-slate-950/90 p-2.5 rounded-xl border border-emerald-500/30 min-h-[44px] shadow-inner">
-              Guard active: 0 unverified claims allowed.
+          <div class="relative w-full h-[430px] rounded-2xl bg-black border border-red-500/40 overflow-hidden shadow-inner">
+            <canvas id="memoryGraphCanvas" class="w-full h-full block cursor-pointer"></canvas>
+            <div class="absolute top-2.5 left-3 flex flex-wrap items-center gap-3 text-[10px] mono pointer-events-none">
+              <span class="flex items-center gap-1 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Core AI Agent</span>
+              <span class="flex items-center gap-1 text-amber-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Spawned Sub-Agent</span>
+              <span class="flex items-center gap-1 text-rose-300"><span class="w-2.5 h-2.5 rotate-45 bg-rose-500 inline-block"></span> Memory Block</span>
+              <span class="flex items-center gap-1 text-emerald-300"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Stored File / Fact</span>
             </div>
           </div>
         </div>
 
-        <div class="bg-slate-950/90 border border-purple-500/35 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs font-semibold text-purple-300">Dynamically Spawned Child Sub-Agents:</span>
-            <div id="dynamicSubAgentsList" class="flex flex-wrap gap-1.5 text-[11px] mono text-slate-300">
-              <span class="text-slate-500 text-xs">None spawned yet — run a mission or click "+ Agent Spawn Sub-Agent".</span>
-            </div>
-          </div>
-          <span id="spawnedCountBadge" class="text-[11px] mono text-purple-200 bg-purple-950/80 px-2.5 py-0.5 rounded-full border border-purple-500/30">0 Active Sub-Agents</span>
-        </div>
-      </div>
-
-      <!-- FOURTH ROW: LIVE AGENT TEAM CHAT BUS + VERIFIED CODE & 3D RECEIPT CARDS -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <div class="lg:col-span-5 stark-panel rounded-2xl p-4 flex flex-col space-y-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-cyan-300">Team Chat &amp; Mouse Telemetry Log</h3>
-              <p class="text-[11px] text-slate-400">Real-time GUI coordinates + inter-agent collaboration</p>
-            </div>
-            <button id="btnClearLog" type="button" class="text-[11px] text-slate-400 hover:text-slate-200 underline">Reset Trace</button>
-          </div>
-          <div id="agentMessageLog" class="custom-scroll overflow-y-auto max-h-72 space-y-2 pr-1"></div>
-        </div>
-
-        <div class="lg:col-span-7 stark-panel rounded-2xl p-4 flex flex-col space-y-3">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-cyan-300">Verified Code / GUI Script &amp; 3D Provenance Cards</h3>
-              <p id="activePatchFileLabel" class="text-[11px] mono text-amber-300">Target File: payment_service.py (Lines 1–23)</p>
-            </div>
-            <button id="btnApplyPatchToRepo" type="button" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 text-xs font-semibold transition">
-              Apply Verified Patch to Repo
-            </button>
-          </div>
-
-          <div id="provenanceStrip" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            <div class="card-3d tilt-card rounded-xl p-2.5">
-              <div class="text-[10px] text-slate-400 z-layer-mid">Shared Blackboard</div>
-              <div id="receiptFileStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">100% SYNCED</div>
-            </div>
-            <div class="card-3d tilt-card rounded-xl p-2.5">
-              <div class="text-[10px] text-slate-400 z-layer-mid">AST / GUI Check</div>
-              <div id="receiptAstStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">VALIDATED</div>
-            </div>
-            <div class="card-3d tilt-card rounded-xl p-2.5">
-              <div class="text-[10px] text-slate-400 z-layer-mid">Co-Leader Review</div>
-              <div id="receiptSymbolStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">APPROVED</div>
-            </div>
-            <div class="card-3d tilt-card rounded-xl p-2.5">
-              <div class="text-[10px] text-slate-400 z-layer-mid">Verification Suite</div>
-              <div id="receiptTestStatus" class="text-xs font-bold text-emerald-400 mono z-layer-top">PASSED</div>
+        <!-- Right (4 cols): Live Agent Task Matrix & Selected Memory Node Inspector -->
+        <div class="lg:col-span-4 crimson-panel rounded-2xl p-4 flex flex-col justify-between space-y-3">
+          <div class="space-y-2">
+            <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-red-400">
+              Selected Node Inspector
+            </h3>
+            <div id="selectedNodeCard" class="card-3d rounded-xl p-3 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span id="inspNodeTitle" class="text-xs font-bold text-white">Co-Leader &amp; Planner</span>
+                <span id="inspNodeType" class="text-[10px] mono px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40">agent</span>
+              </div>
+              <p id="inspNodeTask" class="text-xs text-red-200 mono">Click any node in the graph to inspect its memory links and current task.</p>
+              <div id="inspNodeConnections" class="text-[10px] mono text-red-300/80 pt-1 border-t border-red-950">
+                Connected Synapses: 5
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="bg-slate-950 border border-cyan-500/25 rounded-xl p-3 flex flex-col">
-              <span class="text-[11px] font-semibold text-cyan-200 mb-1.5">Executed Python / GUI / Project Code</span>
-              <pre id="codeDiffViewer" class="custom-scroll overflow-x-auto text-[11px] mono leading-relaxed text-slate-200 max-h-48"></pre>
-            </div>
-            <div class="bg-slate-950 border border-emerald-500/25 rounded-xl p-3 flex flex-col">
-              <span class="text-[11px] font-semibold text-emerald-200 mb-1.5">Co-Leader Audit &amp; Telemetry Log</span>
-              <pre id="criticTestViewer" class="custom-scroll overflow-x-auto text-[11px] mono leading-relaxed text-emerald-300 max-h-48"></pre>
-            </div>
+          <div class="flex-1 flex flex-col space-y-2 overflow-hidden">
+            <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-red-400">
+              Live Agent Task &amp; Memory Matrix
+            </h3>
+            <div id="agentTaskMatrixList" class="custom-scroll overflow-y-auto space-y-2 flex-1 pr-1"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 2: PROJECT AST & CODEBASE EDITOR -->
-    <section id="viewRepo" class="hidden space-y-4">
-      <div class="stark-panel rounded-2xl p-5 space-y-4">
+    <!-- ======================================================================================== -->
+    <!-- TAB 3: ANTIGRAVITY DIRECTORY AUDITOR, BUG FINDER & LIVE CODE STUDIO                      -->
+    <!-- ======================================================================================== -->
+    <section id="tabStudio" class="hidden space-y-4">
+      <div class="crimson-panel rounded-2xl p-4 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 class="font-hud text-sm font-bold text-white">Shared Project Blackboard Files &amp; AST Symbol Index</h2>
-            <p class="text-xs text-slate-400">Every file generated by your spawned agents is automatically added here and indexed so agents never hallucinate.</p>
+            <h2 class="font-hud text-sm font-bold text-red-400">
+              ANTIGRAVITY DIRECTORY AUDITOR, MISTAKE FINDER &amp; LIVE CODE EDITOR
+            </h2>
+            <p class="text-xs text-red-200/75">
+              Mount any local folder via Chrome File System API (`&#128193; Mount Local Folder`) or enter a path for the FastAPI backend to scan files, detect syntax/logic bugs, and write real fixes to disk.
+            </p>
           </div>
-          <button id="btnAddNewFile" type="button" class="px-3 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 text-xs font-semibold">
-            + Add Custom Project File
-          </button>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="btnScanCurrentDir" type="button" class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold mono transition">
+              1. Scan Directory &amp; Find Mistakes
+            </button>
+            <button id="btnAutoFixAll" type="button" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold mono transition">
+              2. AI Auto-Fix Detected Mistakes
+            </button>
+            <button id="btnSaveDiskFile" type="button" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-200 text-xs font-bold mono transition">
+              Save File to Disk
+            </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <!-- File Tree & Detected Mistakes List -->
           <div class="lg:col-span-4 space-y-3">
-            <div id="repoFileList" class="space-y-2"></div>
-            <div class="bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2">
-              <div class="text-xs font-semibold text-amber-300">Extracted AST Symbol Table</div>
-              <div id="astSymbolList" class="space-y-1.5 text-xs mono text-slate-300"></div>
+            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-red-400 mono">Scanned Directory Files</span>
+                <span id="studioFileCount" class="text-[10px] mono text-red-300">0 files</span>
+              </div>
+              <div id="studioFileList" class="custom-scroll max-h-48 overflow-y-auto space-y-1.5 text-xs mono">
+                <div class="text-red-300/60 text-[11px]">Click "&#128193; Mount Local Folder" or "1. Scan Directory" to load real files from your PC.</div>
+              </div>
+            </div>
+
+            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-400 mono">Detected Mistakes &amp; Bugs</span>
+                <span id="studioMistakeCount" class="text-[10px] mono text-amber-300">0 issues</span>
+              </div>
+              <div id="studioMistakeList" class="custom-scroll max-h-48 overflow-y-auto space-y-1.5 text-xs mono">
+                <div class="text-red-300/60 text-[11px]">No mistakes scanned yet.</div>
+              </div>
             </div>
           </div>
 
-          <div class="lg:col-span-8 bg-slate-950 border border-slate-800 rounded-2xl p-3 space-y-2">
-            <div class="flex items-center justify-between">
-              <span id="editorFileName" class="text-xs font-bold mono text-cyan-300">payment_service.py</span>
-              <button id="btnSaveRepoFile" type="button" class="px-3 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold hover:bg-emerald-500/30">
-                Save &amp; Re-Index AST
-              </button>
+          <!-- Code Editor & AI Diff / Terminal Output -->
+          <div class="lg:col-span-8 space-y-3">
+            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span id="studioActiveFileName" class="text-xs font-bold mono text-red-300">No file selected</span>
+                <span id="studioAstBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-red-950 text-red-200 border border-red-500/30">Ready</span>
+              </div>
+              <textarea id="studioCodeEditor" rows="13" class="w-full bg-[#080102] border border-red-900/60 rounded-xl p-3 text-xs mono text-red-50 focus:outline-none focus:border-red-500" placeholder="Select a scanned file or ask J.A.R.V.I.S. to write code..."></textarea>
             </div>
-            <textarea id="repoFileEditor" rows="16" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs mono text-slate-100 focus:outline-none focus:border-cyan-400"></textarea>
+
+            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-1.5">
+              <span class="text-xs font-bold text-red-400 mono">Real AI Diagnostic Report &amp; Shell Output</span>
+              <pre id="studioDiagnosticOutput" class="custom-scroll max-h-40 overflow-auto text-[11px] mono text-red-200">Waiting for directory scan or command execution...</pre>
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 3: PYTHON BACKEND CODE -->
-    <section id="viewBackend" class="hidden space-y-4">
-      <div class="stark-panel rounded-2xl p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+    <!-- ======================================================================================== -->
+    <!-- TAB 4: LIVE TOOL EXECUTION & CONVERSATION TRACE                                          -->
+    <!-- ======================================================================================== -->
+    <section id="tabChat" class="hidden space-y-4">
+      <div class="crimson-panel rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
           <div>
-            <h2 class="font-hud text-sm font-bold text-white">Production Python Backend Code (PyAutoGUI Mouse Agent + 1 Gemma 4 Model + Sarvam Voice + QLoRA)</h2>
-            <p class="text-xs text-slate-400">Included in `jarvis_gemma4_sarvam_fullstack.zip` — tailored for your HP HyperX RTX 5060 (24GB RAM) laptop.</p>
+            <h2 class="font-hud text-sm font-bold text-red-400">REAL-TIME LLM &amp; OS TOOL EXECUTION LOG</h2>
+            <p class="text-xs text-red-200/70">Every prompt, real tool invocation, directory scan, app launch, and live LLM response</p>
           </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <button type="button" data-pyfile="gui_computer_agent.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-400/40">gui_computer_agent.py (Mouse &amp; Screen)</button>
-            <button type="button" data-pyfile="agents.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">agents.py (Gemma 4 Swarm)</button>
-            <button type="button" data-pyfile="os_actions.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">os_actions.py (YouTube &amp; Project Builder)</button>
-            <button type="button" data-pyfile="sarvam_voice.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">sarvam_voice.py (Saaras + Bulbul)</button>
-            <button type="button" data-pyfile="ast_grounding.py" class="pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700">ast_grounding.py (Zero-Hallucination)</button>
-            <button id="btnCopyBackendCode" type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-500/20 text-emerald-200 border border-emerald-400/40">Copy File</button>
-          </div>
+          <button id="btnClearTrace" type="button" class="text-xs text-red-400 underline">Clear Log</button>
         </div>
-        <pre id="backendCodeViewer" class="custom-scroll overflow-x-auto bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs mono text-slate-200 max-h-[460px]"></pre>
+        <div id="chatTraceContainer" class="custom-scroll max-h-[460px] overflow-y-auto space-y-2.5 pr-1"></div>
       </div>
     </section>
 
-    <!-- VIEW 4: STEP-BY-STEP RTX 5060 SETUP & PUBLIC ACCESS GUIDE -->
-    <section id="viewGuide" class="hidden space-y-4">
-      <div class="stark-panel rounded-2xl p-5 space-y-4">
-        <h2 class="font-hud text-base font-bold text-white">Complete Step-by-Step Guide for HP HyperX (i7 14th Gen + RTX 5060 + 24GB RAM)</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
-            <div class="text-cyan-300 font-bold uppercase tracking-wider z-layer-top">1. Best Gemma 4 Setup for Your RTX 5060 + 24GB RAM</div>
-            <p class="text-slate-300 leading-relaxed z-layer-mid">
-              Your laptop has an <strong>NVIDIA RTX 5060 (8GB GDDR7 VRAM) + 24GB System RAM + i7-14th Gen</strong>. Run <code class="text-cyan-300">gemma-4-12B-it</code> (Unified Multimodal with native Screen UI Pointing) locally via Ollama with GPU offload:<br/>
-              <code class="block bg-slate-950 p-2 rounded mt-1 text-emerald-300 mono">ollama run gemma4:12b</code>
-              Or for ultra-fast 60+ tok/sec local GUI control totally inside GPU VRAM, run <code class="text-amber-300 mono">ollama run gemma4:e4b</code>.
-            </p>
-          </div>
-
-          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
-            <div class="text-amber-300 font-bold uppercase tracking-wider z-layer-top">2. Physical Mouse &amp; GUI Automation (`PyAutoGUI`)</div>
-            <p class="text-slate-300 leading-relaxed z-layer-mid">
-              <code class="text-amber-300">backend/gui_computer_agent.py</code> captures your real screen via <code class="text-amber-300">PIL.ImageGrab</code>, asks Gemma 4 Vision for normalized <code class="text-amber-300">[0..1000]</code> coordinates, and glides your physical mouse cursor smoothly with <code class="text-amber-300">pyautogui.moveTo(x, y, duration=0.75, tween=pyautogui.easeInOutQuad)</code>.
-            </p>
-          </div>
-
-          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
-            <div class="text-emerald-300 font-bold uppercase tracking-wider z-layer-top">3. Launch Full-Stack Server on Your Laptop</div>
-            <pre class="bg-slate-950 p-2.5 rounded-xl text-[11px] mono text-slate-200 overflow-x-auto z-layer-mid">unzip jarvis_gemma4_sarvam_fullstack.zip -d jarvis_mark85
-cd jarvis_mark85
-python3 -m venv .venv &amp;&amp; source .venv/bin/activate
-pip install -r requirements.txt
-export SARVAM_API_KEY="your_sarvam_key"
-export JARVIS_GEMMA_MODEL="gemma-4-12b-it"
-cd backend &amp;&amp; uvicorn main:app --reload --port 8000</pre>
-          </div>
-
-          <div class="card-3d tilt-card rounded-2xl p-4 space-y-2">
-            <div class="text-purple-300 font-bold uppercase tracking-wider z-layer-top">4. Optional QLoRA GUI Fine-Tuning on Your RTX 5060</div>
-            <p class="text-slate-300 leading-relaxed z-layer-mid">
-              We included <code class="text-purple-300">backend/finetune_gemma4_gui_qlora.py</code> configured with 4-bit NormalFloat (<code class="text-purple-300">nf4</code>) and <code class="text-purple-300">bfloat16</code> compute specifically for your RTX 5060 Tensor Cores.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
   </main>
 
-  <!-- API Keys Modal -->
-  <div id="apiModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#081224] border border-cyan-500/50 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+  <!-- LLM & Voice Config Modal -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="crimson-panel rounded-2xl max-w-md w-full p-5 space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-bold text-white">Connect Gemma 4 &amp; Sarvam AI Keys</h3>
-        <button id="btnCloseApiModal" type="button" class="text-slate-400 hover:text-white text-xs">Close &times;</button>
+        <h3 class="font-hud text-sm font-bold text-red-400">LLM Brain, Local Backend &amp; Voice Config</h3>
+        <button id="btnCloseConfig" type="button" class="text-red-300 hover:text-white text-xs">Close &times;</button>
       </div>
-      <div class="space-y-3">
+      <div class="space-y-3 text-xs">
         <div>
-          <label for="inputGeminiKey" class="block text-xs text-slate-300 mb-1">Google AI Studio `GEMINI_API_KEY` (or leave blank for local Ollama):</label>
-          <input id="inputGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mono" />
+          <label for="cfgBackendUrl" class="block text-red-200 mb-1">FastAPI OS Backend (`uvicorn main:app --port 8000`):</label>
+          <input id="cfgBackendUrl" type="text" value="http://127.0.0.1:8000" class="w-full bg-black border border-red-500/40 rounded-lg px-3 py-2 text-white mono" />
         </div>
         <div>
-          <label for="inputSarvamKey" class="block text-xs text-slate-300 mb-1">Sarvam AI `api-subscription-key` (Saaras v4 / Bulbul v4):</label>
-          <input id="inputSarvamKey" type="password" placeholder="sarvam_..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mono" />
-        </div>
-      </div>
-      <div class="flex items-center justify-end gap-2 pt-2">
-        <button id="btnSaveApiKeys" type="button" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs">
-          Save Keys
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add New File Modal -->
-  <div id="newFileModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-[#081224] border border-cyan-500/50 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
-      <div class="flex items-center justify-between">
-        <h3 class="text-sm font-bold text-white">Add Project File to Shared Blackboard</h3>
-        <button id="btnCloseNewFileModal" type="button" class="text-slate-400 hover:text-white text-xs">Close &times;</button>
-      </div>
-      <div class="space-y-3">
-        <div>
-          <label for="inputNewFileName" class="block text-xs text-slate-300 mb-1">File Name (e.g. `inventory_sync.py`):</label>
-          <input id="inputNewFileName" type="text" placeholder="inventory_sync.py" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white mono" />
+          <label for="cfgOllamaUrl" class="block text-red-200 mb-1">Direct Ollama URL (for direct browser &rarr; local LLM calls):</label>
+          <input id="cfgOllamaUrl" type="text" value="http://127.0.0.1:11434" class="w-full bg-black border border-red-500/40 rounded-lg px-3 py-2 text-white mono" />
         </div>
         <div>
-          <label for="inputNewFileCode" class="block text-xs text-slate-300 mb-1">Python Code:</label>
-          <textarea id="inputNewFileCode" rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-xs text-white mono">def sync_warehouse_stock(sku_id: str, delta: int) -> dict:
-    return {"sku": sku_id, "updated_qty": delta}</textarea>
+          <label for="cfgGeminiKey" class="block text-red-200 mb-1">Google Gemini API Key (optional fallback if Ollama is off):</label>
+          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-black border border-red-500/40 rounded-lg px-3 py-2 text-white mono" />
         </div>
       </div>
-      <div class="flex justify-end gap-2">
-        <button id="btnConfirmNewFile" type="button" class="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs">
-          Add &amp; Index File
+      <div class="flex justify-end">
+        <button id="btnSaveConfig" type="button" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs">
+          Save &amp; Probe Connections
         </button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- STATE & MULTI-TURN DESKTOP MEMORY ---
+    // ============================================================================
+    // GLOBAL STATE — ZERO HARDCODED DIALOGUES!
+    // ============================================================================
     const state = {
-      ttsEnabled: true,
-      cockpit3dMode: false,
-      activeTab: 'hud',
-      selectedFile: 'payment_service.py',
-      singleModel: 'gemma-4-12B-it',
+      backendUrl: 'http://127.0.0.1:8000',
+      ollamaUrl: 'http://127.0.0.1:11434',
       geminiKey: '',
-      sarvamKey: '',
-      spawnedSubAgents: [],
-      pulse3dIntensity: 1.0,
-      desktopSession: {
-        youtubeOpen: false,
-        activeApp: 'Desktop Home',
-        lastSearchQuery: ''
+      backendOnline: false,
+      ollamaOnline: false,
+      activeModel: 'none',
+      availableModels: [],
+      orbPulse: 1.0,
+      mountedDirHandle: null,
+      mountedFiles: {}, // relative_path -> { content, handle, size, lines }
+      selectedFile: '',
+      detectedMistakes: [],
+      memoryGraph: {
+        nodes: [
+          { id: 'agent_coleader', label: 'Co-Leader & Planner', type: 'agent', status: 'idle', current_task: 'Awaiting user command', x: 380, y: 210 },
+          { id: 'agent_os_operator', label: 'OS App & GUI Operator', type: 'agent', status: 'idle', current_task: 'Launches Windows apps & controls GUI', x: 190, y: 110 },
+          { id: 'agent_dir_auditor', label: 'Directory & AST Auditor', type: 'agent', status: 'idle', current_task: 'Scans local directories for bugs', x: 570, y: 110 },
+          { id: 'agent_coder', label: 'Autonomous Code Builder', type: 'agent', status: 'idle', current_task: 'Writes & patches real files on disk', x: 570, y: 320 },
+          { id: 'agent_researcher', label: 'Deep Web Researcher', type: 'agent', status: 'idle', current_task: 'Searches live docs & GitHub', x: 190, y: 320 },
+          { id: 'mem_episodic', label: 'Episodic Command Memory', type: 'memory', status: 'ready', current_task: 'Stores session prompts & outcomes', x: 380, y: 65 },
+          { id: 'mem_workspace', label: 'Directory & AST Memory', type: 'memory', status: 'ready', current_task: 'Stores local files & syntax trees', x: 690, y: 215 },
+          { id: 'mem_research', label: 'Web Research Memory', type: 'memory', status: 'ready', current_task: 'Stores scraped web facts', x: 85, y: 215 },
+          { id: 'mem_system', label: 'Windows OS State Memory', type: 'memory', status: 'ready', current_task: 'Tracks launched apps & PIDs', x: 380, y: 375 }
+        ],
+        edges: [
+          { source: 'agent_coleader', target: 'agent_os_operator', relation: 'dispatches', active: false },
+          { source: 'agent_coleader', target: 'agent_dir_auditor', relation: 'dispatches', active: false },
+          { source: 'agent_coleader', target: 'agent_coder', relation: 'dispatches', active: false },
+          { source: 'agent_coleader', target: 'agent_researcher', relation: 'dispatches', active: false },
+          { source: 'agent_coleader', target: 'mem_episodic', relation: 'reads/writes', active: true },
+          { source: 'agent_dir_auditor', target: 'mem_workspace', relation: 'indexes AST', active: false },
+          { source: 'agent_coder', target: 'mem_workspace', relation: 'writes files', active: false },
+          { source: 'agent_researcher', target: 'mem_research', relation: 'stores docs', active: false },
+          { source: 'agent_os_operator', target: 'mem_system', relation: 'launches apps', active: false }
+        ]
       },
-      lastSpokenText: '3D Holographic Cockpit active on your HP HyperX RTX 5060. Hover over any 3D card to feel the depth tilt, or click Turn 1 and Turn 2 to watch my mouse operate YouTube live.',
-      pendingPatch: null,
-      files: {
-        'payment_service.py': `"""Open-Source Order & Payment Microservice (Hacktoberfest Target Repo)"""
-from typing import Dict, Any
-
-PROCESSED_WEBHOOKS = set()
-
-def calculate_gst_total(subtotal_inr: float, tax_rate: float = 0.18) -> float:
-    # BUG 1: Subtracts tax instead of adding 18% GST
-    if subtotal_inr < 0:
-        raise ValueError("Subtotal cannot be negative")
-    return round(subtotal_inr - (subtotal_inr * tax_rate), 2)
-
-def process_razorpay_webhook(event_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    # BUG 2: Missing duplicate event_id check causes double charges
-    order_id = payload.get("order_id", "UNKNOWN")
-    amount = payload.get("amount_inr", 0.0)
-    PROCESSED_WEBHOOKS.add(event_id)
-    return {
-        "status": "captured",
-        "order_id": order_id,
-        "charged_inr": calculate_gst_total(amount)
-    }`,
-        'auth_middleware.py': `"""JWT Session & Role Guard Middleware"""
-import time
-from typing import Dict, Any
-
-def verify_jwt_session(token_payload: Dict[str, Any], current_epoch: int) -> bool:
-    exp = token_payload.get("exp", 0)
-    if exp <= current_epoch:
-        return True
-    return True
-
-def require_maintainer_role(user_obj: Dict[str, Any]) -> bool:
-    roles = user_obj.get("roles", [])
-    return "maintainer" in roles or "admin" in roles`,
-        'issue_router.py': `"""Hacktoberfest PR & Issue Auto-Triage Module"""
-from typing import List, Dict
-
-def assign_issue_labels(title: str, body: str) -> List[str]:
-    labels = ["hacktoberfest-accepted"]
-    if "security" in title:
-        labels.append("priority:critical")
-    return labels
-
-def route_pr_reviewer(changed_files: List[str]) -> str:
-    if not changed_files:
-        return "unassigned"
-    if "payment_service.py" in changed_files:
-        return "@fintech-core-team"
-    return "@community-maintainers"`
-      }
+      selectedGraphNode: null
     };
 
-    // --- REAL INTERACTIVE 3D MOUSE-TRACKING TILT ENGINE FOR ALL .tilt-card ELEMENTS ---
-    function attach3DTiltListeners() {
-      document.querySelectorAll('.tilt-card').forEach(card => {
-        if (card.dataset.tiltAttached) return;
-        card.dataset.tiltAttached = 'true';
-        card.addEventListener('mousemove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-          const rotateX = ((y - centerY) / centerY) * -8.5;
-          const rotateY = ((x - centerX) / centerX) * 8.5;
-          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateZ(6px)`;
-        });
-        card.addEventListener('mouseleave', () => {
-          card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
-        });
-      });
-    }
-
-    const BACKEND_FILES = {
-      'gui_computer_agent.py': `# Real-Life Laptop GUI & Visible Mouse Control Agent (PyAutoGUI + Gemma 4 Screen Pointing)
-# Runs natively on your HP HyperX i7 14th Gen + RTX 5060 (24GB RAM)
-
-import pyautogui
-from PIL import ImageGrab
-
-pyautogui.FAILSAFE = True  # Move mouse to top-left corner (0,0) to abort anytime
-
-class JarvisGUIComputerAgent:
-    def __init__(self, model_name="gemma-4-12b-it"):
-        self.model_name = model_name
-        self.active_app = "desktop"
-        self.active_url = ""
-
-    def move_and_click_visibly(self, norm_x: float, norm_y: float, duration: float = 0.75):
-        screen_w, screen_h = pyautogui.size()
-        px = int(max(10, min(screen_w - 10, (norm_x / 1000.0) * screen_w)))
-        py = int(max(10, min(screen_h - 10, (norm_y / 1000.0) * screen_h)))
-        # Smooth human-like cursor glide so you watch J.A.R.V.I.S. move the mouse!
-        pyautogui.moveTo(px, py, duration=duration, tween=pyautogui.easeInOutQuad)
-        pyautogui.click(px, py)
-        return {"pixel_x": px, "pixel_y": py}
-
-    def type_search_visibly(self, query: str):
-        pyautogui.write(query, interval=0.04)
-        pyautogui.press("enter")`,
-      'agents.py': `# Track 1 - G1: Single Gemma 4 Model -> Dynamic Recursive Agent Spawning & Shared Project Blackboard
-class SingleGemma4Engine:
-    def __init__(self, model_name: str = "gemma-4-12b-it"):
-        self.model_name = model_name  # 1 single model powers Co-Leader + all spawned sub-agents!
-
-    def call_agent(self, agent_name: str, role_prompt: str, shared_blackboard: dict, task: str):
-        system_prompt = (
-            f"<|think|>\\nYou are {agent_name} running on {self.model_name}.\\n"
-            f"ROLE: {role_prompt}\\nSHARED PROJECT BLACKBOARD: {shared_blackboard}\\n"
-            "You can chat with teammates, create files, or call spawn_sub_agent({name, role, task})."
-        )
-        return self._invoke_gemma(system_prompt, task)`,
-      'os_actions.py': `# Real-World Voice OS Actions: Open YouTube & Play Song + Multi-File Project Scaffolder
-import re, urllib.parse, urllib.request, webbrowser
-
-def play_youtube_song(song_query: str, auto_open_browser: bool = True):
-    encoded = urllib.parse.quote_plus(song_query.strip())
-    search_url = f"https://www.youtube.com/results?search_query={encoded}"
-    video_id = None
-    try:
-        req = urllib.request.Request(search_url, headers={"User-Agent": "Mozilla/5.0"})
-        html = urllib.request.urlopen(req, timeout=6).read().decode("utf-8", errors="ignore")
-        matches = re.findall(r"watch\\?v=([a-zA-Z0-9_-]{11})", html)
-        if matches:
-            video_id = matches[0]
-    except Exception:
-        pass
-    watch_url = f"https://www.youtube.com/watch?v={video_id}&autoplay=1" if video_id else search_url
-    if auto_open_browser:
-        webbrowser.open(watch_url, new=2)
-    return {"song_query": song_query, "watch_url": watch_url, "video_id": video_id}`,
-      'sarvam_voice.py': `# Track 1 - G2: Voice-First AI Interaction with Sarvam AI (Saaras v4 + Bulbul v4 Flash)
-import requests
-
-class SarvamVoicePipeline:
-    def __init__(self, api_key: str):
-        self.api_key = api_key
-        self.base_url = "https://api.sarvam.ai"
-
-    def transcribe_speech(self, audio_bytes: bytes, mode: str = "codemix", language_code: str = "en-IN"):
-        headers = {"api-subscription-key": self.api_key}
-        files = {"file": ("command.wav", audio_bytes, "audio/wav")}
-        data = {"model": "saaras:v4", "mode": mode, "language_code": language_code}
-        return requests.post(f"{self.base_url}/speech-to-text", headers=headers, files=files, data=data, timeout=20).json()`,
-      'ast_grounding.py': `# Four-Layer Anti-Hallucination Engine: AST Symbol Indexing + Co-Leader Verification
-import ast
-
-def verify_claim_or_patch(repo_index: dict, target_file: str, proposed_code: str, referenced_symbols: list):
-    if target_file not in repo_index:
-        return False, [f"Hallucinated file path: {target_file}"]
-    try:
-        tree = ast.parse(proposed_code)
-    except SyntaxError as e:
-        return False, [f"AST SyntaxError at line {e.lineno}: {e.msg}"]
-    known_symbols = {fn["name"] for f in repo_index.values() for fn in f["functions"]}
-    for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
-            known_symbols.add(node.name)
-    missing = [s for s in referenced_symbols if s not in known_symbols]
-    return len(missing) == 0, [f"Unverified symbol blocked: {m}" for m in missing]`
-    };
-
-    const YOUTUBE_CATALOG = [
-      { keywords: ['believer', 'imagine dragons'], title: 'Imagine Dragons — Believer (Official Music Video)', videoId: '7wtfhZwyrcc' },
-      { keywords: ['kesariya', 'brahmastra', 'arijit'], title: 'Kesariya — Brahmastra (Arijit Singh)', videoId: 'BddP6PYo2gs' },
-      { keywords: ['arabic kuthu', 'halamithi', 'beast', 'anirudh'], title: 'Arabic Kuthu — Halamithi Habibo (Anirudh)', videoId: 'KUN5Uf9mObQ' },
-      { keywords: ['naatu naatu', 'rrr'], title: 'Naatu Naatu — RRR Official Song', videoId: 'OsU0CGZoV8E' },
-      { keywords: ['jai ho', 'rahman'], title: 'A.R. Rahman — Jai Ho', videoId: 'Yc5OyXmHD0w' }
-    ];
-
-    async function moveVirtualCursorTo(x, y, actionLabel, clickAfterMove = true) {
-      const cursor = document.getElementById('jarvisMouseCursor');
-      const tag = document.getElementById('cursorActionTag');
-      const coordBadge = document.getElementById('cursorCoordBadge');
-      const actionBadge = document.getElementById('guiCurrentActionBadge');
-      const ripple = document.getElementById('cursorClickRipple');
-
-      cursor.style.left = `${x}px`;
-      cursor.style.top = `${y}px`;
-      tag.textContent = actionLabel;
-      coordBadge.textContent = `MOUSE XY: [${x}, ${y}]`;
-      actionBadge.textContent = actionLabel;
-
-      await new Promise(r => setTimeout(r, 700));
-
-      if (clickAfterMove) {
-        ripple.classList.remove('hidden', 'cursor-ripple');
-        void ripple.offsetWidth;
-        ripple.classList.add('cursor-ripple');
-        await new Promise(r => setTimeout(r, 380));
-      }
-    }
-
-    async function typeIntoVirtualInput(inputEl, text) {
-      inputEl.value = '';
-      for (let i = 0; i < text.length; i++) {
-        inputEl.value += text[i];
-        await new Promise(r => setTimeout(r, 42));
-      }
-    }
-
-    // --- THREE.JS IRON MAN HOLOGRAPHIC CORE WITH 3D LASER BEAMS ---
-    let threeScene = null;
-    let threeCamera = null;
-    let threeRenderer = null;
-    let coreSphere = null;
-    let outerWireRing = null;
-    let innerRing = null;
-    let agentMeshes = [];
-    let animFrameId = null;
-
-    function initJarvis3D() {
-      const container = document.getElementById('jarvis3dContainer');
-      const canvas = document.getElementById('jarvis3dCanvas');
+    // ============================================================================
+    // 1. CRIMSON RED 3D PARTICLE, GYROSCOPIC RING & RADIAL SPIKE CORE (VIDEO 1)
+    // ============================================================================
+    function initCrimson3DCore() {
+      const container = document.getElementById('crimsonOrbContainer');
+      const canvas = document.getElementById('crimsonOrbCanvas');
       if (!container || !canvas || typeof THREE === 'undefined') return;
 
-      const width = container.clientWidth || 360;
-      const height = container.clientHeight || 240;
+      const width = container.clientWidth || 700;
+      const height = container.clientHeight || 410;
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 1000);
+      camera.position.set(0, 0.3, 6.2);
 
-      threeScene = new THREE.Scene();
-      threeCamera = new THREE.PerspectiveCamera(46, width / height, 0.1, 1000);
-      threeCamera.position.set(0, 1.35, 5.9);
-      threeCamera.lookAt(0, 0, 0);
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
-      threeRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      threeRenderer.setSize(width, height);
-      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      // Glowing Inner Crimson-Orange Sun Nucleus
+      const innerSun = new THREE.Mesh(
+        new THREE.SphereGeometry(0.62, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xff3b1f, transparent: true, opacity: 0.92 })
+      );
+      scene.add(innerSun);
 
-      const ambient = new THREE.AmbientLight(0x00f0ff, 0.9);
-      threeScene.add(ambient);
-      const pointLight = new THREE.PointLight(0xf59e0b, 2.5, 22);
-      pointLight.position.set(2, 3, 4);
-      threeScene.add(pointLight);
+      // Wireframe Geodesic Crimson Shell
+      const wireShell = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(1.18, 3),
+        new THREE.MeshBasicMaterial({ color: 0xff1e27, wireframe: true, transparent: true, opacity: 0.45 })
+      );
+      scene.add(wireShell);
 
-      const coreGeo = new THREE.IcosahedronGeometry(1.05, 2);
-      const coreMat = new THREE.MeshStandardMaterial({
-        color: 0x00f0ff,
-        emissive: 0x0284c7,
-        emissiveIntensity: 0.85,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.94
+      // 4 Intersecting Gyroscopic Orbital Rings (Matches Video 1)
+      const rings = [];
+      const ringConfigs = [
+        { r: 1.55, tube: 0.018, color: 0xff1e27, rx: 1.1, ry: 0.3 },
+        { r: 1.85, tube: 0.015, color: 0xff5500, rx: -0.8, ry: 0.9 },
+        { r: 2.15, tube: 0.012, color: 0xdc2626, rx: 0.4, ry: -1.2 },
+        { r: 2.42, tube: 0.010, color: 0xff8844, rx: 1.5, ry: 0.1 }
+      ];
+      ringConfigs.forEach(cfg => {
+        const m = new THREE.Mesh(
+          new THREE.TorusGeometry(cfg.r, cfg.tube, 16, 120),
+          new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.78 })
+        );
+        m.rotation.set(cfg.rx, cfg.ry, 0);
+        scene.add(m);
+        rings.push(m);
       });
-      coreSphere = new THREE.Mesh(coreGeo, coreMat);
-      threeScene.add(coreSphere);
 
-      const nucleusGeo = new THREE.OctahedronGeometry(0.56, 1);
-      const nucleusMat = new THREE.MeshBasicMaterial({
-        color: 0xfbbf24,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.75
-      });
-      coreSphere.add(new THREE.Mesh(nucleusGeo, nucleusMat));
+      // Radial Energy Spikes shooting outward from the Core (Matches Video 1)
+      const spikeGroup = new THREE.Group();
+      const numSpikes = 72;
+      for (let i = 0; i < numSpikes; i++) {
+        const phi = Math.acos(-1 + (2 * i) / numSpikes);
+        const theta = Math.sqrt(numSpikes * Math.PI) * phi;
+        const dir = new THREE.Vector3(
+          Math.cos(theta) * Math.sin(phi),
+          Math.sin(theta) * Math.sin(phi),
+          Math.cos(phi)
+        ).normalize();
+        const p1 = dir.clone().multiplyScalar(0.75);
+        const p2 = dir.clone().multiplyScalar(2.45 + (i % 3) * 0.35);
+        const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+        const mat = new THREE.LineBasicMaterial({
+          color: i % 2 === 0 ? 0xff1e27 : 0xff6622,
+          transparent: true,
+          opacity: 0.65
+        });
+        spikeGroup.add(new THREE.Line(geo, mat));
+      }
+      scene.add(spikeGroup);
 
-      const ringGeo1 = new THREE.TorusGeometry(1.78, 0.028, 16, 100);
-      const ringMat1 = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7 });
-      outerWireRing = new THREE.Mesh(ringGeo1, ringMat1);
-      outerWireRing.rotation.x = Math.PI / 2.2;
-      threeScene.add(outerWireRing);
+      // 2,400 Floating Crimson & Ember Particle Cloud
+      const partCount = 2400;
+      const positions = new Float32Array(partCount * 3);
+      for (let i = 0; i < partCount; i++) {
+        const rad = 1.1 + Math.random() * 2.1;
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0);
+        positions[i * 3] = rad * Math.sin(phi) * Math.cos(theta);
+        positions[i * 3 + 1] = rad * Math.sin(phi) * Math.sin(theta);
+        positions[i * 3 + 2] = rad * Math.cos(phi);
+      }
+      const partGeo = new THREE.BufferGeometry();
+      partGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const partMat = new THREE.PointsMaterial({ color: 0xff2a2a, size: 0.032, transparent: true, opacity: 0.85 });
+      const particleSystem = new THREE.Points(partGeo, partMat);
+      scene.add(particleSystem);
 
-      const ringGeo2 = new THREE.TorusGeometry(2.32, 0.022, 16, 100);
-      const ringMat2 = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.55 });
-      innerRing = new THREE.Mesh(ringGeo2, ringMat2);
-      innerRing.rotation.x = -Math.PI / 3;
-      threeScene.add(innerRing);
-
-      rebuildOrbitingAgentNodes();
-
-      let isDragging = false;
-      let prevX = 0;
-      let prevY = 0;
-      canvas.addEventListener('mousedown', (e) => { isDragging = true; prevX = e.clientX; prevY = e.clientY; });
-      window.addEventListener('mouseup', () => { isDragging = false; });
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging || !threeScene) return;
-        threeScene.rotation.y += (e.clientX - prevX) * 0.008;
-        threeScene.rotation.x = Math.max(-0.6, Math.min(0.6, threeScene.rotation.x + (e.clientY - prevY) * 0.008));
-        prevX = e.clientX;
-        prevY = e.clientY;
+      // Mouse drag rotation
+      let dragging = false, px = 0, py = 0;
+      canvas.addEventListener('mousedown', e => { dragging = true; px = e.clientX; py = e.clientY; });
+      window.addEventListener('mouseup', () => { dragging = false; });
+      window.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        scene.rotation.y += (e.clientX - px) * 0.007;
+        scene.rotation.x += (e.clientY - py) * 0.007;
+        px = e.clientX; py = e.clientY;
       });
 
       window.addEventListener('resize', () => {
-        if (!container || !threeRenderer || !threeCamera) return;
-        const w = container.clientWidth || 360;
-        const h = container.clientHeight || 240;
-        threeCamera.aspect = w / h;
-        threeCamera.updateProjectionMatrix();
-        threeRenderer.setSize(w, h);
+        const w = container.clientWidth || 700;
+        const h = container.clientHeight || 410;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
       });
 
-      if (animFrameId) cancelAnimationFrame(animFrameId);
-      let clock = 0;
+      let t = 0;
       function animate() {
-        animFrameId = requestAnimationFrame(animate);
-        clock += 0.02 * state.pulse3dIntensity;
-        if (coreSphere) {
-          coreSphere.rotation.y += 0.011 * state.pulse3dIntensity;
-          coreSphere.rotation.x += 0.005 * state.pulse3dIntensity;
-          const scale = 1 + Math.sin(clock * 2.4) * 0.07 * state.pulse3dIntensity;
-          coreSphere.scale.set(scale, scale, scale);
-        }
-        if (outerWireRing) outerWireRing.rotation.z -= 0.009 * state.pulse3dIntensity;
-        if (innerRing) innerRing.rotation.y += 0.008 * state.pulse3dIntensity;
-
-        agentMeshes.forEach((item, idx) => {
-          const angle = clock * item.speed + item.offset;
-          const nx = Math.cos(angle) * item.radius;
-          const nz = Math.sin(angle) * item.radius;
-          const ny = Math.sin(clock * 1.6 + idx) * item.verticalAmp;
-          item.mesh.position.set(nx, ny, nz);
-          item.mesh.rotation.y += 0.03;
-          if (item.beamLine) {
-            const posArr = item.beamLine.geometry.attributes.position.array;
-            posArr[3] = nx;
-            posArr[4] = ny;
-            posArr[5] = nz;
-            item.beamLine.geometry.attributes.position.needsUpdate = true;
-          }
+        requestAnimationFrame(animate);
+        t += 0.018 * state.orbPulse;
+        const pulseScale = 1 + Math.sin(t * 3.2) * 0.08 * state.orbPulse;
+        innerSun.scale.set(pulseScale, pulseScale, pulseScale);
+        wireShell.rotation.y += 0.008 * state.orbPulse;
+        wireShell.rotation.x -= 0.004 * state.orbPulse;
+        spikeGroup.rotation.y -= 0.006 * state.orbPulse;
+        spikeGroup.rotation.z += 0.004 * state.orbPulse;
+        spikeGroup.scale.set(pulseScale, pulseScale, pulseScale);
+        particleSystem.rotation.y += 0.004 * state.orbPulse;
+        rings.forEach((r, idx) => {
+          r.rotation.z += (idx % 2 === 0 ? 0.012 : -0.015) * state.orbPulse;
+          r.rotation.x += 0.005 * state.orbPulse;
         });
-        threeRenderer.render(threeScene, threeCamera);
+        renderer.render(scene, camera);
       }
       animate();
     }
 
-    function rebuildOrbitingAgentNodes() {
-      if (!threeScene) return;
-      agentMeshes.forEach(item => {
-        threeScene.remove(item.mesh);
-        if (item.beamLine) threeScene.remove(item.beamLine);
-      });
-      agentMeshes = [];
-      const coreColors = [0x00f0ff, 0xf59e0b, 0x818cf8, 0x34d399];
-      const totalSub = state.spawnedSubAgents.length;
-      const totalNodes = 4 + totalSub;
-      for (let i = 0; i < totalNodes; i++) {
-        const isCore = i < 4;
-        const nodeColor = isCore ? coreColors[i] : 0xc084fc;
-        const geo = new THREE.OctahedronGeometry(isCore ? 0.19 : 0.14, 0);
-        const mat = new THREE.MeshBasicMaterial({ color: nodeColor, wireframe: false });
-        const mesh = new THREE.Mesh(geo, mat);
-        threeScene.add(mesh);
+    // ============================================================================
+    // 2. INTERACTIVE NEURAL MEMORY & AGENT SYNAPSE GRAPH (VIDEO 2 kpBMntwPOL8)
+    // ============================================================================
+    let pulseOffset = 0;
+    function initMemoryGraphCanvas() {
+      const canvas = document.getElementById('memoryGraphCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
 
-        // Add 3D Holographic Laser Beam connecting Central Co-Leader Core (0,0,0) to Orbiting Agent!
-        const points = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(1, 0, 0)];
-        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
-        const lineMat = new THREE.LineBasicMaterial({ color: nodeColor, transparent: true, opacity: 0.45 });
-        const beamLine = new THREE.Line(lineGeo, lineMat);
-        threeScene.add(beamLine);
-
-        agentMeshes.push({
-          mesh,
-          beamLine,
-          radius: isCore ? 1.82 : 2.38,
-          speed: isCore ? 0.9 : 1.4,
-          offset: (Math.PI * 2 * i) / totalNodes,
-          verticalAmp: isCore ? 0.26 : 0.46
-        });
+      function resize() {
+        canvas.width = canvas.clientWidth || 760;
+        canvas.height = canvas.clientHeight || 430;
       }
-      const label = document.getElementById('orbitNodesLabel');
-      if (label) label.textContent = `ORBIT: 4 AGENTS + ${totalSub} SUB`;
-    }
+      resize();
+      window.addEventListener('resize', resize);
 
-    function trigger3DPulse(durationMs = 2400) {
-      state.pulse3dIntensity = 2.6;
-      setTimeout(() => { state.pulse3dIntensity = 1.0; }, durationMs);
-    }
-
-    function parseRepoAST() {
-      const index = {};
-      Object.entries(state.files).forEach(([filename, code]) => {
-        const lines = code.split('\n');
-        const functions = [];
-        lines.forEach((line, idx) => {
-          const match = line.match(/^\s*def\s+([a-zA-Z0-9_]+)\s*\(([^)]*)\)/);
-          if (match) {
-            functions.push({ name: match[1], args: match[2].trim(), line: idx + 1 });
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        for (const n of state.memoryGraph.nodes) {
+          const dx = mx - (n.x || 200);
+          const dy = my - (n.y || 200);
+          if (Math.sqrt(dx * dx + dy * dy) <= 26) {
+            state.selectedGraphNode = n;
+            renderNodeInspector(n);
+            break;
           }
-        });
-        index[filename] = { lineCount: lines.length, functions };
-      });
-      return index;
-    }
-
-    function updateBlackboardBanner(goalText) {
-      const astIndex = parseRepoAST();
-      const totalFiles = Object.keys(state.files).length;
-      const totalFns = Object.values(astIndex).reduce((acc, f) => acc + f.functions.length, 0);
-      document.getElementById('blackboardModelBadge').textContent = `Base Weights: ${state.singleModel}`;
-      document.getElementById('blackboardSummaryText').textContent =
-        `Active Goal: ${goalText} | Shared Files: ${totalFiles} (${totalFns} AST symbols) | Spawned Child Sub-Agents: ${state.spawnedSubAgents.length}`;
-      document.getElementById('repoFileCount').textContent = String(totalFiles);
-      rebuildOrbitingAgentNodes();
-    }
-
-    function renderSpawnedSubAgents() {
-      const listEl = document.getElementById('dynamicSubAgentsList');
-      const countEl = document.getElementById('spawnedCountBadge');
-      countEl.textContent = `${state.spawnedSubAgents.length} Active Sub-Agents`;
-      rebuildOrbitingAgentNodes();
-      if (state.spawnedSubAgents.length === 0) {
-        listEl.innerHTML = '<span class="text-slate-500 text-xs">None spawned yet — run a mission or click "+ Agent Spawn Sub-Agent".</span>';
-        return;
-      }
-      listEl.innerHTML = '';
-      state.spawnedSubAgents.forEach(ag => {
-        const badge = document.createElement('span');
-        badge.className = 'px-2.5 py-1 rounded-lg bg-purple-950/90 border border-purple-400/40 text-purple-200 text-[11px] flex items-center gap-1.5';
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span><strong>${ag.name}</strong> <span class="text-purple-400">(&larr; ${ag.parent})</span>`;
-        listEl.appendChild(badge);
-      });
-    }
-
-    function showToast(msg) {
-      const banner = document.getElementById('toastBanner');
-      const text = document.getElementById('toastMessage');
-      text.textContent = msg;
-      banner.classList.remove('hidden');
-      setTimeout(() => banner.classList.add('hidden'), 3400);
-    }
-
-    async function speakJarvis(text) {
-      state.lastSpokenText = text;
-      document.getElementById('jarvisSpokenText').textContent = `"${text}"`;
-      trigger3DPulse(2600);
-      if (!state.ttsEnabled) return;
-
-      const lang = document.getElementById('selectLanguage').value || 'en-IN';
-      const speaker = document.getElementById('selectSpeaker').value || 'shubh_enhi_ads';
-
-      if (state.sarvamKey) {
-        try {
-          document.getElementById('ttsLatencyBadge').textContent = 'BULBUL V4 STREAMING...';
-          const res = await fetch('https://api.sarvam.ai/text-to-speech', {
-            method: 'POST',
-            headers: { 'api-subscription-key': state.sarvamKey, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              inputs: [text.slice(0, 1200)],
-              target_language_code: lang,
-              speaker: speaker,
-              model: 'bulbul:v4-flash',
-              speech_sample_rate: 24000,
-              pace: 1.08
-            })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.audios && data.audios[0]) {
-              const audio = new Audio('data:audio/wav;base64,' + data.audios[0]);
-              document.getElementById('ttsLatencyBadge').textContent = 'BULBUL V4 24kHz LIVE';
-              audio.play();
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn('Sarvam TTS fallback:', err);
         }
-      }
-
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = lang;
-        utter.rate = 1.06;
-        utter.pitch = 0.94;
-        window.speechSynthesis.speak(utter);
-        document.getElementById('ttsLatencyBadge').textContent = `VOICE ENGINE (${lang})`;
-      }
-    }
-
-    function appendAgentLog(agentName, badgeClass, modelTag, message, receiptTag) {
-      const container = document.getElementById('agentMessageLog');
-      const card = document.createElement('div');
-      card.className = 'card-3d tilt-card p-2.5 rounded-xl space-y-1';
-      card.innerHTML = `
-        <div class="flex items-center justify-between gap-2 z-layer-top">
-          <span class="text-[11px] font-bold ${badgeClass}">${agentName}</span>
-          <span class="text-[10px] mono px-1.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">${modelTag}</span>
-        </div>
-        <p class="text-xs text-slate-200 leading-relaxed z-layer-mid">${message}</p>
-        ${receiptTag ? `<div class="text-[10px] mono text-emerald-400 pt-0.5 z-layer-top">${receiptTag}</div>` : ''}
-      `;
-      container.prepend(card);
-      attach3DTiltListeners();
-    }
-
-    function highlightAgentCard(cardId, statusId, statusText, borderColor) {
-      ['agentCardOrchestrator', 'agentCardExplorer', 'agentCardBuilder', 'agentCardCritic'].forEach(id => {
-        const el = document.getElementById(id);
-        el.className = 'card-3d tilt-card p-4 rounded-2xl space-y-2';
       });
-      if (cardId) {
-        const active = document.getElementById(cardId);
-        active.className = `card-3d tilt-card p-4 rounded-2xl border-2 ${borderColor} shadow-[0_0_30px_rgba(0,240,255,0.28)] space-y-2`;
+
+      function drawGraph() {
+        requestAnimationFrame(drawGraph);
+        pulseOffset = (pulseOffset + 0.015) % 1;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Subtle background grid
+        ctx.strokeStyle = 'rgba(255, 30, 39, 0.07)';
+        ctx.lineWidth = 1;
+        for (let gx = 0; gx < canvas.width; gx += 40) {
+          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+        }
+        for (let gy = 0; gy < canvas.height; gy += 40) {
+          ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+        }
+
+        const nodeMap = {};
+        state.memoryGraph.nodes.forEach((n, idx) => {
+          if (typeof n.x !== 'number') {
+            const angle = (idx / state.memoryGraph.nodes.length) * Math.PI * 2;
+            n.x = canvas.width / 2 + Math.cos(angle) * 160;
+            n.y = canvas.height / 2 + Math.sin(angle) * 140;
+          }
+          nodeMap[n.id] = n;
+        });
+
+        // Draw Edges & Animated Data Pulses
+        state.memoryGraph.edges.forEach(edge => {
+          const s = nodeMap[edge.source];
+          const t = nodeMap[edge.target];
+          if (!s || !t) return;
+
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(t.x, t.y);
+          ctx.strokeStyle = edge.active ? 'rgba(255, 50, 50, 0.85)' : 'rgba(255, 40, 50, 0.28)';
+          ctx.lineWidth = edge.active ? 2.2 : 1.2;
+          ctx.stroke();
+
+          // Travelling synapse energy packet
+          const px = s.x + (t.x - s.x) * pulseOffset;
+          const py = s.y + (t.y - s.y) * pulseOffset;
+          ctx.beginPath();
+          ctx.arc(px, py, edge.active ? 4.2 : 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = edge.active ? '#ffaa00' : '#ff1e27';
+          ctx.fill();
+        });
+
+        // Draw Nodes
+        state.memoryGraph.nodes.forEach(n => {
+          const isSelected = state.selectedGraphNode && state.selectedGraphNode.id === n.id;
+          ctx.save();
+          if (n.type === 'agent') {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, isSelected ? 22 : 18, 0, Math.PI * 2);
+            ctx.fillStyle = n.status === 'working' ? '#ff5500' : '#b91c1c';
+            ctx.shadowColor = '#ff1e27';
+            ctx.shadowBlur = n.status === 'working' ? 22 : 12;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fca5a5';
+            ctx.stroke();
+          } else if (n.type === 'sub_agent') {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = '#d97706';
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            ctx.strokeStyle = '#fde68a';
+            ctx.stroke();
+          } else if (n.type === 'memory') {
+            ctx.beginPath();
+            ctx.rect(n.x - 16, n.y - 16, 32, 32);
+            ctx.fillStyle = '#4c0519';
+            ctx.shadowColor = '#f43f5e';
+            ctx.shadowBlur = 12;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fb7185';
+            ctx.stroke();
+          } else {
+            ctx.beginPath();
+            ctx.arc(n.x, n.y, 11, 0, Math.PI * 2);
+            ctx.fillStyle = '#065f46';
+            ctx.strokeStyle = '#34d399';
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.restore();
+
+          ctx.fillStyle = '#ffe4e6';
+          ctx.font = 'bold 10px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(n.label, n.x, n.y + 32);
+        });
       }
-      if (statusId && statusText) {
-        document.getElementById(statusId).textContent = statusText;
-      }
+      drawGraph();
+      renderAgentTaskMatrix();
     }
 
-    async function executeStep1OpenYoutube() {
-      trigger3DPulse(2800);
-      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Sending Turn 1 to Backend: "Open YouTube"...', 'border-cyan-400');
-      appendAgentLog(
-        '1. Co-Leader & Chief Reviewer',
-        'text-cyan-300',
-        `1-Model: ${state.singleModel}`,
-        'Dispatched Turn 1 to FastAPI Backend (POST /api/gui-action). Moving physical mouse & launching browser...',
-        '[Live GUI Action Dispatched]'
-      );
+    function renderNodeInspector(node) {
+      document.getElementById('inspNodeTitle').textContent = node.label;
+      document.getElementById('inspNodeType').textContent = `${node.type} // ${node.status}`;
+      document.getElementById('inspNodeTask').textContent = node.current_task || 'Ready';
+      const links = state.memoryGraph.edges.filter(e => e.source === node.id || e.target === node.id);
+      document.getElementById('inspNodeConnections').textContent = `Connected Synapses: ${links.length} (${links.map(l => l.relation).join(', ')})`;
+    }
 
+    function renderAgentTaskMatrix() {
+      const container = document.getElementById('agentTaskMatrixList');
+      if (!container) return;
+      container.innerHTML = '';
+      document.getElementById('navNodeCount').textContent = String(state.memoryGraph.nodes.length);
+
+      state.memoryGraph.nodes.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'card-3d p-2.5 rounded-xl space-y-1 cursor-pointer';
+        const badgeColor = n.status === 'working' ? 'bg-amber-500/20 text-amber-300 border-amber-400/50' : 'bg-red-950 text-red-300 border-red-500/30';
+        div.innerHTML = `
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold text-white">${n.label}</span>
+            <span class="text-[10px] mono px-2 py-0.5 rounded border ${badgeColor}">${n.type}: ${n.status}</span>
+          </div>
+          <p class="text-[11px] text-red-200/80 mono">${n.current_task || ''}</p>
+        `;
+        div.addEventListener('click', () => {
+          state.selectedGraphNode = n;
+          renderNodeInspector(n);
+        });
+        container.appendChild(div);
+      });
+    }
+
+    // ============================================================================
+    // 3. PROBE REAL CONNECTIONS (FASTAPI BACKEND + DIRECT LOCAL OLLAMA + GEMINI)
+    // ============================================================================
+    async function probeLiveConnections() {
+      const badge = document.getElementById('liveConnectionBadge');
+      const footer = document.getElementById('activeModelFooter');
+
+      // 1. Check FastAPI OS Backend (127.0.0.1:8000)
       try {
-        const resp = await fetch('http://127.0.0.1:8000/api/gui-action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: 'Jarvis, open YouTube', synthesize_voice: true })
-        });
-        const guiData = await resp.json();
-        console.log('[Turn 1 Live Backend Result]', guiData);
-
-        if (guiData.executed_steps && guiData.executed_steps.length > 0) {
-          for (const s of guiData.executed_steps) {
-            const coords = s.coords || [500, 55];
-            await moveVirtualCursorTo(coords[0], coords[1], s.label, true);
+        const r = await fetch(`${state.backendUrl}/api/health`, { method: 'GET' });
+        if (r.ok) {
+          const data = await r.json();
+          state.backendOnline = true;
+          state.activeModel = data.active_model || 'connected';
+          if (data.memory_graph && data.memory_graph.nodes) {
+            state.memoryGraph = data.memory_graph;
+            renderAgentTaskMatrix();
           }
-        } else {
-          await moveVirtualCursorTo(500, 55, 'Universal Search Input Focus [/]', true);
+          badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-400/60 text-emerald-300';
+          badge.textContent = `OS BACKEND + ${state.activeModel.toUpperCase()} ONLINE`;
+          footer.textContent = `LLM & OS Backend: ${state.activeModel} (127.0.0.1:8000)`;
+          return;
         }
-
-        state.desktopSession.youtubeOpen = true;
-        state.desktopSession.activeApp = 'YouTube Browser';
-        document.getElementById('desktopActiveAppBadge').textContent = 'YouTube (Search Ready)';
-        document.getElementById('virtualWindowTitle').textContent = 'YOUTUBE // BROWSER — STATEFUL SESSION ACTIVE';
-        document.getElementById('virtualAddressBar').textContent = guiData.active_url || 'https://www.youtube.com';
-
-        const searchInput = document.getElementById('simYoutubeSearchInput');
-        if (searchInput) {
-          searchInput.placeholder = 'Focused! Now say or click: "Search for Believer"...';
-        }
-        switchViewportMode(1);
-
-        appendAgentLog(
-          'GUI Mouse Operator (Gemma 4 Pointing)',
-          'text-amber-300',
-          `1-Model: ${guiData.model || state.singleModel}`,
-          guiData.spoken_response || 'Launched YouTube and glided physical mouse over search bar.',
-          '[Stateful Session: YouTube Open]'
-        );
-
-        document.getElementById('activePatchFileLabel').textContent = 'Live PyAutoGUI & High-DPI Trace: Turn 1 — Open YouTube';
-        document.getElementById('codeDiffViewer').textContent = JSON.stringify(guiData, null, 2);
-
-        speakJarvis(guiData.spoken_response || 'YouTube is open and I have positioned the mouse over the search bar. What would you like me to search for?');
-        showToast('Turn 1 executed! Mouse glided and YouTube opened.');
-      } catch (err) {
-        console.error('Turn 1 backend call failed:', err);
-        await moveVirtualCursorTo(500, 55, 'Search Input Focus', true);
-        showToast('Turn 1 offline fallback: ensure backend is running at http://127.0.0.1:8000');
+      } catch (_) {
+        state.backendOnline = false;
       }
-    }
 
-    async function executeYoutubeSearchAndPlay(commandText) {
-      trigger3DPulse(3500);
-      let query = commandText || document.getElementById('voiceCommandInput').value || 'Believer by Imagine Dragons';
-      query = query
-        .replace(/^(hey\s+)?(jarvis[,\s]*)?(can\s+you\s+|please\s+)?(open\s+youtube\s+(and\s+)?)?(search\s+for\s+|search\s+|play\s+(the\s+song\s+|song\s+|music\s+)?)?/i, '')
-        .trim();
-      if (!query) query = 'Believer by Imagine Dragons';
-
-      highlightAgentCard('agentCardBuilder', 'statusBuilder', `Sending Turn 2 to Backend: Searching for "${query}"...`, 'border-indigo-400');
-      appendAgentLog(
-        'Lead Builder & GUI Operator',
-        'text-indigo-300',
-        `1-Model: ${state.singleModel}`,
-        `Dispatched Turn 2 to FastAPI Backend. Moving physical mouse, typing "${query}", hitting Enter, and clicking top result...`,
-        `[Query: ${query}]`
-      );
-
+      // 2. Check Direct Local Ollama (127.0.0.1:11434)
       try {
-        const resp = await fetch('http://127.0.0.1:8000/api/gui-action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: `Search for ${query} and play it`, synthesize_voice: true })
-        });
-        const guiData = await resp.json();
-        console.log('[Turn 2 Live Backend Result]', guiData);
-
-        if (guiData.executed_steps && guiData.executed_steps.length > 0) {
-          for (const s of guiData.executed_steps) {
-            const coords = s.coords || [500, 55];
-            await moveVirtualCursorTo(coords[0], coords[1], s.label, true);
-          }
-        }
-
-        const displayTitle = guiData.display_title || query;
-        const watchUrl = guiData.active_url || `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
-        const embedUrl = guiData.embed_url || `https://www.youtube.com/embed/7wtfhZwyrcc?autoplay=1`;
-
-        const addrBar = document.getElementById('virtualAddressBar');
-        if (addrBar) addrBar.textContent = watchUrl;
-        const vTitle = document.getElementById('simVideoCard1Title');
-        if (vTitle) vTitle.textContent = displayTitle;
-        const vSub = document.getElementById('simVideoCard1Sub');
-        if (vSub) vSub.textContent = 'Live Audio/Video Playing • Verified Stream';
-        const ytOverlay = document.getElementById('ytPlaceholderOverlay');
-        if (ytOverlay) ytOverlay.classList.add('hidden');
-        const ytTitle = document.getElementById('ytNowPlayingTitle');
-        if (ytTitle) ytTitle.textContent = `Now Playing: ${displayTitle}`;
-        const ytLink = document.getElementById('ytExternalLink');
-        if (ytLink) ytLink.href = watchUrl;
-        const ytFrame = document.getElementById('ytEmbedFrame');
-        if (ytFrame) ytFrame.src = embedUrl;
-        const appBadge = document.getElementById('desktopActiveAppBadge');
-        if (appBadge) appBadge.textContent = `Playing: ${displayTitle.slice(0, 18)}...`;
-        switchViewportMode(1);
-
-        appendAgentLog(
-          'GUI Mouse Operator -> Co-Leader Verified',
-          'text-emerald-300',
-          `1-Model: ${guiData.model || state.singleModel}`,
-          guiData.spoken_response || `Searched YouTube for ${query} and clicked the top result card to stream.`,
-          `[Stream: ${watchUrl}]`
-        );
-
-        document.getElementById('activePatchFileLabel').textContent = `PyAutoGUI & Video Click Trace: "${query}"`;
-        document.getElementById('codeDiffViewer').textContent = JSON.stringify(guiData, null, 2);
-
-        document.getElementById('criticTestViewer').textContent =
-`============================= CO-LEADER GUI & EDGE-CASE AUDIT ==================
-[OK] Live Physical Mouse Glide  : easeInOutQuad -> Target Video Card
-[OK] DPI Coordinate Clamping    : Normalized [0..1000] -> Safe Viewport
-[OK] Target Video Query         : ${query}
-[OK] Active Video Link          : ${watchUrl}
-================================================================================`;
-
-        speakJarvis(guiData.spoken_response || `Playing ${query} on YouTube.`);
-        showToast(`Playing "${displayTitle}"!`);
-      } catch (err) {
-        console.error('Turn 2 backend call failed:', err);
-        showToast('Turn 2 fallback: check backend connection at http://127.0.0.1:8000');
-      }
-    }
-
-    async function executeComplexProjectBuild(commandText) {
-      trigger3DPulse(3500);
-      const simulateHallucination = document.getElementById('chkSimulateHallucination').checked;
-      let projectCmd = commandText || document.getElementById('voiceCommandInput').value || 'build a complex project task manager';
-
-      highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Sending Mission to Backend: Spawning Multi-Agent Swarm...', 'border-cyan-400');
-      appendAgentLog(
-        '1. Co-Leader & Chief Reviewer',
-        'text-cyan-300',
-        `1-Model: ${state.singleModel}`,
-        `Sending project build mission to FastAPI Backend (POST /api/mission). Zero-Hallucination Critic active...`,
-        '[Backend Swarm Invoked]'
-      );
-
-      try {
-        const resp = await fetch('http://127.0.0.1:8000/api/mission', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            command: projectCmd,
-            simulate_hallucination: simulateHallucination,
-            synthesize_voice: true
-          })
-        });
-        const missionData = await resp.json();
-        console.log('[Project Build Live Backend Result]', missionData);
-
-        // Update spawned sub-agents from real backend blackboard
-        if (missionData.blackboard && missionData.blackboard.active_agents) {
-          state.spawnedSubAgents = missionData.blackboard.active_agents.map(a => ({ name: a, parent: 'Co-Leader' }));
-          renderSpawnedSubAgents();
-        }
-
-        // Populate generated files from real backend
-        if (missionData.generated_files) {
-          state.files = missionData.generated_files;
-          const firstKey = Object.keys(missionData.generated_files)[0];
-          state.selectedFile = firstKey;
-          
-          let combinedCode = '';
-          for (const [k, v] of Object.entries(missionData.generated_files)) {
-            combinedCode += `# ================= FILE: ${k} =================\n${v}\n\n`;
-          }
-          document.getElementById('codeDiffViewer').textContent = combinedCode;
-          document.getElementById('activePatchFileLabel').textContent = `Real Generated Files on Disk: ${Object.keys(missionData.generated_files).join(', ')}`;
-        }
-
-        // Show AST receipts in provenance strip
-        if (missionData.blackboard && missionData.blackboard.ast_receipts) {
-          document.getElementById('criticTestViewer').textContent = JSON.stringify(missionData.blackboard.ast_receipts, null, 2);
-        } else if (missionData.verification_receipt) {
-          document.getElementById('criticTestViewer').textContent = JSON.stringify(missionData.verification_receipt, null, 2);
-        }
-
-        // Update chat log from backend agent trace
-        if (missionData.agent_trace) {
-          for (const item of missionData.agent_trace) {
-            appendAgentLog(item.agent, 'text-cyan-300', `1-Model: ${state.singleModel}`, JSON.stringify(item.output), '[Backend Agent Step]');
-          }
-        }
-
-        speakJarvis(missionData.spoken_response || 'Project created successfully on disk with zero hallucinations.');
-        showToast(`Project created at: ${missionData.saved_location || 'backend/generated_projects'}!`);
-      } catch (err) {
-        console.error('Mission backend call failed:', err);
-        showToast('Mission fallback: check backend connection at http://127.0.0.1:8000');
-      }
-    }
-
-    const SCENARIOS = {
-      gst_webhook: {
-        lang: 'en-IN',
-        command: 'Jarvis, check why GST calculation and duplicate webhooks are failing in payment_service.py, divide the fix between agents, and verify with unit tests.',
-        targetFile: 'payment_service.py',
-        orchestratorPlan: 'Co-Leader decomposed voice intent on Shared Blackboard: (1) AST scan of payment_service.py, (2) Patch GST formula & add event_id idempotency guard, (3) Co-Leader QA verification.',
-        explorerReport: 'Verified payment_service.py (23 lines): found `calculate_gst_total` (line 6) and `process_razorpay_webhook` (line 12).',
-        patchedCode: `"""Open-Source Order & Payment Microservice (Hacktoberfest Target Repo)"""
-from typing import Dict, Any
-
-PROCESSED_WEBHOOKS = set()
-
-def calculate_gst_total(subtotal_inr: float, tax_rate: float = 0.18) -> float:
-    if subtotal_inr < 0:
-        raise ValueError("Subtotal cannot be negative")
-    return round(subtotal_inr + (subtotal_inr * tax_rate), 2)
-
-def process_razorpay_webhook(event_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
-    if event_id in PROCESSED_WEBHOOKS:
-        return {"status": "duplicate_ignored", "event_id": event_id, "charged_inr": 0.0}
-    order_id = payload.get("order_id", "UNKNOWN")
-    amount = payload.get("amount_inr", 0.0)
-    PROCESSED_WEBHOOKS.add(event_id)
-    return {
-        "status": "captured",
-        "order_id": order_id,
-        "charged_inr": calculate_gst_total(amount)
-    }`,
-        verifiedSymbols: ['calculate_gst_total', 'process_razorpay_webhook', 'PROCESSED_WEBHOOKS'],
-        testOutput: `============================= test session starts ==============================
-test_payment_service.py::test_calculate_gst_total_adds_18_percent PASSED [ 33%]
-test_payment_service.py::test_duplicate_webhook_idempotency PASSED       [ 66%]
-test_payment_service.py::test_negative_subtotal_raises_error PASSED      [100%]
-============================== 3 passed in 0.04s ===============================`,
-        spokenSummary: 'Mission complete. Using our single Gemma 4 model, the Architect pinpointed the GST and webhook bugs in payment_service.py, the Builder patched both functions, and the Co-Leader verified all unit tests with zero hallucinations.'
-      },
-      hinglish_auth: {
-        lang: 'hi-IN',
-        command: 'Jarvis, auth_middleware.py mein token expiry bug check karo, fix likho aur verify karke batao.',
-        targetFile: 'auth_middleware.py',
-        orchestratorPlan: 'Co-Leader parsed Hinglish command via Saaras v4 codemix mode and synced `auth_middleware.py` security audit to the Shared Blackboard.',
-        explorerReport: 'Verified auth_middleware.py (14 lines): `verify_jwt_session` (line 5) returns `True` even when `exp <= current_epoch`.',
-        patchedCode: `"""JWT Session & Role Guard Middleware"""
-import time
-from typing import Dict, Any
-
-def verify_jwt_session(token_payload: Dict[str, Any], current_epoch: int) -> bool:
-    if token_payload.get("revoked", False):
-        return False
-    exp = token_payload.get("exp", 0)
-    return int(exp) > int(current_epoch)
-
-def require_maintainer_role(user_obj: Dict[str, Any]) -> bool:
-    roles = user_obj.get("roles", [])
-    return "maintainer" in roles or "admin" in roles`,
-        verifiedSymbols: ['verify_jwt_session', 'require_maintainer_role'],
-        testOutput: `============================= test session starts ==============================
-test_auth_middleware.py::test_expired_jwt_rejected PASSED                [ 33%]
-test_auth_middleware.py::test_revoked_jwt_rejected PASSED                [ 66%]
-test_auth_middleware.py::test_valid_jwt_accepted PASSED                  [100%]
-============================== 3 passed in 0.03s ===============================`,
-        spokenSummary: 'Auth middleware fix ho gaya hai. Explorer Agent ne line 5 par JWT expiration bypass detect kiya, Builder Agent ne patch lagaya, aur Co-Leader ne teeno security tests verify kar liye hain.'
-      }
-    };
-
-    async function runMultiAgentMission(scenarioKey) {
-      const rawText = document.getElementById('voiceCommandInput').value.trim();
-      if (!rawText) {
-        showToast('Please enter or speak a command first.');
-        return;
-      }
-
-      // Normalize common typos and conversational prefixes
-      let clean = rawText.toLowerCase()
-        .replace(/^(?:hey\s+)?(?:jarvis[,\s]*)?(?:can\s+(?:you|u)\s+|please\s+)?/, '')
-        .trim();
-      clean = clean
-        .replace(/\bap\b/g, 'app')
-        .replace(/\bdirectry\b/g, 'directory')
-        .replace(/\bdirectroy\b/g, 'directory')
-        .replace(/\bfoldr\b/g, 'folder')
-        .replace(/\bfindthe\b/g, 'find the')
-        .replace(/\bwrit\b/g, 'write')
-        .replace(/\bwrite\s+a\s+write\s+a\b/g, 'write a')
-        .replace(/\bcalcultor\b/g, 'calculator')
-        .replace(/\bnotepd\b/g, 'notepad');
-
-      const commandText = rawText;
-
-      // 1. Launch any native Desktop App or Website (Notepad, Calculator, VS Code, Browser, Spotify, URLs)
-      const isOpenAppOrSite = (
-        clean.startsWith('open ') ||
-        clean.startsWith('launch ') ||
-        clean.startsWith('start ') ||
-        clean.startsWith('run ') ||
-        clean.includes('open app') ||
-        clean.includes('open the app') ||
-        clean.includes('open an app')
-      ) && !clean.includes('youtube') && !clean.includes('write') && !clean.includes('code') && !clean.includes('script') && !clean.includes('test') && !clean.includes('benchmark') && !clean.includes('audit');
-
-      if (isOpenAppOrSite) {
-        showToast(`Launching ${commandText}...`);
-        switchViewportMode(1);
-        try {
-          const resp = await fetch('http://127.0.0.1:8000/api/gui-action', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command: commandText, synthesize_voice: true })
-          });
-          const guiData = await resp.json();
-          if (guiData.spoken_response) {
-            speakJarvis(guiData.spoken_response);
-            showToast(guiData.spoken_response);
-          }
-          if (guiData.active_app) {
-            document.getElementById('desktopActiveAppBadge').textContent = `Active App: ${guiData.active_app}`;
-          }
-          refreshLiveDesktopStream();
-          return;
-        } catch (err) {
-          console.warn('GUI App Launch error:', err);
-        }
-      }
-
-      // 2. Directory Code Audit & Mistake Finding (work in directory, find mistakes, check errors)
-      const isAuditDir = (
-        clean.includes('mistake') ||
-        clean.includes('error') ||
-        clean.includes('bug') ||
-        clean.includes('audit') ||
-        clean.includes('check folder') ||
-        clean.includes('check directory') ||
-        clean.includes('scan folder') ||
-        clean.includes('scan directory') ||
-        clean.includes('find mistakes') ||
-        clean.includes('find the mistakes') ||
-        clean.includes('work in a directory') ||
-        clean.includes('work in directory')
-      );
-
-      if (isAuditDir) {
-        showToast('Auditing directory & detecting code mistakes...');
-        highlightAgentCard('agentCardCritic', 'statusCritic', 'Critic: Scanning directory AST, analyzing defects & test suite...', 'border-emerald-400');
-        try {
-          const resp = await fetch('http://127.0.0.1:8000/api/audit-directory', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ command: commandText, synthesize_voice: true })
-          });
-          const auditData = await resp.json();
-          switchViewportMode(2);
-          if (auditData.report_markdown) {
-            document.getElementById('researchDossierViewer').textContent = auditData.report_markdown;
-          }
-          if (auditData.issues && auditData.issues.length > 0) {
-            document.getElementById('criticTestViewer').textContent = JSON.stringify(auditData.issues, null, 2);
-          }
-          if (auditData.spoken_response) {
-            speakJarvis(auditData.spoken_response);
-            showToast(auditData.spoken_response);
-          }
-          return;
-        } catch (err) {
-          console.warn('Directory audit error:', err);
-        }
-      }
-
-      // 3. Direct Code Writing / Script Generation
-      const isWriteCode = (
-        clean.includes('write code') ||
-        clean.includes('write a code') ||
-        clean.includes('code for') ||
-        clean.includes('generate code') ||
-        clean.includes('write script') ||
-        clean.includes('write a script') ||
-        clean.includes('create function') ||
-        clean.includes('write a function') ||
-        clean.includes('write python') ||
-        clean.includes('write program') ||
-        clean.includes('write a program')
-      ) && !clean.includes('full-stack') && !clean.includes('kanban');
-
-      if (isWriteCode) {
-        showToast('Generating and validating requested code...');
-        highlightAgentCard('agentCardBuilder', 'statusBuilder', 'Lead Builder: Writing code and validating AST syntax...', 'border-indigo-400');
-        try {
-          const resp = await fetch('http://127.0.0.1:8000/api/write-code', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: commandText, synthesize_voice: true })
-          });
-          const codeData = await resp.json();
-          switchViewportMode(3);
-          if (codeData.code) {
-            document.getElementById('codeDiffViewer').textContent = codeData.code;
-            document.getElementById('activePatchFileLabel').textContent = `Created: ${codeData.filename || 'script.py'} (AST Syntax Verified)`;
-          }
-          refreshWorkspaceFilesList();
-          if (codeData.spoken_response) {
-            speakJarvis(codeData.spoken_response);
-            showToast(codeData.spoken_response);
-          }
-          return;
-        } catch (err) {
-          console.warn('Write code error:', err);
-        }
-      }
-
-      // 4. Autonomous Mission (Deep Web Research / Full-Stack Project Building)
-      const isAutonomous = (
-        lower.includes('research') ||
-        lower.includes('benchmark') ||
-        lower.includes('compare') ||
-        lower.includes('full-stack') ||
-        lower.includes('kanban') ||
-        lower.includes('automation') ||
-        lower.includes('build') ||
-        lower.includes('make') ||
-        lower.includes('create')
-      ) && !lower.includes('open youtube') && !lower.includes('play song');
-
-      if (isAutonomous) {
-        showToast('Initiating 5-Phase Autonomous Mission...');
-        highlightAgentCard('agentCardOrchestrator', 'statusOrchestrator', 'Co-Leader & Swarm: Executing 5-Phase Autonomous Mission...', 'border-cyan-400');
-        try {
-          const autoResp = await fetch('http://127.0.0.1:8000/api/autonomous-mission', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              objective: commandText,
-              depth: 3,
-              run_tests: true,
-              launch_app: true,
-              synthesize_voice: true
-            })
-          });
-          if (autoResp.ok) {
-            const data = await autoResp.json();
-            showToast('Mission completed successfully!');
-            if (data.research && data.research.sources_count > 0) {
-              switchViewportMode(2);
-              if (data.research.dossier_preview) {
-                document.getElementById('researchDossierViewer').textContent = data.research.dossier_preview;
-              }
-            } else if (data.generated_files && data.generated_files.length > 0) {
-              switchViewportMode(3);
-              refreshWorkspaceFilesList(data.project_slug);
-            }
-            if (data.spoken_response) {
-              speakJarvis(data.spoken_response);
-            }
+        const r2 = await fetch(`${state.ollamaUrl}/api/tags`, { method: 'GET' });
+        if (r2.ok) {
+          const data2 = await r2.json();
+          const models = (data2.models || []).map(m => m.name);
+          if (models.length > 0) {
+            state.ollamaOnline = true;
+            state.availableModels = models;
+            state.activeModel = models.find(m => m.toLowerCase().includes('gemma')) || models[0];
+            badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-400/60 text-amber-300';
+            badge.textContent = `DIRECT OLLAMA ONLINE (${state.activeModel}) — Start uvicorn for OS app launch`;
+            footer.textContent = `Direct Ollama LLM: ${state.activeModel}`;
             return;
           }
-        } catch (e) {
-          console.warn('Autonomous mission fallback:', e);
+        }
+      } catch (_) {
+        state.ollamaOnline = false;
+      }
+
+      if (state.geminiKey) {
+        state.activeModel = 'gemini-2.5-flash';
+        badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-400/60 text-amber-300';
+        badge.textContent = `GEMINI API ONLINE (Mount Folder to Audit/Write Files)`;
+        footer.textContent = `Direct Cloud LLM: gemini-2.5-flash`;
+        return;
+      }
+
+      badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-red-950 border border-red-500/60 text-red-300';
+      badge.textContent = 'BACKEND OFFLINE — Run uvicorn main:app --port 8000 or Click Config';
+      footer.textContent = 'LLM Disconnected (Start Ollama / Backend or add Gemini Key in Config)';
+    }
+
+    // ============================================================================
+    // 4. NATIVE CHROME LOCAL DIRECTORY MOUNT (`window.showDirectoryPicker`)
+    // ============================================================================
+    async function mountLocalFolderInBrowser() {
+      if (!('showDirectoryPicker' in window)) {
+        alert('Your browser does not support showDirectoryPicker. Enter the folder path in the input box and run the FastAPI backend.');
+        return;
+      }
+      try {
+        const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+        state.mountedDirHandle = dirHandle;
+        document.getElementById('mountedDirLabel').textContent = dirHandle.name;
+        document.getElementById('targetDirInput').value = dirHandle.name;
+        await scanMountedBrowserDirectory();
+        switchTab('studio');
+      } catch (err) {
+        console.warn('Directory picker cancelled or blocked:', err);
+      }
+    }
+
+    async function scanMountedBrowserDirectory() {
+      if (!state.mountedDirHandle) return;
+      state.mountedFiles = {};
+      state.detectedMistakes = [];
+      const skip = new Set(['.git', 'node_modules', '.venv', 'venv', '__pycache__', 'dist', 'build']);
+      const validExts = ['.py', '.js', '.ts', '.tsx', '.jsx', '.html', '.css', '.json', '.md'];
+
+      async function walk(handle, prefix = '') {
+        for await (const entry of handle.values()) {
+          if (entry.kind === 'directory') {
+            if (!skip.has(entry.name)) {
+              await walk(entry, `${prefix}${entry.name}/`);
+            }
+          } else if (entry.kind === 'file') {
+            const relPath = `${prefix}${entry.name}`;
+            if (!validExts.some(ext => entry.name.toLowerCase().endsWith(ext))) continue;
+            const file = await entry.getFile();
+            if (file.size > 250000) continue;
+            const text = await file.text();
+            const lines = text.split('\n');
+            state.mountedFiles[relPath] = { content: text, handle: entry, size: file.size, lines: lines.length };
+
+            // Real static mistake checks in browser
+            if (entry.name.endsWith('.json')) {
+              try {
+                JSON.parse(text);
+              } catch (je) {
+                state.detectedMistakes.push({ file: relPath, type: 'JSONSyntaxError', detail: je.message });
+              }
+            }
+            if (entry.name.endsWith('.py')) {
+              lines.forEach((ln, idx) => {
+                if (ln.includes('TODO') || ln.includes('FIXME') || ln.includes('BUG')) {
+                  state.detectedMistakes.push({ file: relPath, line: idx + 1, type: 'FlaggedBugMarker', detail: ln.trim() });
+                }
+              });
+            }
+          }
         }
       }
 
-      // 5. Open YouTube turn
-      if (scenarioKey === 'step1_open_youtube' || (lower.includes('open youtube') && !lower.includes('search') && !lower.includes('play'))) {
-        await executeStep1OpenYoutube();
-        return;
+      await walk(state.mountedDirHandle);
+      renderStudioFilesAndMistakes();
+
+      // Add to Neural Memory Graph
+      state.memoryGraph.nodes.push({
+        id: `dir_${Date.now().toString().slice(-4)}`,
+        label: `Folder: ${state.mountedDirHandle.name} (${Object.keys(state.mountedFiles).length} files)`,
+        type: 'memory_Artifact',
+        status: 'indexed',
+        current_task: `Found ${state.detectedMistakes.length} issues across ${Object.keys(state.mountedFiles).length} files`,
+        x: 640,
+        y: 160 + Math.random() * 120
+      });
+      state.memoryGraph.edges.push({
+        source: 'agent_dir_auditor',
+        target: state.memoryGraph.nodes[state.memoryGraph.nodes.length - 1].id,
+        relation: 'audited',
+        active: true
+      });
+      renderAgentTaskMatrix();
+    }
+
+    function renderStudioFilesAndMistakes() {
+      const fkeys = Object.keys(state.mountedFiles);
+      document.getElementById('studioFileCount').textContent = `${fkeys.length} files`;
+      const flist = document.getElementById('studioFileList');
+      flist.innerHTML = '';
+
+      if (!state.selectedFile && fkeys.length > 0) {
+        state.selectedFile = fkeys[0];
       }
 
-      // 6. YouTube Song / Video search
-      const isYouTubePlay = (
-        scenarioKey === 'youtube_song' ||
-        lower.includes('youtube') ||
-        lower.includes('play song') ||
-        lower.includes('believer') ||
-        lower.includes('kesariya') ||
-        (lower.startsWith('play ') && !lower.includes('with') && !lower.includes('board'))
-      );
+      fkeys.forEach(fname => {
+        const meta = state.mountedFiles[fname];
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const isSel = fname === state.selectedFile;
+        btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg border transition flex items-center justify-between ${
+          isSel ? 'bg-red-600/25 border-red-400 text-white' : 'bg-zinc-950 border-red-950 text-red-200/80'
+        }`;
+        btn.innerHTML = `<span class="truncate">${fname}</span><span class="text-[10px] text-red-400">${meta.lines}L</span>`;
+        btn.addEventListener('click', () => {
+          state.selectedFile = fname;
+          renderStudioFilesAndMistakes();
+        });
+        flist.appendChild(btn);
+      });
 
-      if (isYouTubePlay) {
-        await executeYoutubeSearchAndPlay(commandText);
-        return;
+      if (state.selectedFile && state.mountedFiles[state.selectedFile]) {
+        document.getElementById('studioActiveFileName').textContent = state.selectedFile;
+        document.getElementById('studioCodeEditor').value = state.mountedFiles[state.selectedFile].content;
       }
 
-      // 7. General Mission
-      try {
-        const resp = await fetch('http://127.0.0.1:8000/api/mission', {
+      document.getElementById('studioMistakeCount').textContent = `${state.detectedMistakes.length} issues`;
+      const mlist = document.getElementById('studioMistakeList');
+      mlist.innerHTML = '';
+      if (state.detectedMistakes.length === 0) {
+        mlist.innerHTML = '<div class="text-emerald-400 text-[11px]">0 syntax markers found. Click "2. AI Auto-Fix" for deep LLM line-by-line logic audit.</div>';
+      } else {
+        state.detectedMistakes.forEach(m => {
+          const item = document.createElement('div');
+          item.className = 'p-2 rounded-lg bg-red-950/60 border border-red-500/40 text-red-200 space-y-0.5 cursor-pointer';
+          item.innerHTML = `<div class="font-bold text-amber-300">${m.file} ${m.line ? `(L${m.line})` : ''} — ${m.type}</div><div class="text-[10px]">${m.detail}</div>`;
+          item.addEventListener('click', () => {
+            if (state.mountedFiles[m.file]) {
+              state.selectedFile = m.file;
+              renderStudioFilesAndMistakes();
+            }
+          });
+          mlist.appendChild(item);
+        });
+      }
+    }
+
+    // ============================================================================
+    // 5. REAL COMMAND EXECUTION (ZERO HARDCODED DIALOGUES!)
+    // ============================================================================
+    function speakText(text) {
+      document.getElementById('liveJarvisTranscript').textContent = text;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text.slice(0, 600));
+        u.rate = 1.05;
+        window.speechSynthesis.speak(u);
+      }
+    }
+
+    function appendTraceCard(role, title, bodyText) {
+      const box = document.getElementById('chatTraceContainer');
+      const div = document.createElement('div');
+      div.className = 'card-3d p-3 rounded-xl space-y-1';
+      div.innerHTML = `
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-red-400 font-hud">${role}</span>
+          <span class="text-[10px] mono text-red-300/70">${new Date().toLocaleTimeString()} — ${title}</span>
+        </div>
+        <pre class="whitespace-pre-wrap text-xs mono text-red-100 leading-relaxed">${bodyText}</pre>
+      `;
+      box.prepend(div);
+    }
+
+    async function callDirectLLM(systemPrompt, userPrompt) {
+      if (state.ollamaOnline) {
+        const res = await fetch(`${state.ollamaUrl}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            command: commandText,
-            simulate_hallucination: document.getElementById('chkSimulateHallucination').checked,
-            synthesize_voice: true
+            model: state.activeModel,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            stream: false
           })
         });
-        const liveRes = await resp.json();
-        console.log('[Live Swarm Result]', liveRes);
-
-        if (liveRes.report_markdown) {
-          document.getElementById('researchDossierViewer').textContent = liveRes.report_markdown;
-          switchViewportMode(2);
-        } else if (liveRes.patched_code) {
-          document.getElementById('codeDiffViewer').textContent = liveRes.patched_code;
-          document.getElementById('activePatchFileLabel').textContent = `File: ${liveRes.target_file || 'code.py'}`;
-          switchViewportMode(3);
-        }
-
-        if (liveRes.verification_receipt) {
-          document.getElementById('criticTestViewer').textContent = JSON.stringify(liveRes.verification_receipt, null, 2);
-        }
-        if (liveRes.agent_trace) {
-          for (const item of liveRes.agent_trace) {
-            appendAgentLog(item.agent, 'text-emerald-300', `1-Model: ${state.singleModel}`, JSON.stringify(item.output), '[Live AST Verification]');
-          }
-        }
-        const spoken = liveRes.spoken_response || 'Mission executed successfully, sir.';
-        speakJarvis(spoken);
-        showToast(spoken);
-      } catch (e) {
-        showToast('Mission error: check backend connection.');
+        if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
+        const data = await res.json();
+        return data.message.content;
       }
-    }
-
-    function renderRepoView() {
-      const astIndex = parseRepoAST();
-      const fileKeys = Object.keys(state.files);
-      document.getElementById('repoFileCount').textContent = String(fileKeys.length);
-
-      const fileListEl = document.getElementById('repoFileList');
-      fileListEl.innerHTML = '';
-      fileKeys.forEach(fname => {
-        const meta = astIndex[fname];
-        const isSelected = fname === state.selectedFile;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `card-3d tilt-card w-full text-left p-2.5 rounded-xl border transition flex items-center justify-between ${
-          isSelected
-            ? 'bg-cyan-500/15 border-cyan-400/50 text-cyan-200'
-            : 'bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700'
-        }`;
-        btn.innerHTML = `
-          <div>
-            <div class="text-xs font-semibold mono">${fname}</div>
-            <div class="text-[10px] text-slate-400">${meta.lineCount} lines &bull; ${meta.functions.length} AST functions</div>
-          </div>
-          <span class="text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-emerald-300">Blackboard Synced</span>
-        `;
-        btn.addEventListener('click', () => {
-          state.selectedFile = fname;
-          renderRepoView();
-        });
-        fileListEl.appendChild(btn);
-      });
-
-      const symbolListEl = document.getElementById('astSymbolList');
-      symbolListEl.innerHTML = '';
-      Object.entries(astIndex).forEach(([fname, meta]) => {
-        meta.functions.forEach(fn => {
-          const item = document.createElement('div');
-          item.className = 'p-1.5 rounded bg-slate-900 border border-slate-800 flex items-center justify-between';
-          item.innerHTML = `
-            <span class="text-cyan-300">${fn.name}(${fn.args})</span>
-            <span class="text-[10px] text-slate-400">${fname}:${fn.line}</span>
-          `;
-          symbolListEl.appendChild(item);
-        });
-      });
-
-      document.getElementById('editorFileName').textContent = state.selectedFile;
-      document.getElementById('repoFileEditor').value = state.files[state.selectedFile] || '';
-      attach3DTiltListeners();
-    }
-
-    function switchTab(tab) {
-      state.activeTab = tab;
-      const views = {
-        hud: document.getElementById('viewHud'),
-        repo: document.getElementById('viewRepo'),
-        backend: document.getElementById('viewBackend'),
-        guide: document.getElementById('viewGuide')
-      };
-      const buttons = {
-        hud: document.getElementById('tabBtnHud'),
-        repo: document.getElementById('tabBtnRepo'),
-        backend: document.getElementById('tabBtnBackend'),
-        guide: document.getElementById('tabBtnGuide')
-      };
-      Object.keys(views).forEach(k => {
-        if (k === tab) {
-          views[k].classList.remove('hidden');
-          buttons[k].className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-cyan-500/25 text-cyan-200 border border-cyan-400/50 transition';
-        } else {
-          views[k].classList.add('hidden');
-          buttons[k].className = 'px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
-        }
-      });
-      if (tab === 'repo') renderRepoView();
-    }
-
-    let recognition = null;
-    let isRecording = false;
-    let mediaRecorder = null;
-    let audioChunks = [];
-
-    async function toggleMicrophone() {
-      const micLabel = document.getElementById('micBtnLabel');
-      const wave = document.getElementById('waveformBars');
-
-      if (isRecording) {
-        isRecording = false;
-        micLabel.textContent = 'Processing Audio...';
-        wave.classList.remove('wave-active');
-
-        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-          mediaRecorder.stop();
-        }
-        if (recognition) {
-          recognition.stop();
-        }
-        return;
-      }
-
-      audioChunks = [];
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorder = new MediaRecorder(stream);
-        
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) audioChunks.push(e.data);
-        };
-
-        mediaRecorder.onstop = async () => {
-          stream.getTracks().forEach(track => track.stop());
-          micLabel.textContent = 'Speak to J.A.R.V.I.S.';
-
-          if (audioChunks.length === 0) return;
-          const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-          const formData = new FormData();
-          formData.append('audio', audioBlob, 'command.wav');
-          formData.append('language_code', document.getElementById('selectLanguage').value || 'en-IN');
-          formData.append('mode', 'codemix');
-          formData.append('simulate_hallucination', document.getElementById('chkSimulateHallucination').checked);
-
-          showToast('Uploading voice audio to Sarvam Saaras v4...');
-          try {
-            const resp = await fetch('http://127.0.0.1:8000/api/voice-mission', {
-              method: 'POST',
-              body: formData
-            });
-            const data = await resp.json();
-            console.log('[Sarvam Voice Mission Response]', data);
-            
-            if (data.stt && data.stt.transcript) {
-              document.getElementById('voiceCommandInput').value = data.stt.transcript;
-              showToast(`Sarvam Transcribed: "${data.stt.transcript}"`);
-              runMultiAgentMission();
-            } else {
-              const currentInput = document.getElementById('voiceCommandInput').value.trim();
-              if (currentInput) {
-                showToast(`Transcribed: "${currentInput}"`);
-                runMultiAgentMission();
-              } else {
-                showToast('Listening complete. Speak or enter your task!');
-              }
-            }
-            if (data.tts && data.tts.audio_base64) {
-              const audio = new Audio("data:audio/wav;base64," + data.tts.audio_base64);
-              audio.play();
-            }
-          } catch (err) {
-            console.warn('Backend voice STT error, falling back to browser speech:', err);
-            const val = document.getElementById('voiceCommandInput').value.trim();
-            if (val) {
-              showToast(`Transcribed: "${val}"`);
-              runMultiAgentMission();
-            } else {
-              showToast('Microphone finished. Type your command and press Enter!');
-            }
-          }
-        };
-
-        mediaRecorder.start();
-        isRecording = true;
-        micLabel.textContent = 'Listening (Click to Stop)...';
-        wave.classList.add('wave-active');
-        trigger3DPulse(4000);
-
-        // Run SpeechRecognition in parallel for real-time visual typing feedback
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRec) {
-          recognition = new SpeechRec();
-          recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
-          recognition.interimResults = true;
-          recognition.onresult = (event) => {
-            let resText = '';
-            for (let i = event.resultIndex; i < event.results.length; ++i) {
-              resText += event.results[i][0].transcript;
-            }
-            if (resText) {
-              document.getElementById('voiceCommandInput').value = resText;
-            }
-          };
-          recognition.start();
-        }
-      } catch (err) {
-        console.warn('Microphone stream access error, using speech recognition fallback:', err);
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRec) {
-          recognition = new SpeechRec();
-          recognition.lang = document.getElementById('selectLanguage').value || 'en-IN';
-          recognition.interimResults = false;
-          recognition.onstart = () => {
-            isRecording = true;
-            micLabel.textContent = 'Listening (WebSpeech)...';
-            wave.classList.add('wave-active');
-          };
-          recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            document.getElementById('voiceCommandInput').value = transcript;
-            runMultiAgentMission();
-          };
-          recognition.onend = () => {
-            isRecording = false;
-            micLabel.textContent = 'Speak to J.A.R.V.I.S.';
-            wave.classList.remove('wave-active');
-          };
-          recognition.start();
-        } else {
-          showToast('Mic unavailable in current browser permissions. Click Turn 1 or Turn 2 to test!');
-        }
-      }
-    }
-
-    function switchViewportMode(mode) {
-      for (let i = 1; i <= 4; i++) {
-        const el = document.getElementById('viewportMode' + i);
-        const btn = document.getElementById('btnTabMode' + i);
-        if (el) el.classList.toggle('hidden', i !== mode);
-        if (btn) {
-          if (i === mode) {
-            btn.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 bg-cyan-500 text-slate-950 shadow';
-          } else {
-            btn.className = 'px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 text-cyan-300 hover:bg-cyan-950/60';
-          }
-        }
-      }
-      const addrBar = document.getElementById('virtualAddressBar');
-      if (addrBar) {
-        const modeNames = ['live://stream/0', 'research://dossier/markdown', 'workspace://files/tree', 'terminal://subprocess/stdout'];
-        addrBar.textContent = modeNames[mode - 1] || 'live://telemetry';
-      }
-      if (mode === 1) {
-        refreshLiveDesktopStream();
-      } else if (mode === 3) {
-        refreshWorkspaceFilesList();
-      }
-    }
-
-    function selectTemplateChip(chipIndex) {
-      const input = document.getElementById('voiceCommandInput');
-      if (!input) return;
-      if (chipIndex === 1) {
-        input.value = "Deep Research: Next.js 15 vs Remix 2026 performance benchmark and architecture comparison";
-        switchViewportMode(2);
-      } else if (chipIndex === 2) {
-        input.value = "Build Full-Stack App: Realtime Kanban Board with SQLite and WebSocket backend";
-        switchViewportMode(3);
-      } else if (chipIndex === 3) {
-        input.value = "Desktop Automation: Open VS Code, create a Python script, and run it";
-        switchViewportMode(1);
-      } else if (chipIndex === 4) {
-        input.value = "Web Automation: Open Hacker News, find the top AI post, and extract key insights";
-        switchViewportMode(2);
-      }
-    }
-
-    function refreshLiveDesktopStream() {
-      const img = document.getElementById('liveDesktopStream');
-      if (img) {
-        img.src = '/api/screen-frame?t=' + Date.now();
-      }
-    }
-
-    async function refreshWorkspaceFilesList(project) {
-      try {
-        const url = project ? `/api/workspace-files?project=${encodeURIComponent(project)}` : '/api/workspace-files';
-        const resp = await fetch(url);
-        if (resp.ok) {
-          const data = await resp.json();
-          const filesMap = {};
-          (data.files || []).forEach(f => {
-            filesMap[f.path] = { content: f.content, size: f.size };
-          });
-          renderBlackboardWorkspaceFiles(filesMap);
-        }
-      } catch (e) {
-        console.error('Error refreshing workspace files:', e);
-      }
-    }
-
-    function renderBlackboardWorkspaceFiles(filesMap) {
-      const tree = document.getElementById('workspaceFilesTree');
-      if (!tree) return;
-      const fnames = Object.keys(filesMap);
-      if (fnames.length === 0) {
-        tree.innerHTML = '<div class="p-2 text-slate-500 text-xs">No files generated yet</div>';
-        return;
-      }
-      tree.innerHTML = fnames.map(f => `
-        <button type="button" onclick="displayWorkspaceFile('${f.replace(/'/g, "\\'")}')" class="w-full text-left p-1.5 rounded-lg border border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-950/30 flex items-center justify-between text-[11px] mono text-cyan-200">
-          <span class="truncate">📄 ${f}</span>
-          <span class="text-[10px] text-slate-500">${filesMap[f].size || 0}B</span>
-        </button>
-      `).join('');
-
-      const nameLabel = document.getElementById('activeWorkspaceFileName');
-      if (nameLabel && (nameLabel.textContent === 'Select a file' || !filesMap[nameLabel.textContent])) {
-        displayWorkspaceFile(fnames[0]);
-      }
-    }
-
-    function displayWorkspaceFile(filename) {
-      const nameLabel = document.getElementById('activeWorkspaceFileName');
-      const sizeLabel = document.getElementById('activeWorkspaceFileSize');
-      const viewer = document.getElementById('workspaceCodeViewer');
-      if (nameLabel) nameLabel.textContent = filename;
-      
-      fetch('/api/workspace-files')
-        .then(r => r.json())
-        .then(data => {
-          const match = (data.files || []).find(f => f.path === filename);
-          if (match) {
-            if (sizeLabel) sizeLabel.textContent = `${match.size} bytes`;
-            if (viewer) viewer.textContent = match.content;
-          }
-        })
-        .catch(err => console.error(err));
-    }
-
-    async function submitTerminalCommand() {
-      const input = document.getElementById('terminalCmdInput');
-      if (!input) return;
-      const cmd = input.value.trim();
-      if (!cmd) return;
-      input.value = '';
-
-      const termEl = document.getElementById('liveTerminalOutput');
-      if (termEl) {
-        termEl.innerHTML += `\n<span class="text-cyan-400">$ ${cmd}</span>\n<span class="text-slate-400">[Executing command...]</span>`;
-        termEl.scrollTop = termEl.scrollHeight;
-      }
-
-      try {
-        const resp = await fetch('http://127.0.0.1:8000/api/terminal-run', {
+      if (state.geminiKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`;
+        const res = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: cmd })
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }]
+          })
         });
-        const res = await resp.json();
-        if (termEl) {
-          termEl.innerHTML += `\n<span class="${res.exit_code === 0 ? 'text-green-300' : 'text-red-400'}">${res.stdout || ''}${res.stderr || ''}</span>\n<span class="text-slate-500 text-[10px]">[Exit code: ${res.exit_code}]</span>\n`;
-          termEl.scrollTop = termEl.scrollHeight;
-        }
-      } catch (e) {
-        if (termEl) {
-          termEl.innerHTML += `\n<span class="text-red-400">Execution Error: ${e.message}</span>\n`;
-          termEl.scrollTop = termEl.scrollHeight;
-        }
+        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+        const data = await res.json();
+        return data.candidates[0].content.parts[0].text;
       }
+      throw new Error(
+        'No live LLM or FastAPI backend is connected! Please either:\n' +
+        '1. Start your Python backend (`cd backend && uvicorn main:app --port 8000`), OR\n' +
+        '2. Start local Ollama (`OLLAMA_ORIGINS=* ollama serve`), OR\n' +
+        '3. Click "LLM & Voice Config" in the top-right to paste a Gemini API key.'
+      );
     }
 
-    function updateAgentCardsFromBlackboard(agents) {
-      if (agents['Co-Leader']) {
-        const st = document.getElementById('statusOrchestrator');
-        if (st) st.textContent = `${agents['Co-Leader'].status}: ${agents['Co-Leader'].current_task}`;
-      }
-      if (agents['Researcher'] || agents['Architect']) {
-        const a = agents['Researcher'] || agents['Architect'];
-        const st = document.getElementById('statusExplorer');
-        if (st) st.textContent = `${a.status}: ${a.current_task}`;
-      }
-      if (agents['Builder']) {
-        const st = document.getElementById('statusBuilder');
-        if (st) st.textContent = `${agents['Builder'].status}: ${agents['Builder'].current_task}`;
-      }
-      if (agents['Critic']) {
-        const st = document.getElementById('statusCritic');
-        if (st) st.textContent = `${agents['Critic'].status}: ${agents['Critic'].current_task}`;
-      }
-    }
+    async function executeCommand(rawInstruction) {
+      const instruction = (rawInstruction || document.getElementById('mainCommandInput').value).trim();
+      const targetDir = document.getElementById('targetDirInput').value.trim() || '.';
+      if (!instruction) return;
 
-    function initWebSocketTelemetry() {
-      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsHost = window.location.host || '127.0.0.1:8000';
-      const wsUrl = `${wsProtocol}//${wsHost}/ws/telemetry`;
+      state.orbPulse = 2.6;
+      document.getElementById('orbStatusTitle').textContent = 'EXECUTING REAL TOOLS & QUERYING LLM...';
+      appendTraceCard('USER COMMAND', `Target Dir: ${targetDir}`, instruction);
 
-      let ws = null;
-      function connect() {
-        try {
-          ws = new WebSocket(wsUrl);
-          ws.onopen = () => {
-            console.log('[WebSocket Telemetry] Connected successfully to', wsUrl);
-          };
-          ws.onmessage = (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              const payload = data.payload || data;
-              if (payload.cursor) {
-                const phys = payload.cursor.physical_xy || [0, 0];
-                const badge = document.getElementById('cursorCoordBadge');
-                if (badge) badge.textContent = `PHYSICAL MOUSE: [${phys[0]}, ${phys[1]}]`;
-
-                const norm = payload.cursor.normalized_coords;
-                if (norm && norm.length === 2 && (norm[0] > 0 || norm[1] > 0)) {
-                  moveVirtualCursorTo(norm[0], norm[1], payload.cursor.active_app || 'Desktop Mouse', false);
-                }
-              }
-              if (payload.inference) {
-                updateInferenceBadge(payload.inference);
-              }
-              if (payload.blackboard) {
-                const bb = payload.blackboard;
-                if (bb.research_notes && bb.research_notes.length > 0) {
-                  const rList = document.getElementById('researchSourcesList');
-                  const rCount = document.getElementById('researchSourceCountBadge');
-                  if (rCount) rCount.textContent = `${bb.research_notes.length} Sources`;
-                  if (rList) {
-                    rList.innerHTML = bb.research_notes.map(n => `
-                      <div class="p-2 rounded bg-slate-950/80 border border-cyan-500/30">
-                        <div class="font-bold text-cyan-200 truncate">${n.title || n.url}</div>
-                        <div class="text-[10px] text-slate-400 truncate">${n.url}</div>
-                        <div class="text-[10px] text-amber-200 mt-1 line-clamp-2">${n.summary}</div>
-                      </div>
-                    `).join('');
-                  }
-                  if (bb.workspace_files && bb.workspace_files['RESEARCH_DOSSIER.md']) {
-                    const dossierViewer = document.getElementById('researchDossierViewer');
-                    if (dossierViewer) dossierViewer.textContent = bb.workspace_files['RESEARCH_DOSSIER.md'].content || '';
-                  }
-                }
-                if (bb.terminal_logs && bb.terminal_logs.length > 0) {
-                  const termEl = document.getElementById('liveTerminalOutput');
-                  if (termEl) {
-                    termEl.innerHTML = bb.terminal_logs.map(l => `
-<span class="text-cyan-400">$ ${l.command}</span>
-<span class="${l.exit_code === 0 ? 'text-green-300' : 'text-red-400'}">${l.stdout || ''}${l.stderr || ''}</span>
-<span class="text-slate-500 text-[10px]">[Exit: ${l.exit_code}]</span>
-                    `).join('\n');
-                    termEl.scrollTop = termEl.scrollHeight;
-                  }
-                  const lastLog = bb.terminal_logs[bb.terminal_logs.length - 1];
-                  const exitBadge = document.getElementById('terminalExitCodeBadge');
-                  if (exitBadge) {
-                    exitBadge.textContent = `EXIT: ${lastLog.exit_code}`;
-                    exitBadge.className = `px-2 py-0.5 rounded text-[10px] mono border ${lastLog.exit_code === 0 ? 'bg-emerald-950 text-emerald-300 border-emerald-400/40' : 'bg-red-950 text-red-300 border-red-400/40'}`;
-                  }
-                }
-                if (bb.workspace_files && Object.keys(bb.workspace_files).length > 0) {
-                  renderBlackboardWorkspaceFiles(bb.workspace_files);
-                }
-                if (bb.active_agents) {
-                  updateAgentCardsFromBlackboard(bb.active_agents);
-                }
-              }
-            } catch (e) {
-              console.error('[Telemetry Parse Error]', e);
-            }
-          };
-          ws.onclose = () => {
-            setTimeout(connect, 2500);
-          };
-          ws.onerror = () => {
-            ws.close();
-          };
-        } catch (e) {
-          setTimeout(connect, 3000);
-        }
+      // Update Memory Graph agent status
+      const coleader = state.memoryGraph.nodes.find(n => n.id === 'agent_coleader');
+      if (coleader) {
+        coleader.status = 'working';
+        coleader.current_task = `Executing: ${instruction}`;
       }
-      connect();
-    }
+      renderAgentTaskMatrix();
 
-    async function checkHealthAndInference() {
       try {
-        const resp = await fetch('http://127.0.0.1:8000/api/health');
-        if (resp.ok) {
-          const health = await resp.json();
-          updateInferenceBadge(health);
+        // ROUTE A: Full Local Python FastAPI OS Backend is running (127.0.0.1:8000)
+        if (state.backendOnline) {
+          const res = await fetch(`${state.backendUrl}/api/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              instruction,
+              target_directory: targetDir,
+              preferred_model: state.activeModel,
+              gemini_api_key: state.geminiKey
+            })
+          });
+          const data = await res.json();
+          if (data.memory_graph) {
+            state.memoryGraph = data.memory_graph;
+            renderAgentTaskMatrix();
+          }
+          if (data.created_or_fixed_files) {
+            Object.entries(data.created_or_fixed_files).forEach(([k, v]) => {
+              state.mountedFiles[k] = { content: v, lines: v.split('\n').length };
+              state.selectedFile = k;
+            });
+            renderStudioFilesAndMistakes();
+          }
+          const reply = data.spoken_response || JSON.stringify(data.tool_traces, null, 2);
+          document.getElementById('studioDiagnosticOutput').textContent = JSON.stringify(data.tool_traces, null, 2);
+          appendTraceCard('J.A.R.V.I.S. (OS BACKEND)', state.activeModel, `${reply}\n\n--- Tool Traces ---\n${JSON.stringify(data.tool_traces, null, 2)}`);
+          speakText(reply);
+          state.orbPulse = 1.0;
+          document.getElementById('orbStatusTitle').textContent = 'EXECUTION COMPLETE';
+          return;
         }
-      } catch (e) {
-        updateInferenceBadge({ is_live_gpu: false, using_mock_fallback: true });
+
+        // ROUTE B: Direct Browser -> Local Ollama / Gemini + Mounted Local Folder
+        const mountedContext = Object.entries(state.mountedFiles)
+          .slice(0, 12)
+          .map(([path, meta]) => `=== FILE: ${path} ===\n${meta.content.slice(0, 4000)}`)
+          .join('\n\n');
+
+        const sysPrompt =
+          'You are J.A.R.V.I.S., an autonomous software engineer and system assistant. ' +
+          'Never use canned responses. Analyze the user instruction and any mounted directory files below. ' +
+          'If the user asks to find mistakes or write code, output exact bugs with line numbers and provide complete corrected code blocks.';
+
+        const userPayload =
+          `User Instruction: ${instruction}\n` +
+          (mountedContext
+            ? `\nMounted Local Directory Files (${Object.keys(state.mountedFiles).length} files):\n${mountedContext}`
+            : '\n(Note: No local folder mounted via browser button yet, and Python OS backend on port 8000 is offline.)');
+
+        const llmReply = await callDirectLLM(sysPrompt, userPayload);
+        document.getElementById('studioDiagnosticOutput').textContent = llmReply;
+        appendTraceCard('J.A.R.V.I.S. (LIVE LLM)', state.activeModel, llmReply);
+        speakText(llmReply);
+      } catch (err) {
+        const errMsg = err.message || String(err);
+        document.getElementById('liveJarvisTranscript').textContent = errMsg;
+        document.getElementById('studioDiagnosticOutput').textContent = errMsg;
+        appendTraceCard('CONNECTION ERROR (NO FAKE DIALOGUE)', 'Action Required', errMsg);
+      } finally {
+        state.orbPulse = 1.0;
+        if (coleader) coleader.status = 'idle';
+        renderAgentTaskMatrix();
       }
     }
 
-    function updateInferenceBadge(info) {
-      const badge = document.getElementById('inferenceModeBadge');
-      const text = document.getElementById('inferenceModeText');
-      if (!badge || !text) return;
+    function switchTab(tabName) {
+      const sections = {
+        voice: document.getElementById('tabVoice'),
+        memory: document.getElementById('tabMemory'),
+        studio: document.getElementById('tabStudio'),
+        chat: document.getElementById('tabChat')
+      };
+      Object.entries(sections).forEach(([k, el]) => {
+        if (k === tabName) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+      });
+      document.querySelectorAll('.nav-pill').forEach(btn => {
+        if (btn.getAttribute('data-nav') === tabName) {
+          btn.className = 'nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_16px_#ff1e27] flex items-center gap-1.5 transition';
+        } else {
+          btn.className = 'nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5';
+        }
+      });
+    }
 
-      if (info.is_live_gpu || info.ollama_connected) {
-        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-950/90 border border-emerald-400 text-emerald-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(52,211,153,0.4)]';
-        text.textContent = `LIVE OLLAMA GPU (${info.active_model || info.model || 'jarvis-gemma:latest'})`;
-      } else {
-        badge.className = 'px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-950/90 border border-amber-400 text-amber-300 transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(245,158,11,0.3)]';
-        text.textContent = `FALLBACK MODE (Offline / CPU)`;
+    // Speech Recognition
+    function startVoiceInput() {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        alert('Web Speech API not supported in this browser window. Type your command in the input bar.');
+        return;
       }
+      const rec = new SpeechRec();
+      rec.lang = 'en-IN';
+      rec.onstart = () => {
+        document.getElementById('micLabel').textContent = 'Listening...';
+        state.orbPulse = 2.8;
+      };
+      rec.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        document.getElementById('mainCommandInput').value = transcript;
+        executeCommand(transcript);
+      };
+      rec.onend = () => {
+        document.getElementById('micLabel').textContent = 'Speak to J.A.R.V.I.S.';
+        state.orbPulse = 1.0;
+      };
+      rec.start();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      initJarvis3D();
-      attach3DTiltListeners();
-      initWebSocketTelemetry();
-      checkHealthAndInference();
-      setInterval(checkHealthAndInference, 4000);
+      initCrimson3DCore();
+      initMemoryGraphCanvas();
+      probeLiveConnections();
 
-      const initScenario = SCENARIOS.gst_webhook;
-      document.getElementById('codeDiffViewer').textContent = BACKEND_FILES['gui_computer_agent.py'];
-      document.getElementById('criticTestViewer').textContent = initScenario.testOutput;
-      state.pendingPatch = { targetFile: initScenario.targetFile, code: initScenario.patchedCode };
-
-      appendAgentLog(
-        'MARK LXXXV 3D COCKPIT ONLINE',
-        'text-cyan-300',
-        'HP HyperX RTX 5060 // 24GB RAM',
-        'Interactive 3D Perspective Cards + Visual GUI Mouse Operator (`gui_computer_agent.py`) initialized. Hover over any card for 3D depth tilt, or click Turn 1 then Turn 2!',
-        '[3D Holographic HUD Ready]'
-      );
-
-      // 3D Helmet Tilt Mode Toggle
-      document.getElementById('btnToggle3dCockpit').addEventListener('click', (e) => {
-        state.cockpit3dMode = !state.cockpit3dMode;
-        const wrapper = document.getElementById('cockpitWrapper');
-        if (state.cockpit3dMode) {
-          wrapper.classList.add('cockpit-3d-engaged');
-          e.currentTarget.textContent = '3D Helmet Tilt: ON';
-          showToast('Engaged 3D Iron Man Helmet Cockpit Perspective!');
-        } else {
-          wrapper.classList.remove('cockpit-3d-engaged');
-          e.currentTarget.textContent = '3D Helmet Tilt: OFF';
-        }
+      document.querySelectorAll('.nav-pill').forEach(btn => {
+        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-nav')));
       });
 
-      document.getElementById('selectSingleGemmaModel').addEventListener('change', (e) => {
-        state.singleModel = e.target.value;
-        updateBlackboardBanner('Model Updated');
-        showToast(`Switched single base model to: ${state.singleModel}`);
+      document.getElementById('btnExecuteCommand').addEventListener('click', () => executeCommand());
+      document.getElementById('mainCommandInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') executeCommand();
       });
 
-      document.getElementById('btnSpawnCustomSubAgent').addEventListener('click', () => {
-        const roles = [
-          { name: 'GUI Coordinate Verifier Sub-Agent', parent: 'Co-Leader' },
-          { name: 'DOM OCR Fallback Sub-Agent', parent: 'Architect Agent' },
-          { name: 'SQLite Schema Sub-Agent', parent: 'Lead Builder' },
-          { name: 'Edge Case Test Sub-Agent', parent: 'Co-Leader QA' }
-        ];
-        const nextRole = roles[state.spawnedSubAgents.length % roles.length];
-        state.spawnedSubAgents.push(nextRole);
-        renderSpawnedSubAgents();
-        updateBlackboardBanner('Sub-Agent Spawned');
-        trigger3DPulse(1800);
-        appendAgentLog(
-          `${nextRole.parent} -> Spawned Sub-Agent`,
-          'text-purple-300',
-          `1-Model: ${state.singleModel}`,
-          `Dynamically spawned '${nextRole.name}' in 3D orbit with laser link and connected it to the Shared Blackboard.`,
-          `call:spawn_sub_agent{name: "${nextRole.name}"}`
-        );
-        showToast(`Spawned ${nextRole.name} in 3D orbit!`);
-      });
-
-      const closeYt = document.getElementById('btnCloseYoutubeDock');
-      if (closeYt) {
-        closeYt.addEventListener('click', () => {
-          const dock = document.getElementById('youtubePlayerDock');
-          if (dock) dock.classList.add('hidden');
-        });
-      }
-
-      const voiceCmdInput = document.getElementById('voiceCommandInput');
-      if (voiceCmdInput) {
-        voiceCmdInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            runMultiAgentMission();
-          }
-        });
-      }
-
-      document.getElementById('tabBtnHud').addEventListener('click', () => switchTab('hud'));
-      document.getElementById('tabBtnRepo').addEventListener('click', () => switchTab('repo'));
-      document.getElementById('tabBtnBackend').addEventListener('click', () => switchTab('backend'));
-      document.getElementById('tabBtnGuide').addEventListener('click', () => switchTab('guide'));
-
-      document.getElementById('btnToggleMute').addEventListener('click', () => {
-        state.ttsEnabled = !state.ttsEnabled;
-        const dot = document.getElementById('muteStatusDot');
-        const label = document.getElementById('muteStatusLabel');
-        if (state.ttsEnabled) {
-          dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-          label.textContent = 'Voice TTS: ON';
-        } else {
-          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-          dot.className = 'w-2 h-2 rounded-full bg-slate-500';
-          label.textContent = 'Voice TTS: MUTED';
-        }
-      });
-
-      document.getElementById('btnReplaySpeech').addEventListener('click', () => speakJarvis(state.lastSpokenText));
-      document.getElementById('btnMicRecord').addEventListener('click', toggleMicrophone);
-      document.getElementById('btnRunMission').addEventListener('click', () => runMultiAgentMission());
-
-      document.querySelectorAll('.scenario-btn').forEach(btn => {
+      document.querySelectorAll('.quick-cmd').forEach(btn => {
         btn.addEventListener('click', () => {
-          const key = btn.getAttribute('data-Scenario');
-          if (key === 'step1_open_youtube') {
-            document.getElementById('voiceCommandInput').value = 'Jarvis, open YouTube';
-            runMultiAgentMission('step1_open_youtube');
-            return;
-          }
-          if (key === 'youtube_song') {
-            document.getElementById('voiceCommandInput').value = 'Can you search for Believer by Imagine Dragons';
-            runMultiAgentMission('youtube_song');
-            return;
-          }
-          if (key === 'build_complex_project') {
-            document.getElementById('voiceCommandInput').value = 'Jarvis, make a complex Smart Expense Tracker project with FastAPI backend, SQLite database, and dashboard UI';
-            runMultiAgentMission('build_complex_project');
-            return;
-          }
-          const sc = SCENARIOS[key];
-          if (sc) {
-            document.getElementById('voiceCommandInput').value = sc.command;
-            runMultiAgentMission(key);
-          }
+          const cmd = btn.getAttribute('data-cmd');
+          document.getElementById('mainCommandInput').value = cmd;
+          executeCommand(cmd);
         });
       });
 
-      document.getElementById('btnClearLog').addEventListener('click', () => {
-        document.getElementById('agentMessageLog').innerHTML = '';
-        state.spawnedSubAgents = [];
-        renderSpawnedSubAgents();
-        showToast('Reset trace and 3D orbit nodes.');
-      });
+      document.getElementById('btnVoiceMic').addEventListener('click', startVoiceInput);
+      document.getElementById('btnPickLocalDir').addEventListener('click', mountLocalFolderInBrowser);
 
-      document.getElementById('btnApplyPatchToRepo').addEventListener('click', () => {
-        if (state.pendingPatch && state.pendingPatch.targetFile && state.files[state.pendingPatch.targetFile]) {
-          state.files[state.pendingPatch.targetFile] = state.pendingPatch.code;
-          state.selectedFile = state.pendingPatch.targetFile;
-          renderRepoView();
-          showToast(`Applied verified patch to ${state.pendingPatch.targetFile}!`);
+      document.getElementById('btnScanCurrentDir').addEventListener('click', async () => {
+        if (state.mountedDirHandle) {
+          await scanMountedBrowserDirectory();
+          return;
         }
-      });
-
-      document.getElementById('btnSaveRepoFile').addEventListener('click', () => {
-        state.files[state.selectedFile] = document.getElementById('repoFileEditor').value;
-        renderRepoView();
-        updateBlackboardBanner(`Edited ${state.selectedFile}`);
-        showToast(`Saved ${state.selectedFile} to Shared Blackboard.`);
-      });
-
-      document.getElementById('btnAddNewFile').addEventListener('click', () => {
-        document.getElementById('newFileModal').classList.remove('hidden');
-      });
-      document.getElementById('btnCloseNewFileModal').addEventListener('click', () => {
-        document.getElementById('newFileModal').classList.add('hidden');
-      });
-      document.getElementById('btnConfirmNewFile').addEventListener('click', () => {
-        let name = document.getElementById('inputNewFileName').value.trim() || 'custom_module.py';
-        if (!name.endsWith('.py')) name += '.py';
-        state.files[name] = document.getElementById('inputNewFileCode').value;
-        state.selectedFile = name;
-        document.getElementById('newFileModal').classList.add('hidden');
-        renderRepoView();
-        updateBlackboardBanner(`Added ${name}`);
-        showToast(`Added ${name} to Shared Blackboard!`);
-      });
-
-      document.getElementById('backendCodeViewer').textContent = BACKEND_FILES['gui_computer_agent.py'];
-      document.querySelectorAll('.pyfile-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const fname = btn.getAttribute('data-pyfile');
-          document.getElementById('backendCodeViewer').textContent = BACKEND_FILES[fname] || '';
-          document.querySelectorAll('.pyfile-btn').forEach(b => {
-            b.className = 'pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700';
+        const dirPath = document.getElementById('targetDirInput').value.trim() || '.';
+        if (state.backendOnline) {
+          const res = await fetch(`${state.backendUrl}/api/inspect-dir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ instruction: 'scan', target_directory: dirPath })
           });
-          btn.className = 'pyfile-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-400/40';
+          const data = await res.json();
+          if (data.files) {
+            state.mountedFiles = {};
+            data.files.forEach(f => {
+              state.mountedFiles[f.path] = { content: f.full_content || f.preview, lines: f.lines };
+            });
+            state.detectedMistakes = data.detected_mistakes || [];
+            renderStudioFilesAndMistakes();
+            document.getElementById('studioDiagnosticOutput').textContent = JSON.stringify(data, null, 2);
+          }
+        } else {
+          await mountLocalFolderInBrowser();
+        }
+      });
+
+      document.getElementById('btnAutoFixAll').addEventListener('click', () => {
+        switchTab('voice');
+        executeCommand('Inspect all files in the directory, explain every mistake and bug with exact line numbers, and write the corrected code.');
+      });
+
+      document.getElementById('btnSaveDiskFile').addEventListener('click', async () => {
+        if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
+        const newContent = document.getElementById('studioCodeEditor').value;
+        state.mountedFiles[state.selectedFile].content = newContent;
+        const handle = state.mountedFiles[state.selectedFile].handle;
+        if (handle && handle.createWritable) {
+          const writable = await handle.createWritable();
+          await writable.write(newContent);
+          await writable.close();
+          document.getElementById('studioAstBadge').textContent = 'Saved to Disk!';
+        }
+      });
+
+      document.getElementById('btnAddMemoryFact').addEventListener('click', () => {
+        const title = prompt('Enter Memory Block Title (e.g. "API Auth Key Rule" or "Project Stack: FastAPI + React"):');
+        if (!title) return;
+        const id = `mem_custom_${Date.now().toString().slice(-4)}`;
+        state.memoryGraph.nodes.push({
+          id,
+          label: title,
+          type: 'memory',
+          status: 'stored',
+          current_task: 'User-injected persistent memory rule',
+          x: 120 + Math.random() * 520,
+          y: 80 + Math.random() * 270
         });
+        state.memoryGraph.edges.push({ source: 'agent_coleader', target: id, relation: 'remembers', active: true });
+        renderAgentTaskMatrix();
       });
 
-      document.getElementById('btnCopyBackendCode').addEventListener('click', () => {
-        const text = document.getElementById('backendCodeViewer').textContent;
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        showToast('Copied Python backend code!');
+      document.getElementById('btnSpawnGraphAgent').addEventListener('click', () => {
+        const name = prompt('Enter Specialist Sub-Agent Name (e.g. "Security Linter Agent"):', 'AST Bug Hunter Sub-Agent');
+        if (!name) return;
+        const id = `sub_${Date.now().toString().slice(-4)}`;
+        state.memoryGraph.nodes.push({
+          id,
+          label: name,
+          type: 'sub_agent',
+          status: 'working',
+          current_task: 'Dynamically spawned by user / Co-Leader',
+          x: 150 + Math.random() * 460,
+          y: 90 + Math.random() * 260
+        });
+        state.memoryGraph.edges.push({ source: 'agent_coleader', target: id, relation: 'spawned', active: true });
+        state.memoryGraph.edges.push({ source: id, target: 'mem_workspace', relation: 'audits', active: true });
+        renderAgentTaskMatrix();
       });
 
-      document.getElementById('btnOpenApiModal').addEventListener('click', () => {
-        document.getElementById('apiModal').classList.remove('hidden');
+      document.getElementById('btnClearTrace').addEventListener('click', () => {
+        document.getElementById('chatTraceContainer').innerHTML = '';
       });
-      document.getElementById('btnCloseApiModal').addEventListener('click', () => {
-        document.getElementById('apiModal').classList.add('hidden');
+
+      document.getElementById('btnOpenConfig').addEventListener('click', () => {
+        document.getElementById('configModal').classList.remove('hidden');
       });
-      document.getElementById('btnSaveApiKeys').addEventListener('click', () => {
-        state.geminiKey = document.getElementById('inputGeminiKey').value.trim();
-        state.sarvamKey = document.getElementById('inputSarvamKey').value.trim();
-        document.getElementById('apiModeBadge').textContent = (state.geminiKey || state.sarvamKey) ? 'Live APIs Connected' : 'Sandbox + WebSpeech';
-        document.getElementById('apiModal').classList.add('hidden');
-        showToast('Saved API keys.');
+      document.getElementById('btnCloseConfig').addEventListener('click', () => {
+        document.getElementById('configModal').classList.add('hidden');
+      });
+      document.getElementById('btnSaveConfig').addEventListener('click', () => {
+        state.backendUrl = document.getElementById('cfgBackendUrl').value.trim() || 'http://127.0.0.1:8000';
+        state.ollamaUrl = document.getElementById('cfgOllamaUrl').value.trim() || 'http://127.0.0.1:11434';
+        state.geminiKey = document.getElementById('cfgGeminiKey').value.trim();
+        document.getElementById('configModal').classList.add('hidden');
+        probeLiveConnections();
       });
     });
   </script>

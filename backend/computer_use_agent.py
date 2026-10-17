@@ -430,6 +430,215 @@ def _type_into_calculator_direct(expression: str) -> Dict[str, Any]:
         return {"ok": False, "method": "pyautogui_winsta0_foreground", "error": str(e), "steps": steps}
 
 
+def control_desktop_gui(app_name: str, goal: str = "", actions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+    """
+    Universal Muse AI / Claude Computer Use Agent for any Windows application.
+    Controls Blender, Notepad, VS Code, Calculator, Spotify, Chrome/Browser, Terminal, or any desktop app.
+    Executes real keystrokes, mouse events, menu navigations on WinSta0\\Default and captures verification proof.
+    """
+    attach_to_default_desktop()
+    steps: List[str] = []
+    app_lower = (app_name or "desktop").lower().strip()
+    goal_lower = (goal or "").lower().strip()
+    proof_path = os.path.join(os.path.dirname(__file__), "muse_ai_action_proof.png")
+
+    try:
+        # 1. APPLICATION LAUNCH / FOCUS
+        target_hwnd = None
+        wins = find_visible_windows(app_lower)
+        if wins:
+            target_hwnd = wins[0]["hwnd"]
+            force_foreground_window(target_hwnd)
+            steps.append(f"Focused existing window: {wins[0]['title']}")
+            time.sleep(0.5)
+        else:
+            # Need to launch the application
+            if "blender" in app_lower:
+                blender_paths = [r"E:\blender.exe", r"E:\blender-launcher.exe"]
+                launched = False
+                for bp in blender_paths:
+                    if os.path.exists(bp):
+                        subprocess.Popen([bp], cwd=os.path.dirname(bp))
+                        steps.append(f"Launched Blender from {bp}")
+                        launched = True
+                        break
+                if not launched:
+                    pyautogui.press('win')
+                    time.sleep(0.4)
+                    pyautogui.write('Blender')
+                    time.sleep(0.4)
+                    pyautogui.press('enter')
+                    steps.append("Launched Blender via Windows Start Search")
+                time.sleep(4.0)
+            elif "notepad" in app_lower:
+                subprocess.Popen(["notepad.exe"])
+                steps.append("Launched Notepad")
+                time.sleep(1.2)
+            elif "calc" in app_lower:
+                subprocess.Popen(["calc.exe"])
+                steps.append("Launched Calculator")
+                time.sleep(1.5)
+            elif any(k in app_lower for k in ["code", "vscode", "vs code"]):
+                subprocess.Popen(["code"], shell=True)
+                steps.append("Launched Visual Studio Code")
+                time.sleep(2.5)
+            elif any(k in app_lower for k in ["chrome", "edge", "browser"]):
+                browser_exe = "chrome" if "chrome" in app_lower else "msedge"
+                subprocess.Popen([browser_exe], shell=True)
+                steps.append(f"Launched {browser_exe}")
+                time.sleep(2.0)
+            elif "spotify" in app_lower:
+                os.startfile("spotify:")
+                steps.append("Launched Spotify via protocol")
+                time.sleep(2.0)
+            else:
+                from os_and_dir_tools import open_system_app_or_url
+                res = open_system_app_or_url(app_name)
+                steps.append(f"Launched {app_name}: {res.get('action')}")
+                time.sleep(2.0)
+
+            # Refocus launched window
+            time.sleep(0.5)
+            new_wins = find_visible_windows(app_lower)
+            if new_wins:
+                target_hwnd = new_wins[0]["hwnd"]
+                force_foreground_window(target_hwnd)
+                steps.append(f"Foregrounded: {new_wins[0]['title']}")
+
+        # 2. PERFORM APPLICATION-SPECIFIC OPERATIONS (MUSE AI DEEP ACTIONS)
+        if "blender" in app_lower:
+            pyautogui.press('escape')
+            time.sleep(0.3)
+            steps.append("Dismissed Blender splash screen (Escape)")
+
+            if any(k in goal_lower for k in ["cube", "mesh cube", "box", "add a cube", "create a cube", "add cube"]):
+                pyautogui.hotkey('shift', 'a')
+                time.sleep(0.3)
+                pyautogui.press('enter')  # Opens Mesh submenu
+                time.sleep(0.2)
+                pyautogui.press('enter')  # Selects Cube
+                steps.append("Executed Blender Add Mesh -> Cube (Shift+A -> Enter -> Enter)")
+            elif any(k in goal_lower for k in ["sphere", "uv sphere", "ball"]):
+                pyautogui.hotkey('shift', 'a')
+                time.sleep(0.3)
+                pyautogui.press('enter')
+                time.sleep(0.2)
+                pyautogui.press('down')
+                pyautogui.press('down')
+                pyautogui.press('enter')
+                steps.append("Executed Blender Add Mesh -> UV Sphere")
+            elif any(k in goal_lower for k in ["cylinder"]):
+                pyautogui.hotkey('shift', 'a')
+                time.sleep(0.3)
+                pyautogui.press('enter')
+                time.sleep(0.2)
+                pyautogui.press('down')
+                pyautogui.press('down')
+                pyautogui.press('down')
+                pyautogui.press('enter')
+                steps.append("Executed Blender Add Mesh -> Cylinder")
+            elif any(k in goal_lower for k in ["monkey", "suzanne"]):
+                pyautogui.hotkey('shift', 'a')
+                time.sleep(0.3)
+                pyautogui.press('enter')
+                time.sleep(0.2)
+                for _ in range(8):
+                    pyautogui.press('down')
+                pyautogui.press('enter')
+                steps.append("Executed Blender Add Mesh -> Monkey")
+            elif any(k in goal_lower for k in ["render"]):
+                pyautogui.press('f12')
+                steps.append("Triggered Blender Render (F12)")
+            elif any(k in goal_lower for k in ["edit mode", "toggle mode"]):
+                pyautogui.press('tab')
+                steps.append("Toggled Edit/Object Mode (Tab)")
+
+        elif "notepad" in app_lower:
+            text_match = re.search(r'(?:type|write|text)\s+["\']?([^"\']+)["\']?', goal, re.IGNORECASE)
+            to_type = text_match.group(1).strip() if text_match else ""
+            if not to_type and ("write" in goal_lower or "type" in goal_lower):
+                to_type = re.sub(r'^(?:open\s+notepad\s+and\s+)?(?:type|write)\s+', '', goal, flags=re.I).strip()
+            if to_type:
+                time.sleep(0.3)
+                pyautogui.typewrite(to_type[:500], interval=0.02)
+                steps.append(f"Typed text into Notepad: {to_type[:60]}")
+            if "save" in goal_lower:
+                pyautogui.hotkey('ctrl', 's')
+                steps.append("Sent Ctrl+S (Save)")
+
+        elif "calc" in app_lower:
+            norm_math_cmd = goal
+            for pattern, sym in [
+                (r'\b(?:multiplied\s+by|times|\*|star|into|x|X|×)\b', '*'),
+                (r'\b(?:divided\s+by|divide\s+by|over|÷)\b', '/'),
+                (r'\b(?:plus|\+)\b', '+'),
+                (r'\b(?:minus|-)\b', '-'),
+            ]:
+                norm_math_cmd = re.sub(pattern, f' {sym} ', norm_math_cmd, flags=re.I)
+            math_match = re.search(r'(\d+(?:\s*[\+\-\*/\^%]\s*\d+)+)', norm_math_cmd)
+            expr = math_match.group(1) if math_match else "0"
+            c_res = _type_into_calculator_direct(expr)
+            steps.extend(c_res.get("steps", []))
+
+        elif any(k in app_lower for k in ["code", "vscode", "vs code"]):
+            if "new file" in goal_lower:
+                pyautogui.hotkey('ctrl', 'n')
+                steps.append("Triggered New File in VS Code (Ctrl+N)")
+            if "terminal" in goal_lower:
+                pyautogui.hotkey('ctrl', '`')
+                steps.append("Toggled VS Code Terminal (Ctrl+`)")
+
+        elif "spotify" in app_lower:
+            pyautogui.press('space')
+            steps.append("Toggled Spotify Play/Pause (Space)")
+
+        # 3. EXPLICIT CUSTOM ACTIONS (IF PROVIDED)
+        if actions:
+            for act in actions:
+                atype = act.get("type", "")
+                if atype == "hotkey":
+                    pyautogui.hotkey(*act.get("keys", []))
+                    steps.append(f"Hotkey: {'+'.join(act.get('keys', []))}")
+                elif atype == "press":
+                    pyautogui.press(act.get("key", ""))
+                    steps.append(f"Pressed: {act.get('key')}")
+                elif atype == "write":
+                    pyautogui.write(act.get("text", ""), interval=0.02)
+                    steps.append(f"Typed: {act.get('text')[:30]}")
+                elif atype == "click":
+                    pyautogui.click(act.get("x", 0), act.get("y", 0))
+                    steps.append(f"Clicked coordinate: ({act.get('x')}, {act.get('y')})")
+                time.sleep(0.2)
+
+        # 4. VERIFICATION SCREENSHOT
+        time.sleep(0.6)
+        import PIL.ImageGrab
+        import io
+        import base64
+        img = PIL.ImageGrab.grab()
+        img.save(proof_path)
+        img_thumb = img.copy()
+        img_thumb.thumbnail((1280, 800))
+        buf = io.BytesIO()
+        img_thumb.save(buf, format="JPEG", quality=65)
+        b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        steps.append(f"Captured real verification screenshot: {img.size[0]}x{img.size[1]}")
+
+        return {
+            "ok": True,
+            "action": "control_desktop_gui",
+            "app": app_name,
+            "goal": goal,
+            "steps": steps,
+            "screenshot_path": proof_path,
+            "screenshot_base64": f"data:image/jpeg;base64,{b64}",
+            "resolution": list(img.size),
+        }
+    except Exception as e:
+        logger.error(f"Error in control_desktop_gui: {e}")
+        return {"ok": False, "app": app_name, "goal": goal, "error": str(e), "steps": steps}
+
+
 def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
     """
     Execute a real GUI computer use action.
@@ -463,24 +672,14 @@ def execute_computer_use(action: Dict[str, Any]) -> Dict[str, Any]:
             "gui_method": gui_result.get("method", "unknown"),
         }
 
-    # ── TYPE IN APP ───────────────────────────────────────────────────────────
-    elif action_type == "type_in_app":
-        app_name = action.get("app", "")
-        text = action.get("text", "")
-        attach_to_default_desktop()
+    # ── UNIVERSAL DESKTOP GUI CONTROL (MUSE AI STYLE) ──────────────────────────
+    elif action_type in ("control_app", "control_desktop_gui", "desktop_gui", "gui_action"):
+        app_name = action.get("app") or action.get("target") or "desktop"
+        goal = action.get("goal") or action.get("instruction") or action.get("task") or ""
+        acts = action.get("actions") or []
+        return control_desktop_gui(app_name, goal, acts)
 
-        steps = []
-        try:
-            wins = find_visible_windows(app_name)
-            if wins:
-                force_foreground_window(wins[0]["hwnd"])
-                steps.append(f"Focused window: {wins[0]['title']}")
-            time.sleep(0.3)
-            pyautogui.typewrite(text[:500], interval=0.03)
-            steps.append(f"Typed {len(text[:500])} characters into {app_name}")
-            return {"ok": True, "app": app_name, "typed_preview": text[:80], "steps": steps}
-        except Exception as e:
-            return {"ok": False, "app": app_name, "error": str(e)}
+    # ── TYPE IN APP ───────────────────────────────────────────────────────────
 
     # ── SCREENSHOT ────────────────────────────────────────────────────────────
     elif action_type == "screenshot":

@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. CRIMSON OS — 3D Red Particle Core, Neural Memory Graph &amp; Antigravity Directory Studio</title>
+  <title>J.A.R.V.I.S. // ANTIGRAVITY IDE (CRIMSON EDITION)</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,13 +15,13 @@
       --crimson-core: #ff1e27;
       --crimson-glow: #dc2626;
       --ember-orange: #ff5500;
-      --pitch-black: #000000;
+      --pitch-black: #050102;
     }
     body {
       font-family: 'Inter', sans-serif;
-      background-color: #000000;
+      background-color: #030001;
       background-image:
-        radial-gradient(circle at 50% 42%, rgba(255, 30, 39, 0.14) 0%, rgba(120, 0, 10, 0.05) 42%, #000000 75%);
+        radial-gradient(circle at 50% 0%, rgba(255, 30, 39, 0.12) 0%, rgba(120, 0, 10, 0.04) 35%, #030001 70%);
       color: #ffe4e6;
       overflow-x: hidden;
     }
@@ -29,1177 +30,1279 @@
 
     /* Crimson Glass Panels */
     .crimson-panel {
-      background: linear-gradient(155deg, rgba(20, 4, 7, 0.88) 0%, rgba(5, 1, 2, 0.96) 100%);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      border: 1px solid rgba(255, 30, 39, 0.35);
-      box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.95),
-        0 0 30px rgba(255, 30, 39, 0.12),
-        inset 0 1px 0 rgba(255, 120, 120, 0.18);
+      background: linear-gradient(155deg, rgba(18, 3, 6, 0.92) 0%, rgba(6, 1, 3, 0.98) 100%);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 30, 39, 0.3);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(255, 30, 39, 0.1);
     }
 
-    .card-3d {
-      position: relative;
-      transform-style: preserve-3d;
-      perspective: 1000px;
-      background: linear-gradient(160deg, rgba(28, 5, 9, 0.88) 0%, rgba(8, 1, 3, 0.96) 100%);
-      border: 1px solid rgba(255, 45, 55, 0.3);
-      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.85), 0 0 18px rgba(255, 30, 39, 0.08);
-      transition: transform 0.15s ease-out, border-color 0.25s ease, box-shadow 0.25s ease;
-    }
-    .card-3d:hover {
-      border-color: rgba(255, 60, 70, 0.85);
-      box-shadow: 0 22px 44px rgba(255, 30, 39, 0.26), 0 0 25px rgba(255, 30, 39, 0.22);
+    .editor-container {
+      background: #080204;
+      border: 1px solid rgba(255, 30, 39, 0.25);
     }
 
-    .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scroll::-webkit-scrollbar-track { background: #050001; }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: #080102; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #5c0a11; border-radius: 3px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: #ff1e27; }
+
+    .glow-crimson {
+      box-shadow: 0 0 20px rgba(255, 30, 39, 0.35);
+    }
+    .text-glow {
+      text-shadow: 0 0 12px rgba(255, 30, 39, 0.6);
+    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col selection:bg-red-600/40">
 
-  <!-- MINIMALIST FLOATING PILL BAR (EXACT LAYOUT FROM YOUTUBE SHORT wXc_OZS5FmM + MEMORY GRAPH TAB FROM kpBMntwPOL8) -->
-  <header class="sticky top-0 z-40 pt-3 pb-2 px-4 flex flex-wrap items-center justify-between gap-3 bg-black/80 backdrop-blur-md border-b border-red-950/60">
-    <div class="flex items-center gap-2.5">
-      <span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_14px_#ff1e27] animate-ping"></span>
-      <span class="font-hud text-sm font-black tracking-widest text-red-500">J.A.R.V.I.S. // CRIMSON CORE</span>
-      <span id="liveConnectionBadge" class="text-[10px] mono px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-red-300">
-        Probing Ollama (11434) &amp; Backend (8000)...
+  <!-- TOP HEADER HUD & STATUS BAR -->
+  <header class="sticky top-0 z-40 px-4 py-2 bg-black/90 backdrop-blur-md border-b border-red-950/70 flex flex-wrap items-center justify-between gap-3">
+    <!-- Brand / Status -->
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_#ff1e27] animate-pulse"></span>
+        <span class="font-hud text-sm font-black tracking-widest text-red-500 text-glow">J.A.R.V.I.S. // ANTIGRAVITY IDE</span>
+      </div>
+      <span id="activeModelBadge" class="text-[10px] mono px-2.5 py-0.5 rounded-full bg-red-950/80 border border-red-500/40 text-red-300">
+        Connecting to Ollama &amp; Backend...
+      </span>
+      <span id="osDesktopBadge" class="hidden sm:inline-flex text-[10px] mono px-2 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
+        WinSta0\Default: Live
       </span>
     </div>
 
-    <!-- Center Floating Pill Navigation (Matches Video 1: Voice | Chat | Memory & Swarm | Antigravity Directory Studio) -->
-    <nav class="inline-flex items-center gap-1 rounded-full bg-[#0d0204] px-2 py-1 border border-red-500/40 shadow-[0_0_25px_rgba(255,30,39,0.22)]">
-      <button type="button" data-nav="voice" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_16px_#ff1e27] flex items-center gap-1.5 transition">
-        <span>&#9679;</span> Voice Core
+    <!-- Center Navigation Pill Bar (View Switcher) -->
+    <nav class="inline-flex items-center gap-1 rounded-full bg-[#0d0204] px-2 py-1 border border-red-500/40 shadow-[0_0_20px_rgba(255,30,39,0.2)]">
+      <button type="button" data-view="ide" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_14px_#ff1e27] transition flex items-center gap-1.5">
+        <span>&#9881;</span> Antigravity IDE
       </button>
-      <button type="button" data-nav="memory" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
-        <span>&#10022;</span> Memory &amp; Swarm Graph (<span id="navNodeCount">9</span>)
+      <button type="button" data-view="desktop" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+        <span>&#128187;</span> Muse AI Live Desktop
       </button>
-      <button type="button" data-nav="studio" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
-        <span>&#9881;</span> Directory &amp; Code Studio
+      <button type="button" data-view="swarm" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+        <span>&#10022;</span> Neural Swarm Graph
       </button>
-      <button type="button" data-nav="chat" class="nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
-        <span>&#9993;</span> Tool &amp; Chat Trace
+      <button type="button" data-view="voice" class="nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5">
+        <span>&#9679;</span> Voice Core 3D
       </button>
     </nav>
 
+    <!-- Right Quick Actions -->
     <div class="flex items-center gap-2">
-      <button id="btnPickLocalDir" type="button" class="px-3 py-1.5 rounded-full text-xs font-bold bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 mono transition">
-        &#128193; Mount Local Folder
+      <button id="btnQuickAudit" type="button" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-950/80 hover:bg-amber-900 border border-amber-500/50 text-amber-200 mono transition flex items-center gap-1">
+        <span>&#9888;</span> Audit Mistakes
       </button>
-      <button id="btnOpenConfig" type="button" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 border border-red-500/40 text-red-300 transition">
-        LLM &amp; Voice Config
+      <button id="btnOpenConfig" type="button" class="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-950 hover:bg-zinc-900 border border-red-500/40 text-red-300 transition">
+        Settings
       </button>
     </div>
   </header>
 
-  <!-- MAIN STAGE -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-3 flex flex-col justify-between space-y-4">
-
-    <!-- ======================================================================================== -->
-    <!-- TAB 1: CRIMSON 3D PARTICLE, GYROSCOPIC RING & RADIAL SPIKE VOICE CORE (VIDEO 1 STYLE)    -->
-    <!-- ======================================================================================== -->
-    <section id="tabVoice" class="flex-1 flex flex-col items-center justify-between min-h-[540px] relative">
-
-      <!-- Top Floating Telemetry Strip -->
-      <div class="w-full flex flex-wrap items-center justify-between gap-2 text-xs mono z-10">
-        <div class="px-3 py-1.5 rounded-xl bg-black/80 border border-red-500/35 text-red-300">
-          Mounted Folder: <strong id="mountedDirLabel" class="text-white">. (Current Workspace)</strong>
-        </div>
-        <div id="activeAgentBanner" class="px-3 py-1.5 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200">
-          Active Agent: <strong>Co-Leader Standby</strong>
-        </div>
+  <!-- ====================================================================================== -->
+  <!-- MAIN STAGE: 1. ANTIGRAVITY IDE VIEW (3 COLUMNS: EXPLORER | MONACO | CLAUDE CODE & SCREEN) -->
+  <!-- ====================================================================================== -->
+  <main id="viewIde" class="flex-1 w-full px-3 py-2 flex flex-col gap-2">
+    <!-- Top Action Bar for IDE -->
+    <div class="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-black/60 border border-red-950/70 text-xs mono">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="text-red-400 font-bold">Workspace:</span>
+        <input id="inputWorkspaceDir" type="text" value="." class="bg-black/80 border border-red-900/60 rounded px-2.5 py-1 text-xs mono text-red-100 focus:outline-none focus:border-red-500 w-44 sm:w-64" placeholder="Directory path (. for root)">
+        <button id="btnRefreshWorkspace" type="button" class="px-2.5 py-1 rounded bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
+          &#8635; Reload Tree
+        </button>
       </div>
 
-      <!-- CENTERPIECE: PURE BLACK + GLOWING RED 3D PARTICLE & SPIKE ORB (Matches YouTube Short wXc_OZS5FmM) -->
-      <div id="crimsonOrbContainer" class="relative w-full h-[390px] sm:h-[430px] flex items-center justify-center cursor-grab active:cursor-grabbing">
-        <canvas id="crimsonOrbCanvas" class="w-full h-full block"></canvas>
-
-        <!-- Subtle HUD Overlay around Orb -->
-        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 text-center pointer-events-none space-y-1 max-w-2xl px-4">
-          <div id="orbStatusTitle" class="font-hud text-xs uppercase tracking-[0.25em] text-red-400 font-bold">
-            CRIMSON NEURAL CORE ONLINE // ZERO CANNED DIALOGUES
-          </div>
-          <p id="liveJarvisTranscript" class="text-xs sm:text-sm text-red-100/95 bg-black/85 border border-red-500/35 rounded-2xl px-4 py-2.5 shadow-[0_0_30px_rgba(255,30,39,0.2)]">
-            Speak or type any command below — e.g. "Open Calculator", "Audit my mounted folder and fix all bugs", or "Write a Python port scanner and test it".
-          </p>
-        </div>
+      <div class="flex items-center gap-2">
+        <span id="activeFileIndicator" class="text-red-300/80 font-bold truncate max-w-xs">No file open</span>
+        <button id="btnSaveFileDisk" type="button" class="px-3 py-1 rounded bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/50 text-emerald-200 font-bold transition flex items-center gap-1">
+          <span>&#128190;</span> Save to Disk
+        </button>
+        <button id="btnRunCurrentFile" type="button" class="px-3 py-1 rounded bg-red-600 hover:bg-red-500 text-white font-bold transition flex items-center gap-1 shadow-[0_0_10px_#ff1e27]">
+          <span>&#9654;</span> Run Code
+        </button>
       </div>
+    </div>
 
-      <!-- BOTTOM COMMAND BAR (SUPPORTS REAL APP LAUNCH, REAL DIRECTORY AUDIT, REAL CODE BUILD & WEB RESEARCH) -->
-      <div class="w-full crimson-panel rounded-2xl p-3.5 space-y-2.5 z-10">
-        <div class="flex flex-col md:flex-row items-stretch md:items-center gap-2.5">
-          <button id="btnVoiceMic" type="button" class="px-4 py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-[0_0_25px_rgba(255,30,39,0.55)] shrink-0 transition">
-            <span id="micDot" class="w-2.5 h-2.5 rounded-full bg-white"></span>
-            <span id="micLabel">Speak to J.A.R.V.I.S.</span>
-          </button>
-
-          <input id="targetDirInput" type="text" value="." placeholder="Target Directory Path (e.g. C:\Users\You\project or .)" class="md:w-64 bg-black border border-red-500/40 rounded-xl px-3 py-2.5 text-xs text-red-200 mono focus:outline-none focus:border-red-400" />
-
-          <input id="mainCommandInput" type="text" placeholder="Tell J.A.R.V.I.S. what to do (open any app, audit &amp; fix files in folder, research web, or write code)..." class="flex-1 bg-black border border-red-500/50 rounded-xl px-3.5 py-2.5 text-xs text-white mono focus:outline-none focus:border-red-400" />
-
-          <button id="btnExecuteCommand" type="button" class="px-5 py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-hud font-bold text-xs tracking-wider shadow-[0_0_24px_rgba(255,30,39,0.5)] shrink-0 transition">
-            EXECUTE &rarr;
-          </button>
+    <!-- 3-Column IDE Workspace Grid -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-2.5 min-h-[580px]">
+      
+      <!-- COLUMN 1: WORKSPACE FILE EXPLORER & AST ISSUE AUDITOR (3 COLS) -->
+      <section class="lg:col-span-3 flex flex-col gap-2 crimson-panel rounded-xl p-3 overflow-hidden">
+        <div class="flex items-center justify-between border-b border-red-950/70 pb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-red-500 font-bold">&#128194;</span>
+            <span class="font-hud text-xs font-bold text-red-400 tracking-wider">PROJECT EXPLORER</span>
+          </div>
+          <span id="fileTreeCountBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-red-950/60 border border-red-500/30 text-red-300">0 files</span>
         </div>
 
-        <!-- Quick Action Triggers for Testing Real Capabilities -->
-        <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] mono pt-1">
-          <div class="flex flex-wrap items-center gap-1.5">
-            <span class="text-red-400/80">Test Real Actions:</span>
-            <button type="button" data-cmd="Open Calculator and Notepad on my system" class="quick-cmd px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-200 transition">
-              Launch System App
-            </button>
-            <button type="button" data-cmd="Inspect all files in the target directory, find every syntax or logic mistake, and fix them" class="quick-cmd px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-200 transition">
-              Audit Folder &amp; Fix Mistakes
-            </button>
-            <button type="button" data-cmd="Write a complete Python CLI system monitor using psutil with unit tests and run it" class="quick-cmd px-2.5 py-1 rounded-lg bg-red-950/70 hover:bg-red-900/80 border border-red-500/40 text-red-200 transition">
-              Write &amp; Run Code
-            </button>
-          </div>
-          <span id="activeModelFooter" class="text-red-300/80">LLM: Auto-Detecting...</span>
+        <!-- Interactive File Tree -->
+        <div id="fileTreeContainer" class="flex-1 custom-scroll overflow-y-auto space-y-1 text-xs mono pr-1">
+          <div class="text-red-300/50 text-center py-6">Loading files...</div>
         </div>
-      </div>
-    </section>
 
-    <!-- ======================================================================================== -->
-    <!-- TAB 2: NEURAL MEMORY CONNECTION GRAPH & LIVE AGENT TASK MONITOR (VIDEO 2 kpBMntwPOL8)    -->
-    <!-- ======================================================================================== -->
-    <section id="tabMemory" class="hidden space-y-4">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-
-        <!-- Left (8 cols): Interactive 2D/3D Force-Directed Neural Memory & Agent Synapse Canvas -->
-        <div class="lg:col-span-8 crimson-panel rounded-2xl p-4 flex flex-col justify-between space-y-3">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 class="font-hud text-sm font-bold text-red-400 tracking-wide">
-                NEURAL MEMORY &amp; MULTI-AGENT SYNAPSE TOPOLOGY
-              </h2>
-              <p class="text-xs text-red-200/70">
-                Live view of all Memory Blocks (Red Hexagons), Core Agents (Crimson Orbs), Spawned Sub-Agents (Amber Nodes), and Stored Facts — click any node to inspect its memory payload and active task.
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button id="btnAddMemoryFact" type="button" class="px-3 py-1.5 rounded-xl bg-red-600/25 hover:bg-red-600/40 border border-red-500/50 text-red-200 text-xs font-semibold mono">
-                + Store Custom Memory Block
-              </button>
-              <button id="btnSpawnGraphAgent" type="button" class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 text-xs font-semibold mono">
-                + Spawn Sub-Agent Node
-              </button>
-            </div>
+        <!-- Detected AST Issues / Mistakes Card -->
+        <div class="border-t border-red-950/80 pt-2 flex flex-col gap-1.5 max-h-48 overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-amber-400 mono flex items-center gap-1">
+              <span>&#9888;</span> Detected AST Bugs
+            </span>
+            <span id="detectedBugsCount" class="text-[10px] mono text-amber-300">0 issues</span>
           </div>
+          <div id="detectedBugsList" class="custom-scroll overflow-y-auto space-y-1 text-[11px] mono flex-1 pr-1">
+            <div class="text-red-300/50 italic">No AST syntax errors found. Run "Audit Mistakes" to scan.</div>
+          </div>
+        </div>
+      </section>
 
-          <div class="relative w-full h-[430px] rounded-2xl bg-black border border-red-500/40 overflow-hidden shadow-inner">
-            <canvas id="memoryGraphCanvas" class="w-full h-full block cursor-pointer"></canvas>
-            <div class="absolute top-2.5 left-3 flex flex-wrap items-center gap-3 text-[10px] mono pointer-events-none">
-              <span class="flex items-center gap-1 text-red-400"><span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Core AI Agent</span>
-              <span class="flex items-center gap-1 text-amber-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Spawned Sub-Agent</span>
-              <span class="flex items-center gap-1 text-rose-300"><span class="w-2.5 h-2.5 rotate-45 bg-rose-500 inline-block"></span> Memory Block</span>
-              <span class="flex items-center gap-1 text-emerald-300"><span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Stored File / Fact</span>
-            </div>
+      <!-- COLUMN 2: MONACO CODE EDITOR (6 COLS) -->
+      <section class="lg:col-span-5 flex flex-col crimson-panel rounded-xl overflow-hidden">
+        <!-- Editor Tabs Bar -->
+        <div id="editorTabsBar" class="flex items-center gap-1 px-2 pt-2 bg-black/80 border-b border-red-950/80 overflow-x-auto custom-scroll text-xs mono">
+          <div class="tab-item active flex items-center gap-2 px-3 py-1.5 rounded-t bg-[#0d0204] border-t border-x border-red-500/50 text-red-200">
+            <span>&#128196;</span>
+            <span id="tabTitlePrimary">welcome.py</span>
           </div>
         </div>
 
-        <!-- Right (4 cols): Live Agent Task Matrix & Selected Memory Node Inspector -->
-        <div class="lg:col-span-4 crimson-panel rounded-2xl p-4 flex flex-col justify-between space-y-3">
-          <div class="space-y-2">
-            <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-red-400">
-              Selected Node Inspector
-            </h3>
-            <div id="selectedNodeCard" class="card-3d rounded-xl p-3 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span id="inspNodeTitle" class="text-xs font-bold text-white">Co-Leader &amp; Planner</span>
-                <span id="inspNodeType" class="text-[10px] mono px-2 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40">agent</span>
-              </div>
-              <p id="inspNodeTask" class="text-xs text-red-200 mono">Click any node in the graph to inspect its memory links and current task.</p>
-              <div id="inspNodeConnections" class="text-[10px] mono text-red-300/80 pt-1 border-t border-red-950">
-                Connected Synapses: 5
-              </div>
+        <!-- Monaco Editor Container -->
+        <div id="monacoWrapper" class="flex-1 relative bg-[#060102]">
+          <div id="monacoEditorContainer" class="absolute inset-0"></div>
+          <!-- Fallback Textarea if Monaco is loading or fails -->
+          <textarea id="fallbackEditor" class="hidden absolute inset-0 w-full h-full bg-[#060102] text-red-100 p-3 text-xs mono resize-none focus:outline-none"></textarea>
+        </div>
+
+        <!-- Editor Status Bar -->
+        <div class="px-3 py-1 bg-black/90 border-t border-red-950/70 flex items-center justify-between text-[10px] mono text-red-400">
+          <div class="flex items-center gap-3">
+            <span id="cursorStatus">Ln 1, Col 1</span>
+            <span id="charCountStatus">0 chars</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span id="editorLanguageStatus">Python</span>
+            <span>UTF-8</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLUMN 3: CLAUDE CODE LIVE EXECUTION STREAM & LIVE SCREEN VIEWPORT (4 COLS) -->
+      <section class="lg:col-span-4 flex flex-col gap-2 crimson-panel rounded-xl p-3 overflow-hidden">
+        <!-- Header with Tabs for Stream vs Live Desktop Screen -->
+        <div class="flex items-center justify-between border-b border-red-950/70 pb-1.5">
+          <div class="flex items-center gap-2">
+            <button id="btnTabClaudeStream" type="button" class="text-xs font-bold text-red-400 border-b-2 border-red-500 pb-0.5 mono">
+              Claude Code Execution
+            </button>
+            <button id="btnTabScreenViewport" type="button" class="text-xs font-semibold text-red-300/60 hover:text-red-200 pb-0.5 mono">
+              Live Desktop Viewport
+            </button>
+          </div>
+          <span id="agentExecutionStatusBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300">
+            Agent: Ready
+          </span>
+        </div>
+
+        <!-- Content Area 1: Claude Code Step-by-Step Execution Stream -->
+        <div id="claudeStreamContainer" class="flex-1 flex flex-col gap-2 overflow-hidden">
+          <!-- Step Cards List -->
+          <div id="stepCardsList" class="flex-1 custom-scroll overflow-y-auto space-y-2 pr-1">
+            <div class="p-2.5 rounded-lg bg-black/60 border border-red-950 text-xs mono text-red-300/70">
+              <span class="text-red-400 font-bold">J.A.R.V.I.S. Autonomous Agent Engine Ready</span><br>
+              Type any command below (e.g. "Work in directory and find mistakes", "Open Blender and add a cube", "Write a Snake game in Pygame"). Every step, file write, terminal stdout, and GUI action will stream here in real time.
             </div>
           </div>
 
-          <div class="flex-1 flex flex-col space-y-2 overflow-hidden">
-            <h3 class="font-hud text-xs font-bold uppercase tracking-wider text-red-400">
-              Live Agent Task &amp; Memory Matrix
-            </h3>
-            <div id="agentTaskMatrixList" class="custom-scroll overflow-y-auto space-y-2 flex-1 pr-1"></div>
+          <!-- Integrated Terminal Output Console -->
+          <div class="h-36 rounded-lg bg-black border border-red-950 flex flex-col overflow-hidden">
+            <div class="px-2.5 py-1 bg-zinc-950 border-b border-red-950 flex items-center justify-between text-[10px] mono text-red-400">
+              <span>Terminal Output / Shell Stdout</span>
+              <button id="btnClearTerminal" type="button" class="text-red-400/70 hover:text-red-300">Clear</button>
+            </div>
+            <pre id="terminalOutputBox" class="flex-1 p-2 text-[11px] mono text-red-200 overflow-y-auto custom-scroll selection:bg-red-800">Ready for command execution...</pre>
           </div>
         </div>
-      </div>
-    </section>
 
-    <!-- ======================================================================================== -->
-    <!-- TAB 3: ANTIGRAVITY DIRECTORY AUDITOR, BUG FINDER & LIVE CODE STUDIO                      -->
-    <!-- ======================================================================================== -->
-    <section id="tabStudio" class="hidden space-y-4">
-      <div class="crimson-panel rounded-2xl p-4 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 class="font-hud text-sm font-bold text-red-400">
-              ANTIGRAVITY DIRECTORY AUDITOR, MISTAKE FINDER &amp; LIVE CODE EDITOR
-            </h2>
-            <p class="text-xs text-red-200/75">
-              Mount any local folder via Chrome File System API (`&#128193; Mount Local Folder`) or enter a path for the FastAPI backend to scan files, detect syntax/logic bugs, and write real fixes to disk.
-            </p>
+        <!-- Content Area 2: Live Desktop Screen Viewport (Muse AI) -->
+        <div id="screenViewportContainer" class="hidden flex-1 flex flex-col gap-2 overflow-hidden">
+          <div class="flex-1 relative rounded-lg bg-black border border-red-950 overflow-hidden flex items-center justify-center">
+            <img id="liveDesktopStreamImg" src="" alt="Live Desktop Stream" class="w-full h-full object-contain" />
+            <div id="screenStreamLoading" class="absolute inset-0 flex items-center justify-center bg-black/75 text-xs mono text-red-300">
+              Streaming WinSta0\Default Screen...
+            </div>
           </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <button id="btnScanCurrentDir" type="button" class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold mono transition">
-              1. Scan Directory &amp; Find Mistakes
-            </button>
-            <button id="btnAutoFixAll" type="button" class="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold mono transition">
-              2. AI Auto-Fix Detected Mistakes
-            </button>
-            <button id="btnSaveDiskFile" type="button" class="px-3.5 py-2 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-400/50 text-emerald-200 text-xs font-bold mono transition">
-              Save File to Disk
+          <div class="flex items-center justify-between text-[10px] mono text-red-400">
+            <span id="screenResolutionBadge">Resolution: 2560x1600</span>
+            <button id="btnCaptureFreshFrame" type="button" class="px-2.5 py-1 rounded bg-red-950 hover:bg-red-900 border border-red-500/40 text-red-200 transition">
+              &#128248; Capture Frame
             </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <!-- File Tree & Detected Mistakes List -->
-          <div class="lg:col-span-4 space-y-3">
-            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-red-400 mono">Scanned Directory Files</span>
-                <span id="studioFileCount" class="text-[10px] mono text-red-300">0 files</span>
-              </div>
-              <div id="studioFileList" class="custom-scroll max-h-48 overflow-y-auto space-y-1.5 text-xs mono">
-                <div class="text-red-300/60 text-[11px]">Click "&#128193; Mount Local Folder" or "1. Scan Directory" to load real files from your PC.</div>
-              </div>
-            </div>
+      </section>
 
-            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-amber-400 mono">Detected Mistakes &amp; Bugs</span>
-                <span id="studioMistakeCount" class="text-[10px] mono text-amber-300">0 issues</span>
-              </div>
-              <div id="studioMistakeList" class="custom-scroll max-h-48 overflow-y-auto space-y-1.5 text-xs mono">
-                <div class="text-red-300/60 text-[11px]">No mistakes scanned yet.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Code Editor & AI Diff / Terminal Output -->
-          <div class="lg:col-span-8 space-y-3">
-            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-2">
-              <div class="flex items-center justify-between">
-                <span id="studioActiveFileName" class="text-xs font-bold mono text-red-300">No file selected</span>
-                <span id="studioAstBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-red-950 text-red-200 border border-red-500/30">Ready</span>
-              </div>
-              <textarea id="studioCodeEditor" rows="13" class="w-full bg-[#080102] border border-red-900/60 rounded-xl p-3 text-xs mono text-red-50 focus:outline-none focus:border-red-500" placeholder="Select a scanned file or ask J.A.R.V.I.S. to write code..."></textarea>
-            </div>
-
-            <div class="bg-black border border-red-500/35 rounded-xl p-3 space-y-1.5">
-              <span class="text-xs font-bold text-red-400 mono">Real AI Diagnostic Report &amp; Shell Output</span>
-              <pre id="studioDiagnosticOutput" class="custom-scroll max-h-40 overflow-auto text-[11px] mono text-red-200">Waiting for directory scan or command execution...</pre>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ======================================================================================== -->
-    <!-- TAB 4: LIVE TOOL EXECUTION & CONVERSATION TRACE                                          -->
-    <!-- ======================================================================================== -->
-    <section id="tabChat" class="hidden space-y-4">
-      <div class="crimson-panel rounded-2xl p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="font-hud text-sm font-bold text-red-400">REAL-TIME LLM &amp; OS TOOL EXECUTION LOG</h2>
-            <p class="text-xs text-red-200/70">Every prompt, real tool invocation, directory scan, app launch, and live LLM response</p>
-          </div>
-          <button id="btnClearTrace" type="button" class="text-xs text-red-400 underline">Clear Log</button>
-        </div>
-        <div id="chatTraceContainer" class="custom-scroll max-h-[460px] overflow-y-auto space-y-2.5 pr-1"></div>
-      </div>
-    </section>
-
+    </div>
   </main>
 
-  <!-- LLM & Voice Config Modal -->
-  <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+  <!-- ====================================================================================== -->
+  <!-- MAIN STAGE: 2. MUSE AI LIVE DESKTOP VIEW (FULL DEDICATED COMPUTER USE VIEWPORT)           -->
+  <!-- ====================================================================================== -->
+  <main id="viewDesktop" class="hidden flex-1 w-full px-4 py-3 flex flex-col gap-3">
+    <div class="crimson-panel rounded-2xl p-4 flex-1 flex flex-col gap-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-red-950 pb-2">
+        <div>
+          <h2 class="font-hud text-sm font-bold text-red-400">MUSE AI // LIVE WINDOWS COMPUTER USE ENGINE</h2>
+          <p class="text-xs text-red-200/70">Operating live on WinSta0\Default: Blender, Calculator, Notepad, VS Code, Browser, and any desktop app</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnTriggerBlenderDemo" type="button" class="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-bold mono transition">
+            Test Blender Cube
+          </button>
+          <button id="btnTriggerCalcDemo" type="button" class="px-3 py-1.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 text-xs font-bold mono transition">
+            Test Calculator (125*8)
+          </button>
+        </div>
+      </div>
+
+      <!-- Large Live Viewport -->
+      <div class="flex-1 min-h-[500px] relative rounded-xl bg-black border border-red-900/50 overflow-hidden flex items-center justify-center">
+        <img id="viewDesktopLargeImg" src="" alt="Full Screen Desktop" class="w-full h-full object-contain" />
+        <div id="viewDesktopOverlay" class="absolute bottom-3 left-3 bg-black/80 border border-red-500/40 px-3 py-1.5 rounded-lg text-xs mono text-red-300">
+          Desktop Feed Active
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ====================================================================================== -->
+  <!-- MAIN STAGE: 3. NEURAL MEMORY & AGENT SWARM GRAPH (REFERENCE VIDEO 2)                   -->
+  <!-- ====================================================================================== -->
+  <main id="viewSwarm" class="hidden flex-1 w-full px-4 py-3 flex flex-col gap-3">
+    <div class="crimson-panel rounded-2xl p-4 flex-1 flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-red-950 pb-2">
+        <div>
+          <h2 class="font-hud text-sm font-bold text-red-400">NEURAL MEMORY &amp; AGENT SWARM GRAPH</h2>
+          <p class="text-xs text-red-200/70">Live synapses connecting Co-Leader, OS Operator, Directory Auditor, Coder, and Memory Blocks</p>
+        </div>
+        <span class="text-xs mono text-red-400">Nodes: <span id="swarmNodeCount">9</span></span>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1">
+        <!-- SVG Canvas for Graph -->
+        <div class="lg:col-span-8 rounded-xl bg-black border border-red-900/50 relative overflow-hidden min-h-[460px]">
+          <svg id="swarmSvgCanvas" class="w-full h-full"></svg>
+        </div>
+        <!-- Node Inspector & Matrix -->
+        <div class="lg:col-span-4 flex flex-col gap-3">
+          <div class="rounded-xl bg-black/80 border border-red-950 p-3 space-y-2">
+            <h3 class="font-hud text-xs font-bold text-red-400">Selected Node Inspector</h3>
+            <div id="swarmSelectedCard" class="text-xs mono space-y-1 text-red-200">
+              <div id="swarmNodeLabel" class="font-bold text-white">agent_coleader</div>
+              <div id="swarmNodeType" class="text-[10px] text-red-400">Core Agent</div>
+              <p id="swarmNodeTask" class="text-red-300/80">Idle — awaiting user command</p>
+            </div>
+          </div>
+          <div class="flex-1 rounded-xl bg-black/80 border border-red-950 p-3 flex flex-col gap-2 overflow-hidden">
+            <h3 class="font-hud text-xs font-bold text-red-400">Agent Task Matrix</h3>
+            <div id="swarmAgentMatrix" class="flex-1 custom-scroll overflow-y-auto space-y-1.5 text-xs mono pr-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ====================================================================================== -->
+  <!-- MAIN STAGE: 4. VOICE CORE 3D PARTICLE & SPIKE SPHERE (REFERENCE VIDEO 1)               -->
+  <!-- ====================================================================================== -->
+  <main id="viewVoice" class="hidden flex-1 w-full px-4 py-3 flex flex-col items-center justify-between min-h-[580px] relative">
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div id="threeJsVoiceContainer" class="w-full h-full max-w-4xl max-h-[520px]"></div>
+    </div>
+    
+    <div class="relative z-10 w-full max-w-2xl text-center space-y-2 pt-6">
+      <h2 class="font-hud text-lg font-black text-red-500 tracking-wider text-glow">CRIMSON 3D AUDIO CORE</h2>
+      <p id="voiceSpeechStatus" class="text-xs mono text-red-300/80">Listening for voice instructions or waiting for prompt...</p>
+    </div>
+
+    <div class="relative z-10 w-full max-w-2xl pb-4">
+      <div class="crimson-panel rounded-2xl p-3 text-center text-xs mono text-red-200">
+        <span id="voiceLastSpeechResponse">"Awaiting command. I have direct access to your Windows desktop, applications, and filesystem."</span>
+      </div>
+    </div>
+  </main>
+
+  <!-- ====================================================================================== -->
+  <!-- BOTTOM CLAUDE CODE COMMAND PROMPT BAR                                                  -->
+  <!-- ====================================================================================== -->
+  <footer class="sticky bottom-0 z-40 bg-black/95 backdrop-blur-md border-t border-red-950/80 px-4 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-col gap-2">
+      <!-- Quick Prompt Suggestion Chips -->
+      <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-1 text-[11px] mono">
+        <span class="text-red-400/80 font-bold shrink-0">Quick Prompts:</span>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Blender and add a 3D mesh cube">
+          🧊 Open Blender &amp; add cube
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Work in directory . and find the mistakes">
+          🔍 Find mistakes in directory
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Notepad and type 'J.A.R.V.I.S. Antigravity IDE is now operational'">
+          📝 Open Notepad &amp; type notes
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Write a complete Snake game in Pygame and run it">
+          🎮 Snake Game in Pygame
+        </button>
+        <button type="button" class="quick-chip px-2.5 py-0.5 rounded-full bg-red-950/50 hover:bg-red-900/60 border border-red-500/30 text-red-200 shrink-0 transition" data-prompt="Open Calculator and calculate 125 * 8">
+          🧮 Calculator 125 * 8
+        </button>
+      </div>
+
+      <!-- Main Input Bar -->
+      <form id="jarvisPromptForm" class="flex items-center gap-2">
+        <div class="relative flex-1">
+          <input
+            id="jarvisPromptInput"
+            type="text"
+            autocomplete="off"
+            placeholder="Tell J.A.R.V.I.S. what to build, run, or operate (e.g. 'Open Blender and add a cube', 'Fix mistakes in folder', 'Build a REST API')..."
+            class="w-full bg-[#0a0204] border border-red-500/40 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-red-50 placeholder-red-400/40 focus:outline-none focus:border-red-500 shadow-[0_0_15px_rgba(255,30,39,0.15)] mono"
+          />
+        </div>
+
+        <!-- Voice Microphone Toggle -->
+        <button
+          id="btnToggleVoiceMic"
+          type="button"
+          title="Toggle Voice Input (Speech-to-Text)"
+          class="px-3.5 py-2.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 text-sm transition flex items-center justify-center shrink-0"
+        >
+          <span id="voiceMicIcon">&#127908;</span>
+        </button>
+
+        <!-- Submit Button -->
+        <button
+          id="btnSubmitPrompt"
+          type="submit"
+          class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-bold tracking-wide shadow-[0_0_18px_#ff1e27] transition flex items-center gap-1.5 shrink-0"
+        >
+          <span>EXECUTE</span>
+          <span>&#10148;</span>
+        </button>
+      </form>
+    </div>
+  </footer>
+
+  <!-- CONFIGURATION MODAL -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="crimson-panel rounded-2xl max-w-md w-full p-5 space-y-4">
-      <div class="flex items-center justify-between">
-        <h3 class="font-hud text-sm font-bold text-red-400">LLM Brain, Local Backend &amp; Voice Config</h3>
-        <button id="btnCloseConfig" type="button" class="text-red-300 hover:text-white text-xs">Close &times;</button>
+      <div class="flex items-center justify-between border-b border-red-950 pb-2">
+        <h3 class="font-hud text-sm font-bold text-red-400">J.A.R.V.I.S. MODEL CONFIG</h3>
+        <button id="btnCloseConfig" type="button" class="text-red-400 text-sm font-bold">&times;</button>
       </div>
-      <div class="space-y-3 text-xs">
+      <div class="space-y-3 text-xs mono">
         <div>
-          <label for="cfgBackendUrl" class="block text-red-200 mb-1">FastAPI OS Backend (`uvicorn main:app --port 8000`):</label>
-          <input id="cfgBackendUrl" type="text" value="http://127.0.0.1:8000" class="w-full bg-black border border-red-500/40 rounded-lg px-3 py-2 text-white mono" />
+          <label class="block text-red-300 mb-1">Ollama Model Preference:</label>
+          <input id="cfgPreferredModel" type="text" placeholder="jarvis-gemma:latest, gemma:2b, etc." class="w-full bg-black border border-red-900 rounded p-2 text-red-100 focus:outline-none focus:border-red-500" />
         </div>
         <div>
-          <label for="cfgOllamaUrl" class="block text-red-200 mb-1">Direct Ollama URL (for direct browser &rarr; local LLM calls):</label>
-          <input id="cfgOllamaUrl" type="text" value="http://127.0.0.1:11434" class="w-full bg-black border border-red-500/40 rounded-lg px-3 py-2 text-white mono" />
+          <label class="block text-red-300 mb-1">Google Gemini API Key (Optional):</label>
+          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-black border border-red-900 rounded p-2 text-red-100 focus:outline-none focus:border-red-500" />
         </div>
         <div>
-          <label for="cfgGeminiKey" class="block text-red-200 mb-1">Google Gemini API Key (optional fallback if Ollama is off):</label>
-          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-black border border-red-500/40 rounded-lg px-3 py-2 text-white mono" />
+          <label class="block text-red-300 mb-1">Backend URL:</label>
+          <input id="cfgBackendUrl" type="text" value="http://127.0.0.1:8000" class="w-full bg-black border border-red-900 rounded p-2 text-red-100 focus:outline-none focus:border-red-500" />
         </div>
       </div>
-      <div class="flex justify-end">
-        <button id="btnSaveConfig" type="button" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs">
-          Save &amp; Probe Connections
+      <div class="flex justify-end gap-2 pt-2">
+        <button id="btnSaveConfig" type="button" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition">
+          Save Settings
         </button>
       </div>
     </div>
   </div>
 
+  <!-- SCRIPT IMPLEMENTATION -->
   <script>
-    // ============================================================================
-    // GLOBAL STATE — ZERO HARDCODED DIALOGUES!
-    // ============================================================================
+    // State
     const state = {
-      backendUrl: 'http://127.0.0.1:8000',
-      ollamaUrl: 'http://127.0.0.1:11434',
-      geminiKey: '',
-      backendOnline: false,
-      ollamaOnline: false,
-      activeModel: 'none',
-      availableModels: [],
-      orbPulse: 1.0,
-      mountedDirHandle: null,
-      mountedFiles: {}, // relative_path -> { content, handle, size, lines }
-      selectedFile: '',
+      backendUrl: localStorage.getItem('jarvis_backend_url') || 'http://127.0.0.1:8000',
+      activeView: 'ide',
+      activeFilePath: '',
+      openTabs: [],
+      filesTree: [],
       detectedMistakes: [],
-      memoryGraph: {
-        nodes: [
-          { id: 'agent_coleader', label: 'Co-Leader & Planner', type: 'agent', status: 'idle', current_task: 'Awaiting user command', x: 380, y: 210 },
-          { id: 'agent_os_operator', label: 'OS App & GUI Operator', type: 'agent', status: 'idle', current_task: 'Launches Windows apps & controls GUI', x: 190, y: 110 },
-          { id: 'agent_dir_auditor', label: 'Directory & AST Auditor', type: 'agent', status: 'idle', current_task: 'Scans local directories for bugs', x: 570, y: 110 },
-          { id: 'agent_coder', label: 'Autonomous Code Builder', type: 'agent', status: 'idle', current_task: 'Writes & patches real files on disk', x: 570, y: 320 },
-          { id: 'agent_researcher', label: 'Deep Web Researcher', type: 'agent', status: 'idle', current_task: 'Searches live docs & GitHub', x: 190, y: 320 },
-          { id: 'mem_episodic', label: 'Episodic Command Memory', type: 'memory', status: 'ready', current_task: 'Stores session prompts & outcomes', x: 380, y: 65 },
-          { id: 'mem_workspace', label: 'Directory & AST Memory', type: 'memory', status: 'ready', current_task: 'Stores local files & syntax trees', x: 690, y: 215 },
-          { id: 'mem_research', label: 'Web Research Memory', type: 'memory', status: 'ready', current_task: 'Stores scraped web facts', x: 85, y: 215 },
-          { id: 'mem_system', label: 'Windows OS State Memory', type: 'memory', status: 'ready', current_task: 'Tracks launched apps & PIDs', x: 380, y: 375 }
-        ],
-        edges: [
-          { source: 'agent_coleader', target: 'agent_os_operator', relation: 'dispatches', active: false },
-          { source: 'agent_coleader', target: 'agent_dir_auditor', relation: 'dispatches', active: false },
-          { source: 'agent_coleader', target: 'agent_coder', relation: 'dispatches', active: false },
-          { source: 'agent_coleader', target: 'agent_researcher', relation: 'dispatches', active: false },
-          { source: 'agent_coleader', target: 'mem_episodic', relation: 'reads/writes', active: true },
-          { source: 'agent_dir_auditor', target: 'mem_workspace', relation: 'indexes AST', active: false },
-          { source: 'agent_coder', target: 'mem_workspace', relation: 'writes files', active: false },
-          { source: 'agent_researcher', target: 'mem_research', relation: 'stores docs', active: false },
-          { source: 'agent_os_operator', target: 'mem_system', relation: 'launches apps', active: false }
-        ]
-      },
-      selectedGraphNode: null
+      memoryGraph: { nodes: [], edges: [] },
+      isExecuting: false,
+      isListeningVoice: false,
+      screenStreamTimer: null
     };
 
-    // ============================================================================
-    // 1. CRIMSON RED 3D PARTICLE, GYROSCOPIC RING & RADIAL SPIKE CORE (VIDEO 1)
-    // ============================================================================
-    function initCrimson3DCore() {
-      const container = document.getElementById('crimsonOrbContainer');
-      const canvas = document.getElementById('crimsonOrbCanvas');
-      if (!container || !canvas || typeof THREE === 'undefined') return;
+    // DOM Elements
+    const elements = {
+      activeModelBadge: document.getElementById('activeModelBadge'),
+      fileTreeContainer: document.getElementById('fileTreeContainer'),
+      fileTreeCountBadge: document.getElementById('fileTreeCountBadge'),
+      detectedBugsCount: document.getElementById('detectedBugsCount'),
+      detectedBugsList: document.getElementById('detectedBugsList'),
+      inputWorkspaceDir: document.getElementById('inputWorkspaceDir'),
+      btnRefreshWorkspace: document.getElementById('btnRefreshWorkspace'),
+      activeFileIndicator: document.getElementById('activeFileIndicator'),
+      btnSaveFileDisk: document.getElementById('btnSaveFileDisk'),
+      btnRunCurrentFile: document.getElementById('btnRunCurrentFile'),
+      stepCardsList: document.getElementById('stepCardsList'),
+      terminalOutputBox: document.getElementById('terminalOutputBox'),
+      btnClearTerminal: document.getElementById('btnClearTerminal'),
+      jarvisPromptForm: document.getElementById('jarvisPromptForm'),
+      jarvisPromptInput: document.getElementById('jarvisPromptInput'),
+      btnSubmitPrompt: document.getElementById('btnSubmitPrompt'),
+      btnToggleVoiceMic: document.getElementById('btnToggleVoiceMic'),
+      voiceMicIcon: document.getElementById('voiceMicIcon'),
+      agentExecutionStatusBadge: document.getElementById('agentExecutionStatusBadge'),
+      liveDesktopStreamImg: document.getElementById('liveDesktopStreamImg'),
+      screenStreamLoading: document.getElementById('screenStreamLoading'),
+      btnCaptureFreshFrame: document.getElementById('btnCaptureFreshFrame'),
+      btnTabClaudeStream: document.getElementById('btnTabClaudeStream'),
+      btnTabScreenViewport: document.getElementById('btnTabScreenViewport'),
+      claudeStreamContainer: document.getElementById('claudeStreamContainer'),
+      screenViewportContainer: document.getElementById('screenViewportContainer'),
+      btnQuickAudit: document.getElementById('btnQuickAudit'),
+      btnOpenConfig: document.getElementById('btnOpenConfig'),
+      configModal: document.getElementById('configModal'),
+      btnCloseConfig: document.getElementById('btnCloseConfig'),
+      btnSaveConfig: document.getElementById('btnSaveConfig'),
+      cfgPreferredModel: document.getElementById('cfgPreferredModel'),
+      cfgGeminiKey: document.getElementById('cfgGeminiKey'),
+      cfgBackendUrl: document.getElementById('cfgBackendUrl'),
+      viewIde: document.getElementById('viewIde'),
+      viewDesktop: document.getElementById('viewDesktop'),
+      viewSwarm: document.getElementById('viewSwarm'),
+      viewVoice: document.getElementById('viewVoice'),
+      viewDesktopLargeImg: document.getElementById('viewDesktopLargeImg'),
+      btnTriggerBlenderDemo: document.getElementById('btnTriggerBlenderDemo'),
+      btnTriggerCalcDemo: document.getElementById('btnTriggerCalcDemo')
+    };
 
-      const width = container.clientWidth || 700;
-      const height = container.clientHeight || 410;
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 1000);
-      camera.position.set(0, 0.3, 6.2);
+    // ─── 1. MONACO EDITOR INITIALIZATION ──────────────────────────────────────────
+    function initMonacoEditor() {
+      if (typeof require === 'undefined') {
+        setTimeout(initMonacoEditor, 200);
+        return;
+      }
+      require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' }});
+      require(['vs/editor/editor.main'], function() {
+        window.monacoEditor = monaco.editor.create(document.getElementById('monacoEditorContainer'), {
+          value: '# Welcome to J.A.R.V.I.S. Antigravity IDE (Crimson Red Edition)\n# Choose any file in the Explorer on the left, or give a prompt below.\n\nimport os\nimport sys\n\ndef main():\n    print("J.A.R.V.I.S. Antigravity IDE & Muse AI Engine ready.")\n\nif __name__ == "__main__":\n    main()\n',
+          language: 'python',
+          theme: 'vs-dark',
+          automaticLayout: true,
+          fontSize: 13,
+          lineNumbers: 'on',
+          scrollBeyondLastLine: false,
+          roundedSelection: true,
+          minimap: { enabled: true }
+        });
 
-      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-      renderer.setSize(width, height);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        window.monacoEditor.onDidChangeCursorPosition(e => {
+          document.getElementById('cursorStatus').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+        });
 
-      // Glowing Inner Crimson-Orange Sun Nucleus
-      const innerSun = new THREE.Mesh(
-        new THREE.SphereGeometry(0.62, 32, 32),
-        new THREE.MeshBasicMaterial({ color: 0xff3b1f, transparent: true, opacity: 0.92 })
-      );
-      scene.add(innerSun);
+        window.monacoEditor.onDidChangeModelContent(() => {
+          const val = window.monacoEditor.getValue();
+          document.getElementById('charCountStatus').textContent = `${val.length} chars`;
+        });
+      });
+    }
 
-      // Wireframe Geodesic Crimson Shell
-      const wireShell = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(1.18, 3),
-        new THREE.MeshBasicMaterial({ color: 0xff1e27, wireframe: true, transparent: true, opacity: 0.45 })
-      );
-      scene.add(wireShell);
+    function setEditorContent(code, language, filePath) {
+      state.activeFilePath = filePath;
+      elements.activeFileIndicator.textContent = filePath || 'untitled';
+      document.getElementById('tabTitlePrimary').textContent = filePath.split('/').pop() || 'untitled';
 
-      // 4 Intersecting Gyroscopic Orbital Rings (Matches Video 1)
-      const rings = [];
-      const ringConfigs = [
-        { r: 1.55, tube: 0.018, color: 0xff1e27, rx: 1.1, ry: 0.3 },
-        { r: 1.85, tube: 0.015, color: 0xff5500, rx: -0.8, ry: 0.9 },
-        { r: 2.15, tube: 0.012, color: 0xdc2626, rx: 0.4, ry: -1.2 },
-        { r: 2.42, tube: 0.010, color: 0xff8844, rx: 1.5, ry: 0.1 }
-      ];
-      ringConfigs.forEach(cfg => {
-        const m = new THREE.Mesh(
-          new THREE.TorusGeometry(cfg.r, cfg.tube, 16, 120),
-          new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: 0.78 })
-        );
-        m.rotation.set(cfg.rx, cfg.ry, 0);
-        scene.add(m);
-        rings.push(m);
+      if (window.monacoEditor) {
+        const monacoLang = mapExtensionToMonacoLang(filePath);
+        const oldModel = window.monacoEditor.getModel();
+        if (oldModel) oldModel.dispose();
+        const newModel = monaco.editor.createModel(code, monacoLang);
+        window.monacoEditor.setModel(newModel);
+        document.getElementById('editorLanguageStatus').textContent = monacoLang.toUpperCase();
+      } else {
+        const fb = document.getElementById('fallbackEditor');
+        fb.classList.remove('hidden');
+        fb.value = code;
+      }
+    }
+
+    function getEditorContent() {
+      if (window.monacoEditor) return window.monacoEditor.getValue();
+      return document.getElementById('fallbackEditor').value;
+    }
+
+    function mapExtensionToMonacoLang(filePath) {
+      if (!filePath) return 'python';
+      const ext = filePath.split('.').pop().toLowerCase();
+      const map = {
+        py: 'python', js: 'javascript', ts: 'typescript', jsx: 'javascript',
+        tsx: 'typescript', html: 'html', css: 'css', json: 'json',
+        md: 'markdown', sh: 'shell', bat: 'bat', ps1: 'powershell',
+        yml: 'yaml', yaml: 'yaml', ini: 'ini', txt: 'plaintext'
+      };
+      return map[ext] || 'plaintext';
+    }
+
+    // ─── 2. WORKSPACE FILES & DIRECTORY INSPECTOR ──────────────────────────────
+    async function fetchWorkspaceFiles() {
+      const dir = elements.inputWorkspaceDir.value.trim() || '.';
+      try {
+        const res = await fetch(`${state.backendUrl}/api/files?dir=${encodeURIComponent(dir)}`);
+        const data = await res.json();
+        if (data.ok) {
+          state.filesTree = data.files || [];
+          renderFileTree(state.filesTree);
+        }
+      } catch (err) {
+        console.error('Failed to fetch files:', err);
+      }
+    }
+
+    function renderFileTree(files) {
+      elements.fileTreeCountBadge.textContent = `${files.length} files`;
+      if (!files.length) {
+        elements.fileTreeContainer.innerHTML = `<div class="text-red-400/60 text-center py-4">No code files found in ${elements.inputWorkspaceDir.value}</div>`;
+        return;
+      }
+
+      let html = '';
+      files.forEach(f => {
+        const icon = getFileIcon(f.extension);
+        const isActive = f.path === state.activeFilePath;
+        html += `
+          <div data-path="${f.path}" class="file-tree-item flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition ${isActive ? 'bg-red-950/80 border border-red-500/50 text-white' : 'hover:bg-red-950/40 text-red-200/80'}">
+            <div class="flex items-center gap-1.5 truncate">
+              <span>${icon}</span>
+              <span class="truncate">${f.path}</span>
+            </div>
+            <span class="text-[9px] text-red-400/60 mono">${formatFileSize(f.size)}</span>
+          </div>
+        `;
+      });
+      elements.fileTreeContainer.innerHTML = html;
+
+      // Click to open
+      elements.fileTreeContainer.querySelectorAll('.file-tree-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const path = el.getAttribute('data-path');
+          openFileInEditor(path);
+        });
+      });
+    }
+
+    function getFileIcon(ext) {
+      const icons = {
+        '.py': '🐍', '.js': '📜', '.ts': '📘', '.html': '🌐',
+        '.css': '🎨', '.json': '⚙️', '.md': '📄', '.txt': '📝',
+        '.png': '🖼️', '.jpg': '🖼️', '.ps1': '⚡', '.bat': '⚡'
+      };
+      return icons[ext] || '📄';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    async function openFileInEditor(filePath) {
+      try {
+        const res = await fetch(`${state.backendUrl}/api/file-content?path=${encodeURIComponent(filePath)}`);
+        const data = await res.json();
+        if (data.ok) {
+          setEditorContent(data.content, data.extension, filePath);
+          renderFileTree(state.filesTree);
+        } else {
+          appendTerminal(`Error loading ${filePath}: ${data.error}`);
+        }
+      } catch (err) {
+        appendTerminal(`Network error reading ${filePath}: ${err}`);
+      }
+    }
+
+    async function saveCurrentFileToDisk() {
+      if (!state.activeFilePath) {
+        alert('No active file selected to save.');
+        return;
+      }
+      const content = getEditorContent();
+      try {
+        const res = await fetch(`${state.backendUrl}/api/save-file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path: state.activeFilePath,
+            content: content,
+            base_dir: elements.inputWorkspaceDir.value.trim() || '.'
+          })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          appendTerminal(`[SUCCESS] Saved ${state.activeFilePath} (${data.bytes_written} bytes)`);
+          fetchWorkspaceFiles();
+        } else {
+          appendTerminal(`[ERROR] Save failed: ${data.syntax_error || data.error}`);
+        }
+      } catch (err) {
+        appendTerminal(`[ERROR] Save failed: ${err}`);
+      }
+    }
+
+    async function runCurrentFile() {
+      if (!state.activeFilePath) {
+        alert('Open a file first before clicking Run.');
+        return;
+      }
+      const cmd = `python "${state.activeFilePath}"`;
+      appendTerminal(`> ${cmd}`);
+      try {
+        const res = await fetch(`${state.backendUrl}/api/run-file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd, cwd: elements.inputWorkspaceDir.value.trim() || '.' })
+        });
+        const data = await res.json();
+        if (data.stdout) appendTerminal(data.stdout);
+        if (data.stderr) appendTerminal(`[STDERR]\n${data.stderr}`);
+        appendTerminal(`[Process exited with code ${data.exit_code}]`);
+      } catch (err) {
+        appendTerminal(`[RUN ERROR] ${err}`);
+      }
+    }
+
+    async function auditDirectoryMistakes() {
+      const dir = elements.inputWorkspaceDir.value.trim() || '.';
+      appendTerminal(`[AUDIT] Scanning ${dir} for AST syntax errors and pytest bugs...`);
+      try {
+        const res = await fetch(`${state.backendUrl}/api/inspect-dir`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_directory: dir, instruction: 'audit' })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          state.detectedMistakes = data.detected_mistakes || [];
+          elements.detectedBugsCount.textContent = `${state.detectedMistakes.length} issues`;
+          renderMistakesList(state.detectedMistakes);
+          appendTerminal(`[AUDIT COMPLETE] Scanned ${data.file_count} files, found ${state.detectedMistakes.length} bugs.`);
+          if (data.pytest_output) appendTerminal(data.pytest_output);
+        }
+      } catch (err) {
+        appendTerminal(`[AUDIT ERROR] ${err}`);
+      }
+    }
+
+    function renderMistakesList(mistakes) {
+      if (!mistakes.length) {
+        elements.detectedBugsList.innerHTML = `<div class="text-emerald-400 text-xs">✓ No syntax or test errors detected.</div>`;
+        return;
+      }
+      let html = '';
+      mistakes.forEach((m, idx) => {
+        html += `
+          <div class="p-1.5 rounded bg-amber-950/60 border border-amber-500/40 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-amber-300 truncate">${m.file || 'File'}</span>
+              <span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-900 text-amber-200">${m.type || 'Bug'}</span>
+            </div>
+            <p class="text-[10px] text-amber-100/80">${m.detail || ''}</p>
+            <button data-fix-idx="${idx}" type="button" class="btn-fix-bug text-[9px] text-red-300 underline hover:text-white">
+              Ask AI to Fix This
+            </button>
+          </div>
+        `;
+      });
+      elements.detectedBugsList.innerHTML = html;
+
+      elements.detectedBugsList.querySelectorAll('.btn-fix-bug').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const idx = parseInt(btn.getAttribute('data-fix-idx'));
+          const mistake = state.detectedMistakes[idx];
+          elements.jarvisPromptInput.value = `Fix bug in ${mistake.file}: ${mistake.detail}`;
+          executeUserPrompt(`Fix bug in ${mistake.file}: ${mistake.detail}`);
+        });
+      });
+    }
+
+    // ─── 3. CLAUDE CODE LIVE EXECUTION STREAMER ────────────────────────────────
+    async function executeUserPrompt(instruction) {
+      if (!instruction || state.isExecuting) return;
+      state.isExecuting = true;
+      elements.agentExecutionStatusBadge.textContent = 'Agent: Working...';
+      elements.agentExecutionStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/50 text-amber-200 animate-pulse';
+
+      // Switch right pane to Claude Code stream
+      switchRightTab('claude');
+
+      // Clear previous step cards and append user prompt card
+      appendStepCard({
+        title: 'User Instruction Received',
+        tool: 'CO-LEADER',
+        badgeColor: 'border-red-500 text-red-300',
+        content: instruction,
+        status: 'working'
       });
 
-      // Radial Energy Spikes shooting outward from the Core (Matches Video 1)
-      const spikeGroup = new THREE.Group();
-      const numSpikes = 72;
-      for (let i = 0; i < numSpikes; i++) {
-        const phi = Math.acos(-1 + (2 * i) / numSpikes);
-        const theta = Math.sqrt(numSpikes * Math.PI) * phi;
-        const dir = new THREE.Vector3(
-          Math.cos(theta) * Math.sin(phi),
-          Math.sin(theta) * Math.sin(phi),
-          Math.cos(phi)
-        ).normalize();
-        const p1 = dir.clone().multiplyScalar(0.75);
-        const p2 = dir.clone().multiplyScalar(2.45 + (i % 3) * 0.35);
-        const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
-        const mat = new THREE.LineBasicMaterial({
-          color: i % 2 === 0 ? 0xff1e27 : 0xff6622,
-          transparent: true,
-          opacity: 0.65
-        });
-        spikeGroup.add(new THREE.Line(geo, mat));
-      }
-      scene.add(spikeGroup);
+      appendTerminal(`\n=== J.A.R.V.I.S. EXECUTION STARTED ===\n> ${instruction}`);
 
-      // 2,400 Floating Crimson & Ember Particle Cloud
-      const partCount = 2400;
-      const positions = new Float32Array(partCount * 3);
-      for (let i = 0; i < partCount; i++) {
-        const rad = 1.1 + Math.random() * 2.1;
+      try {
+        const payload = {
+          instruction: instruction,
+          target_directory: elements.inputWorkspaceDir.value.trim() || '.',
+          preferred_model: localStorage.getItem('jarvis_preferred_model') || '',
+          gemini_api_key: localStorage.getItem('jarvis_gemini_key') || ''
+        };
+
+        const res = await fetch(`${state.backendUrl}/api/execute`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          // Render each tool trace as a live Claude Code step card
+          (data.tool_traces || []).forEach((t, i) => {
+            const toolName = t.tool;
+            const resObj = t.result || {};
+            let details = '';
+
+            if (toolName === 'desktop_gui') {
+              details = (resObj.steps || []).join('\n') || JSON.stringify(resObj);
+            } else if (toolName === 'inspect_directory_and_find_mistakes') {
+              details = `Scanned ${resObj.file_count} files in ${resObj.directory}.\nMistakes detected: ${(resObj.detected_mistakes || []).length}`;
+            } else if (toolName === 'write_file_to_disk') {
+              details = `Wrote file ${resObj.relative_path} (${resObj.bytes_written} bytes)`;
+            } else if (toolName === 'run_terminal_command') {
+              details = `Command: ${resObj.command}\nExit Code: ${resObj.exit_code}\n${resObj.stdout || ''}\n${resObj.stderr || ''}`;
+            } else if (toolName === 'calculate') {
+              details = `Evaluated: ${t.input} => Result: ${resObj.result}\n${(resObj.calculator_gui_steps || []).join('\n')}`;
+            } else {
+              details = JSON.stringify(resObj, null, 2);
+            }
+
+            appendStepCard({
+              title: `Step ${i + 1}: ${formatToolLabel(toolName)}`,
+              tool: toolName.toUpperCase(),
+              badgeColor: 'border-red-500/60 text-red-200',
+              content: details,
+              status: resObj.ok !== false ? 'done' : 'error'
+            });
+
+            appendTerminal(`\n[${toolName.toUpperCase()}]\n${details}`);
+          });
+
+          // Final response card
+          appendStepCard({
+            title: 'Mission Complete',
+            tool: 'SYNTHESIS',
+            badgeColor: 'border-emerald-500 text-emerald-300',
+            content: data.spoken_response,
+            status: 'done'
+          });
+
+          // If files were written, auto-open the first one in Monaco Editor!
+          if (data.files && data.files.length > 0) {
+            const firstFile = data.files[0];
+            setEditorContent(firstFile.content, '', firstFile.path);
+            fetchWorkspaceFiles();
+          }
+
+          // If screenshot returned, display it
+          if (data.screenshot) {
+            elements.liveDesktopStreamImg.src = data.screenshot;
+            elements.viewDesktopLargeImg.src = data.screenshot;
+            elements.screenStreamLoading.classList.add('hidden');
+          }
+
+          // Spoken speech output
+          speakText(data.spoken_response);
+          document.getElementById('voiceLastSpeechResponse').textContent = `"${data.spoken_response}"`;
+        } else {
+          appendStepCard({
+            title: 'Execution Failed',
+            tool: 'ERROR',
+            badgeColor: 'border-red-600 text-red-400',
+            content: data.error || 'Unknown execution error',
+            status: 'error'
+          });
+        }
+      } catch (err) {
+        appendStepCard({
+          title: 'Network / Server Error',
+          tool: 'HTTP_ERROR',
+          badgeColor: 'border-red-600 text-red-400',
+          content: String(err),
+          status: 'error'
+        });
+        appendTerminal(`[FATAL ERROR] ${err}`);
+      } finally {
+        state.isExecuting = false;
+        elements.agentExecutionStatusBadge.textContent = 'Agent: Ready';
+        elements.agentExecutionStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300';
+      }
+    }
+
+    function formatToolLabel(tool) {
+      const map = {
+        desktop_gui: 'Muse AI Desktop Action (WinSta0)',
+        inspect_directory_and_find_mistakes: 'Directory AST & Compiler Audit',
+        write_file_to_disk: 'Autonomous Coder File Write',
+        run_terminal_command: 'Shell / Terminal Execution',
+        calculate: 'Mathematical & GUI Calculator',
+        open_system_app_or_url: 'OS App Launcher',
+        web_search: 'Web & API Research'
+      };
+      return map[tool] || tool;
+    }
+
+    function appendStepCard(card) {
+      const cardEl = document.createElement('div');
+      const isSuccess = card.status === 'done';
+      const isWorking = card.status === 'working';
+      const statusIcon = isSuccess ? '✓' : isWorking ? '⚡' : '✗';
+      const statusColor = isSuccess ? 'text-emerald-400' : isWorking ? 'text-amber-400' : 'text-rose-400';
+
+      cardEl.className = 'p-3 rounded-lg bg-black/75 border border-red-950/80 space-y-1.5 text-xs mono transition hover:border-red-500/40';
+      cardEl.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5 truncate">
+            <span class="${statusColor} font-bold">${statusIcon}</span>
+            <span class="font-bold text-white truncate">${card.title}</span>
+          </div>
+          <span class="text-[9px] px-2 py-0.5 rounded bg-red-950 border ${card.badgeColor}">${card.tool}</span>
+        </div>
+        <pre class="custom-scroll max-h-32 overflow-y-auto text-[11px] text-red-200/90 whitespace-pre-wrap">${card.content}</pre>
+      `;
+      elements.stepCardsList.appendChild(cardEl);
+      elements.stepCardsList.scrollTop = elements.stepCardsList.scrollHeight;
+    }
+
+    function appendTerminal(text) {
+      elements.terminalOutputBox.textContent += `\n${text}`;
+      elements.terminalOutputBox.scrollTop = elements.terminalOutputBox.scrollHeight;
+    }
+
+    // ─── 4. MUSE AI LIVE SCREEN VIEWPORT (SCREEN-FRAME POLLING) ────────────────
+    function startScreenStreaming() {
+      if (state.screenStreamTimer) clearInterval(state.screenStreamTimer);
+      captureFreshScreenFrame();
+      state.screenStreamTimer = setInterval(captureFreshScreenFrame, 1200);
+    }
+
+    function stopScreenStreaming() {
+      if (state.screenStreamTimer) {
+        clearInterval(state.screenStreamTimer);
+        state.screenStreamTimer = null;
+      }
+    }
+
+    async function captureFreshScreenFrame() {
+      try {
+        const res = await fetch(`${state.backendUrl}/api/screen-frame`);
+        const data = await res.json();
+        if (data.ok && data.image) {
+          elements.liveDesktopStreamImg.src = data.image;
+          elements.viewDesktopLargeImg.src = data.image;
+          elements.screenStreamLoading.classList.add('hidden');
+          document.getElementById('screenResolutionBadge').textContent = `Resolution: ${data.width}x${data.height}`;
+        }
+      } catch (err) {
+        console.warn('Frame grab failed:', err);
+      }
+    }
+
+    function switchRightTab(tab) {
+      if (tab === 'claude') {
+        elements.btnTabClaudeStream.className = 'text-xs font-bold text-red-400 border-b-2 border-red-500 pb-0.5 mono';
+        elements.btnTabScreenViewport.className = 'text-xs font-semibold text-red-300/60 hover:text-red-200 pb-0.5 mono';
+        elements.claudeStreamContainer.classList.remove('hidden');
+        elements.screenViewportContainer.classList.add('hidden');
+        stopScreenStreaming();
+      } else {
+        elements.btnTabScreenViewport.className = 'text-xs font-bold text-red-400 border-b-2 border-red-500 pb-0.5 mono';
+        elements.btnTabClaudeStream.className = 'text-xs font-semibold text-red-300/60 hover:text-red-200 pb-0.5 mono';
+        elements.screenViewportContainer.classList.remove('hidden');
+        elements.claudeStreamContainer.classList.add('hidden');
+        startScreenStreaming();
+      }
+    }
+
+    // ─── 5. VIEW SWITCHER (IDE | LIVE DESKTOP | SWARM | VOICE) ─────────────────
+    function switchMainView(viewName) {
+      state.activeView = viewName;
+      document.querySelectorAll('.nav-view-btn').forEach(btn => {
+        const v = btn.getAttribute('data-view');
+        if (v === viewName) {
+          btn.className = 'nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_14px_#ff1e27] transition flex items-center gap-1.5';
+        } else {
+          btn.className = 'nav-view-btn px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5';
+        }
+      });
+
+      elements.viewIde.classList.toggle('hidden', viewName !== 'ide');
+      elements.viewDesktop.classList.toggle('hidden', viewName !== 'desktop');
+      elements.viewSwarm.classList.toggle('hidden', viewName !== 'swarm');
+      elements.viewVoice.classList.toggle('hidden', viewName !== 'voice');
+
+      if (viewName === 'desktop') {
+        startScreenStreaming();
+      } else if (viewName === 'swarm') {
+        stopScreenStreaming();
+        renderSwarmGraph();
+      } else if (viewName === 'voice') {
+        stopScreenStreaming();
+        initThreeJsVoice();
+      } else {
+        stopScreenStreaming();
+        if (window.monacoEditor) window.monacoEditor.layout();
+      }
+    }
+
+    // ─── 6. NEURAL MEMORY & AGENT SWARM GRAPH (REFERENCE VIDEO 2) ─────────────
+    function renderSwarmGraph() {
+      const svg = document.getElementById('swarmSvgCanvas');
+      if (!svg) return;
+      svg.innerHTML = '';
+      const w = svg.clientWidth || 600;
+      const h = svg.clientHeight || 450;
+      const nodes = state.memoryGraph.nodes || [];
+      const edges = state.memoryGraph.edges || [];
+
+      // Layout nodes radially around Co-Leader
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = Math.min(w, h) * 0.38;
+
+      const nodeCoords = {};
+      nodes.forEach((n, idx) => {
+        if (n.id === 'agent_coleader') {
+          nodeCoords[n.id] = { x: cx, y: cy };
+        } else {
+          const angle = ((idx - 1) / (nodes.length - 1)) * 2 * Math.PI;
+          nodeCoords[n.id] = {
+            x: cx + r * Math.cos(angle),
+            y: cy + r * Math.sin(angle)
+          };
+        }
+      });
+
+      // Draw Edges (Synapses)
+      edges.forEach(e => {
+        const src = nodeCoords[e.source];
+        const tgt = nodeCoords[e.target];
+        if (src && tgt) {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', src.x);
+          line.setAttribute('y1', src.y);
+          line.setAttribute('x2', tgt.x);
+          line.setAttribute('y2', tgt.y);
+          line.setAttribute('stroke', e.active ? '#ff1e27' : 'rgba(255, 30, 39, 0.25)');
+          line.setAttribute('stroke-width', e.active ? '2.5' : '1.2');
+          if (e.active) line.setAttribute('stroke-dasharray', '5,3');
+          svg.appendChild(line);
+        }
+      });
+
+      // Draw Nodes
+      nodes.forEach(n => {
+        const coord = nodeCoords[n.id] || { x: cx, y: cy };
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('transform', `translate(${coord.x}, ${coord.y})`);
+        g.style.cursor = 'pointer';
+
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('r', n.id === 'agent_coleader' ? '22' : '14');
+        circle.setAttribute('fill', n.type === 'agent' ? '#ff1e27' : '#991b1b');
+        circle.setAttribute('stroke', '#ff8888');
+        circle.setAttribute('stroke-width', '2');
+        if (n.status === 'working') {
+          circle.setAttribute('filter', 'drop-shadow(0 0 10px #ff1e27)');
+        }
+        g.appendChild(circle);
+
+        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        text.setAttribute('y', n.id === 'agent_coleader' ? '34' : '26');
+        text.setAttribute('text-anchor', 'middle');
+        text.setAttribute('fill', '#ffe4e6');
+        text.setAttribute('font-size', '10');
+        text.setAttribute('font-family', 'JetBrains Mono');
+        text.textContent = (n.label || n.id).substring(0, 16);
+        g.appendChild(text);
+
+        g.addEventListener('click', () => {
+          document.getElementById('swarmNodeLabel').textContent = n.label || n.id;
+          document.getElementById('swarmNodeType').textContent = `Type: ${n.type} | Status: ${n.status}`;
+          document.getElementById('swarmNodeTask').textContent = n.current_task || 'No active task';
+        });
+
+        svg.appendChild(g);
+      });
+
+      // Agent Matrix List
+      const matrixEl = document.getElementById('swarmAgentMatrix');
+      if (matrixEl) {
+        matrixEl.innerHTML = nodes.map(n => `
+          <div class="p-1.5 rounded bg-black/60 border border-red-950 flex items-center justify-between text-[11px]">
+            <div class="truncate">
+              <span class="font-bold ${n.type === 'agent' ? 'text-red-400' : 'text-amber-300'}">${n.label}</span>
+              <p class="text-[10px] text-red-300/70 truncate">${n.current_task || 'Idle'}</p>
+            </div>
+            <span class="text-[9px] px-1.5 py-0.5 rounded ${n.status === 'working' ? 'bg-amber-950 text-amber-300 border border-amber-500/40' : 'bg-red-950 text-red-300'}">${n.status}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // ─── 7. THREE.JS CRIMSON 3D PARTICLE & SPIKE CORE (REFERENCE VIDEO 1) ───────
+    let threeRenderer, threeScene, threeCamera, particleGroup, spikeGroup;
+    function initThreeJsVoice() {
+      const container = document.getElementById('threeJsVoiceContainer');
+      if (!container || threeRenderer) return;
+
+      const w = container.clientWidth || 600;
+      const h = container.clientHeight || 450;
+
+      threeScene = new THREE.Scene();
+      threeCamera = new THREE.PerspectiveCamera(50, w / h, 0.1, 1000);
+      threeCamera.position.z = 240;
+
+      threeRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      threeRenderer.setSize(w, h);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(threeRenderer.domElement);
+
+      // Core Red Particle Sphere
+      particleGroup = new THREE.Group();
+      const pCount = 1200;
+      const pGeo = new THREE.BufferGeometry();
+      const pPos = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount; i++) {
         const u = Math.random();
         const v = Math.random();
         const theta = u * 2.0 * Math.PI;
         const phi = Math.acos(2.0 * v - 1.0);
-        positions[i * 3] = rad * Math.sin(phi) * Math.cos(theta);
-        positions[i * 3 + 1] = rad * Math.sin(phi) * Math.sin(theta);
-        positions[i * 3 + 2] = rad * Math.cos(phi);
+        const r = 50 + (Math.random() - 0.5) * 8;
+        pPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        pPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        pPos[i * 3 + 2] = r * Math.cos(phi);
       }
-      const partGeo = new THREE.BufferGeometry();
-      partGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const partMat = new THREE.PointsMaterial({ color: 0xff2a2a, size: 0.032, transparent: true, opacity: 0.85 });
-      const particleSystem = new THREE.Points(partGeo, partMat);
-      scene.add(particleSystem);
-
-      // Mouse drag rotation
-      let dragging = false, px = 0, py = 0;
-      canvas.addEventListener('mousedown', e => { dragging = true; px = e.clientX; py = e.clientY; });
-      window.addEventListener('mouseup', () => { dragging = false; });
-      window.addEventListener('mousemove', e => {
-        if (!dragging) return;
-        scene.rotation.y += (e.clientX - px) * 0.007;
-        scene.rotation.x += (e.clientY - py) * 0.007;
-        px = e.clientX; py = e.clientY;
+      pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+      const pMat = new THREE.PointsMaterial({
+        color: 0xff1e27,
+        size: 2.2,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending
       });
+      const points = new THREE.Points(pGeo, pMat);
+      particleGroup.add(points);
+      threeScene.add(particleGroup);
 
-      window.addEventListener('resize', () => {
-        const w = container.clientWidth || 700;
-        const h = container.clientHeight || 410;
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-      });
+      // Radial Audio Spikes
+      spikeGroup = new THREE.Group();
+      const spikeCount = 64;
+      for (let i = 0; i < spikeCount; i++) {
+        const spikeGeo = new THREE.CylinderGeometry(0.3, 1.2, 28, 4);
+        const spikeMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+        const spike = new THREE.Mesh(spikeGeo, spikeMat);
+        const phi = Math.acos(-1 + (2 * i) / spikeCount);
+        const theta = Math.sqrt(spikeCount * Math.PI) * phi;
+        spike.position.set(60 * Math.cos(theta) * Math.sin(phi), 60 * Math.sin(theta) * Math.sin(phi), 60 * Math.cos(phi));
+        spike.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), spike.position.clone().normalize());
+        spikeGroup.add(spike);
+      }
+      threeScene.add(spikeGroup);
 
-      let t = 0;
+      // Gyroscopic Outer Rings
+      for (let r = 0; r < 3; r++) {
+        const ringGeo = new THREE.TorusGeometry(75 + r * 10, 0.6, 8, 80);
+        const ringMat = new THREE.MeshBasicMaterial({ color: 0xff3b30, wireframe: true, transparent: true, opacity: 0.5 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = r * 1.1;
+        ring.rotation.y = r * 0.8;
+        threeScene.add(ring);
+      }
+
       function animate() {
         requestAnimationFrame(animate);
-        t += 0.018 * state.orbPulse;
-        const pulseScale = 1 + Math.sin(t * 3.2) * 0.08 * state.orbPulse;
-        innerSun.scale.set(pulseScale, pulseScale, pulseScale);
-        wireShell.rotation.y += 0.008 * state.orbPulse;
-        wireShell.rotation.x -= 0.004 * state.orbPulse;
-        spikeGroup.rotation.y -= 0.006 * state.orbPulse;
-        spikeGroup.rotation.z += 0.004 * state.orbPulse;
-        spikeGroup.scale.set(pulseScale, pulseScale, pulseScale);
-        particleSystem.rotation.y += 0.004 * state.orbPulse;
-        rings.forEach((r, idx) => {
-          r.rotation.z += (idx % 2 === 0 ? 0.012 : -0.015) * state.orbPulse;
-          r.rotation.x += 0.005 * state.orbPulse;
-        });
-        renderer.render(scene, camera);
+        particleGroup.rotation.y += 0.003;
+        particleGroup.rotation.x += 0.001;
+        spikeGroup.rotation.y -= 0.002;
+        threeRenderer.render(threeScene, threeCamera);
       }
       animate();
     }
 
-    // ============================================================================
-    // 2. INTERACTIVE NEURAL MEMORY & AGENT SYNAPSE GRAPH (VIDEO 2 kpBMntwPOL8)
-    // ============================================================================
-    let pulseOffset = 0;
-    function initMemoryGraphCanvas() {
-      const canvas = document.getElementById('memoryGraphCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-
-      function resize() {
-        canvas.width = canvas.clientWidth || 760;
-        canvas.height = canvas.clientHeight || 430;
-      }
-      resize();
-      window.addEventListener('resize', resize);
-
-      canvas.addEventListener('click', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        for (const n of state.memoryGraph.nodes) {
-          const dx = mx - (n.x || 200);
-          const dy = my - (n.y || 200);
-          if (Math.sqrt(dx * dx + dy * dy) <= 26) {
-            state.selectedGraphNode = n;
-            renderNodeInspector(n);
-            break;
-          }
-        }
-      });
-
-      function drawGraph() {
-        requestAnimationFrame(drawGraph);
-        pulseOffset = (pulseOffset + 0.015) % 1;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Subtle background grid
-        ctx.strokeStyle = 'rgba(255, 30, 39, 0.07)';
-        ctx.lineWidth = 1;
-        for (let gx = 0; gx < canvas.width; gx += 40) {
-          ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
-        }
-        for (let gy = 0; gy < canvas.height; gy += 40) {
-          ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
-        }
-
-        const nodeMap = {};
-        state.memoryGraph.nodes.forEach((n, idx) => {
-          if (typeof n.x !== 'number') {
-            const angle = (idx / state.memoryGraph.nodes.length) * Math.PI * 2;
-            n.x = canvas.width / 2 + Math.cos(angle) * 160;
-            n.y = canvas.height / 2 + Math.sin(angle) * 140;
-          }
-          nodeMap[n.id] = n;
-        });
-
-        // Draw Edges & Animated Data Pulses
-        state.memoryGraph.edges.forEach(edge => {
-          const s = nodeMap[edge.source];
-          const t = nodeMap[edge.target];
-          if (!s || !t) return;
-
-          ctx.beginPath();
-          ctx.moveTo(s.x, s.y);
-          ctx.lineTo(t.x, t.y);
-          ctx.strokeStyle = edge.active ? 'rgba(255, 50, 50, 0.85)' : 'rgba(255, 40, 50, 0.28)';
-          ctx.lineWidth = edge.active ? 2.2 : 1.2;
-          ctx.stroke();
-
-          // Travelling synapse energy packet
-          const px = s.x + (t.x - s.x) * pulseOffset;
-          const py = s.y + (t.y - s.y) * pulseOffset;
-          ctx.beginPath();
-          ctx.arc(px, py, edge.active ? 4.2 : 2.5, 0, Math.PI * 2);
-          ctx.fillStyle = edge.active ? '#ffaa00' : '#ff1e27';
-          ctx.fill();
-        });
-
-        // Draw Nodes
-        state.memoryGraph.nodes.forEach(n => {
-          const isSelected = state.selectedGraphNode && state.selectedGraphNode.id === n.id;
-          ctx.save();
-          if (n.type === 'agent') {
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, isSelected ? 22 : 18, 0, Math.PI * 2);
-            ctx.fillStyle = n.status === 'working' ? '#ff5500' : '#b91c1c';
-            ctx.shadowColor = '#ff1e27';
-            ctx.shadowBlur = n.status === 'working' ? 22 : 12;
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#fca5a5';
-            ctx.stroke();
-          } else if (n.type === 'sub_agent') {
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, 14, 0, Math.PI * 2);
-            ctx.fillStyle = '#d97706';
-            ctx.shadowColor = '#f59e0b';
-            ctx.shadowBlur = 15;
-            ctx.fill();
-            ctx.strokeStyle = '#fde68a';
-            ctx.stroke();
-          } else if (n.type === 'memory') {
-            ctx.beginPath();
-            ctx.rect(n.x - 16, n.y - 16, 32, 32);
-            ctx.fillStyle = '#4c0519';
-            ctx.shadowColor = '#f43f5e';
-            ctx.shadowBlur = 12;
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#fb7185';
-            ctx.stroke();
-          } else {
-            ctx.beginPath();
-            ctx.arc(n.x, n.y, 11, 0, Math.PI * 2);
-            ctx.fillStyle = '#065f46';
-            ctx.strokeStyle = '#34d399';
-            ctx.fill();
-            ctx.stroke();
-          }
-          ctx.restore();
-
-          ctx.fillStyle = '#ffe4e6';
-          ctx.font = 'bold 10px "JetBrains Mono", monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText(n.label, n.x, n.y + 32);
-        });
-      }
-      drawGraph();
-      renderAgentTaskMatrix();
-    }
-
-    function renderNodeInspector(node) {
-      document.getElementById('inspNodeTitle').textContent = node.label;
-      document.getElementById('inspNodeType').textContent = `${node.type} // ${node.status}`;
-      document.getElementById('inspNodeTask').textContent = node.current_task || 'Ready';
-      const links = state.memoryGraph.edges.filter(e => e.source === node.id || e.target === node.id);
-      document.getElementById('inspNodeConnections').textContent = `Connected Synapses: ${links.length} (${links.map(l => l.relation).join(', ')})`;
-    }
-
-    function renderAgentTaskMatrix() {
-      const container = document.getElementById('agentTaskMatrixList');
-      if (!container) return;
-      container.innerHTML = '';
-      document.getElementById('navNodeCount').textContent = String(state.memoryGraph.nodes.length);
-
-      state.memoryGraph.nodes.forEach(n => {
-        const div = document.createElement('div');
-        div.className = 'card-3d p-2.5 rounded-xl space-y-1 cursor-pointer';
-        const badgeColor = n.status === 'working' ? 'bg-amber-500/20 text-amber-300 border-amber-400/50' : 'bg-red-950 text-red-300 border-red-500/30';
-        div.innerHTML = `
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-bold text-white">${n.label}</span>
-            <span class="text-[10px] mono px-2 py-0.5 rounded border ${badgeColor}">${n.type}: ${n.status}</span>
-          </div>
-          <p class="text-[11px] text-red-200/80 mono">${n.current_task || ''}</p>
-        `;
-        div.addEventListener('click', () => {
-          state.selectedGraphNode = n;
-          renderNodeInspector(n);
-        });
-        container.appendChild(div);
-      });
-    }
-
-    // ============================================================================
-    // 3. PROBE REAL CONNECTIONS (FASTAPI BACKEND + DIRECT LOCAL OLLAMA + GEMINI)
-    // ============================================================================
-    async function probeLiveConnections() {
-      const badge = document.getElementById('liveConnectionBadge');
-      const footer = document.getElementById('activeModelFooter');
-
-      // 1. Check FastAPI OS Backend (127.0.0.1:8000)
+    // ─── 8. WEBSOCKET TELEMETRY & STATUS ──────────────────────────────────────
+    function initWebSocket() {
+      const wsUrl = state.backendUrl.replace(/^http/, 'ws') + '/ws/telemetry';
       try {
-        const r = await fetch(`${state.backendUrl}/api/health`, { method: 'GET' });
-        if (r.ok) {
-          const data = await r.json();
-          state.backendOnline = true;
-          state.activeModel = data.active_model || 'connected';
-          if (data.memory_graph && data.memory_graph.nodes) {
-            state.memoryGraph = data.memory_graph;
-            renderAgentTaskMatrix();
-          }
-          badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-emerald-950 border border-emerald-400/60 text-emerald-300';
-          badge.textContent = `OS BACKEND + ${state.activeModel.toUpperCase()} ONLINE`;
-          footer.textContent = `LLM & OS Backend: ${state.activeModel} (127.0.0.1:8000)`;
-          return;
-        }
-      } catch (_) {
-        state.backendOnline = false;
-      }
-
-      // 2. Check Direct Local Ollama (127.0.0.1:11434)
-      try {
-        const r2 = await fetch(`${state.ollamaUrl}/api/tags`, { method: 'GET' });
-        if (r2.ok) {
-          const data2 = await r2.json();
-          const models = (data2.models || []).map(m => m.name);
-          if (models.length > 0) {
-            state.ollamaOnline = true;
-            state.availableModels = models;
-            state.activeModel = models.find(m => m.toLowerCase().includes('gemma')) || models[0];
-            badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-400/60 text-amber-300';
-            badge.textContent = `DIRECT OLLAMA ONLINE (${state.activeModel}) — Start uvicorn for OS app launch`;
-            footer.textContent = `Direct Ollama LLM: ${state.activeModel}`;
-            return;
-          }
-        }
-      } catch (_) {
-        state.ollamaOnline = false;
-      }
-
-      if (state.geminiKey) {
-        state.activeModel = 'gemini-2.5-flash';
-        badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-amber-950 border border-amber-400/60 text-amber-300';
-        badge.textContent = `GEMINI API ONLINE (Mount Folder to Audit/Write Files)`;
-        footer.textContent = `Direct Cloud LLM: gemini-2.5-flash`;
-        return;
-      }
-
-      badge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-red-950 border border-red-500/60 text-red-300';
-      badge.textContent = 'BACKEND OFFLINE — Run uvicorn main:app --port 8000 or Click Config';
-      footer.textContent = 'LLM Disconnected (Start Ollama / Backend or add Gemini Key in Config)';
-    }
-
-    // ============================================================================
-    // 4. NATIVE CHROME LOCAL DIRECTORY MOUNT (`window.showDirectoryPicker`)
-    // ============================================================================
-    async function mountLocalFolderInBrowser() {
-      if (!('showDirectoryPicker' in window)) {
-        alert('Your browser does not support showDirectoryPicker. Enter the folder path in the input box and run the FastAPI backend.');
-        return;
-      }
-      try {
-        const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-        state.mountedDirHandle = dirHandle;
-        document.getElementById('mountedDirLabel').textContent = dirHandle.name;
-        document.getElementById('targetDirInput').value = dirHandle.name;
-        await scanMountedBrowserDirectory();
-        switchTab('studio');
-      } catch (err) {
-        console.warn('Directory picker cancelled or blocked:', err);
-      }
-    }
-
-    async function scanMountedBrowserDirectory() {
-      if (!state.mountedDirHandle) return;
-      state.mountedFiles = {};
-      state.detectedMistakes = [];
-      const skip = new Set(['.git', 'node_modules', '.venv', 'venv', '__pycache__', 'dist', 'build']);
-      const validExts = ['.py', '.js', '.ts', '.tsx', '.jsx', '.html', '.css', '.json', '.md'];
-
-      async function walk(handle, prefix = '') {
-        for await (const entry of handle.values()) {
-          if (entry.kind === 'directory') {
-            if (!skip.has(entry.name)) {
-              await walk(entry, `${prefix}${entry.name}/`);
+        const ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          elements.activeModelBadge.textContent = 'Backend: Online';
+          elements.activeModelBadge.className = 'text-[10px] mono px-2.5 py-0.5 rounded-full bg-emerald-950/80 border border-emerald-500/40 text-emerald-300';
+        };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.memory_graph) {
+              state.memoryGraph = data.memory_graph;
+              document.getElementById('swarmNodeCount').textContent = (state.memoryGraph.nodes || []).length;
+              if (state.activeView === 'swarm') renderSwarmGraph();
             }
-          } else if (entry.kind === 'file') {
-            const relPath = `${prefix}${entry.name}`;
-            if (!validExts.some(ext => entry.name.toLowerCase().endsWith(ext))) continue;
-            const file = await entry.getFile();
-            if (file.size > 250000) continue;
-            const text = await file.text();
-            const lines = text.split('\n');
-            state.mountedFiles[relPath] = { content: text, handle: entry, size: file.size, lines: lines.length };
-
-            // Real static mistake checks in browser
-            if (entry.name.endsWith('.json')) {
-              try {
-                JSON.parse(text);
-              } catch (je) {
-                state.detectedMistakes.push({ file: relPath, type: 'JSONSyntaxError', detail: je.message });
-              }
-            }
-            if (entry.name.endsWith('.py')) {
-              lines.forEach((ln, idx) => {
-                if (ln.includes('TODO') || ln.includes('FIXME') || ln.includes('BUG')) {
-                  state.detectedMistakes.push({ file: relPath, line: idx + 1, type: 'FlaggedBugMarker', detail: ln.trim() });
-                }
-              });
-            }
-          }
-        }
-      }
-
-      await walk(state.mountedDirHandle);
-      renderStudioFilesAndMistakes();
-
-      // Add to Neural Memory Graph
-      state.memoryGraph.nodes.push({
-        id: `dir_${Date.now().toString().slice(-4)}`,
-        label: `Folder: ${state.mountedDirHandle.name} (${Object.keys(state.mountedFiles).length} files)`,
-        type: 'memory_Artifact',
-        status: 'indexed',
-        current_task: `Found ${state.detectedMistakes.length} issues across ${Object.keys(state.mountedFiles).length} files`,
-        x: 640,
-        y: 160 + Math.random() * 120
-      });
-      state.memoryGraph.edges.push({
-        source: 'agent_dir_auditor',
-        target: state.memoryGraph.nodes[state.memoryGraph.nodes.length - 1].id,
-        relation: 'audited',
-        active: true
-      });
-      renderAgentTaskMatrix();
-    }
-
-    function renderStudioFilesAndMistakes() {
-      const fkeys = Object.keys(state.mountedFiles);
-      document.getElementById('studioFileCount').textContent = `${fkeys.length} files`;
-      const flist = document.getElementById('studioFileList');
-      flist.innerHTML = '';
-
-      if (!state.selectedFile && fkeys.length > 0) {
-        state.selectedFile = fkeys[0];
-      }
-
-      fkeys.forEach(fname => {
-        const meta = state.mountedFiles[fname];
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        const isSel = fname === state.selectedFile;
-        btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg border transition flex items-center justify-between ${
-          isSel ? 'bg-red-600/25 border-red-400 text-white' : 'bg-zinc-950 border-red-950 text-red-200/80'
-        }`;
-        btn.innerHTML = `<span class="truncate">${fname}</span><span class="text-[10px] text-red-400">${meta.lines}L</span>`;
-        btn.addEventListener('click', () => {
-          state.selectedFile = fname;
-          renderStudioFilesAndMistakes();
-        });
-        flist.appendChild(btn);
-      });
-
-      if (state.selectedFile && state.mountedFiles[state.selectedFile]) {
-        document.getElementById('studioActiveFileName').textContent = state.selectedFile;
-        document.getElementById('studioCodeEditor').value = state.mountedFiles[state.selectedFile].content;
-      }
-
-      document.getElementById('studioMistakeCount').textContent = `${state.detectedMistakes.length} issues`;
-      const mlist = document.getElementById('studioMistakeList');
-      mlist.innerHTML = '';
-      if (state.detectedMistakes.length === 0) {
-        mlist.innerHTML = '<div class="text-emerald-400 text-[11px]">0 syntax markers found. Click "2. AI Auto-Fix" for deep LLM line-by-line logic audit.</div>';
-      } else {
-        state.detectedMistakes.forEach(m => {
-          const item = document.createElement('div');
-          item.className = 'p-2 rounded-lg bg-red-950/60 border border-red-500/40 text-red-200 space-y-0.5 cursor-pointer';
-          item.innerHTML = `<div class="font-bold text-amber-300">${m.file} ${m.line ? `(L${m.line})` : ''} — ${m.type}</div><div class="text-[10px]">${m.detail}</div>`;
-          item.addEventListener('click', () => {
-            if (state.mountedFiles[m.file]) {
-              state.selectedFile = m.file;
-              renderStudioFilesAndMistakes();
-            }
-          });
-          mlist.appendChild(item);
-        });
+          } catch (e) {}
+        };
+        ws.onclose = () => {
+          setTimeout(initWebSocket, 3000);
+        };
+      } catch (e) {
+        setTimeout(initWebSocket, 3000);
       }
     }
 
-    // ============================================================================
-    // 5. REAL COMMAND EXECUTION (ZERO HARDCODED DIALOGUES!)
-    // ============================================================================
-    function speakText(text) {
-      document.getElementById('liveJarvisTranscript').textContent = text;
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(text.slice(0, 600));
-        u.rate = 1.05;
-        window.speechSynthesis.speak(u);
-      }
-    }
-
-    function appendTraceCard(role, title, bodyText) {
-      const box = document.getElementById('chatTraceContainer');
-      const div = document.createElement('div');
-      div.className = 'card-3d p-3 rounded-xl space-y-1';
-      div.innerHTML = `
-        <div class="flex items-center justify-between text-xs">
-          <span class="font-bold text-red-400 font-hud">${role}</span>
-          <span class="text-[10px] mono text-red-300/70">${new Date().toLocaleTimeString()} — ${title}</span>
-        </div>
-        <pre class="whitespace-pre-wrap text-xs mono text-red-100 leading-relaxed">${bodyText}</pre>
-      `;
-      box.prepend(div);
-    }
-
-    async function callDirectLLM(systemPrompt, userPrompt) {
-      if (state.ollamaOnline) {
-        const res = await fetch(`${state.ollamaUrl}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: state.activeModel,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            stream: false
-          })
-        });
-        if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
-        const data = await res.json();
-        return data.message.content;
-      }
-      if (state.geminiKey) {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${state.geminiKey}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [{ role: 'user', parts: [{ text: userPrompt }] }]
-          })
-        });
-        if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
-        const data = await res.json();
-        return data.candidates[0].content.parts[0].text;
-      }
-      throw new Error(
-        'No live LLM or FastAPI backend is connected! Please either:\n' +
-        '1. Start your Python backend (`cd backend && uvicorn main:app --port 8000`), OR\n' +
-        '2. Start local Ollama (`OLLAMA_ORIGINS=* ollama serve`), OR\n' +
-        '3. Click "LLM & Voice Config" in the top-right to paste a Gemini API key.'
-      );
-    }
-
-    async function executeCommand(rawInstruction) {
-      const instruction = (rawInstruction || document.getElementById('mainCommandInput').value).trim();
-      const targetDir = document.getElementById('targetDirInput').value.trim() || '.';
-      if (!instruction) return;
-
-      state.orbPulse = 2.6;
-      document.getElementById('orbStatusTitle').textContent = 'EXECUTING REAL TOOLS & QUERYING LLM...';
-      appendTraceCard('USER COMMAND', `Target Dir: ${targetDir}`, instruction);
-
-      // Update Memory Graph agent status
-      const coleader = state.memoryGraph.nodes.find(n => n.id === 'agent_coleader');
-      if (coleader) {
-        coleader.status = 'working';
-        coleader.current_task = `Executing: ${instruction}`;
-      }
-      renderAgentTaskMatrix();
-
-      try {
-        // ROUTE A: Full Local Python FastAPI OS Backend is running (127.0.0.1:8000)
-        if (state.backendOnline) {
-          const res = await fetch(`${state.backendUrl}/api/execute`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              instruction,
-              target_directory: targetDir,
-              preferred_model: state.activeModel,
-              gemini_api_key: state.geminiKey
-            })
-          });
-          const data = await res.json();
-          if (data.memory_graph) {
-            state.memoryGraph = data.memory_graph;
-            renderAgentTaskMatrix();
-          }
-          if (data.created_or_fixed_files) {
-            Object.entries(data.created_or_fixed_files).forEach(([k, v]) => {
-              state.mountedFiles[k] = { content: v, lines: v.split('\n').length };
-              state.selectedFile = k;
-            });
-            renderStudioFilesAndMistakes();
-          }
-          const reply = data.spoken_response || JSON.stringify(data.tool_traces, null, 2);
-          document.getElementById('studioDiagnosticOutput').textContent = JSON.stringify(data.tool_traces, null, 2);
-          appendTraceCard('J.A.R.V.I.S. (OS BACKEND)', state.activeModel, `${reply}\n\n--- Tool Traces ---\n${JSON.stringify(data.tool_traces, null, 2)}`);
-          speakText(reply);
-          state.orbPulse = 1.0;
-          document.getElementById('orbStatusTitle').textContent = 'EXECUTION COMPLETE';
-          return;
-        }
-
-        // ROUTE B: Direct Browser -> Local Ollama / Gemini + Mounted Local Folder
-        const mountedContext = Object.entries(state.mountedFiles)
-          .slice(0, 12)
-          .map(([path, meta]) => `=== FILE: ${path} ===\n${meta.content.slice(0, 4000)}`)
-          .join('\n\n');
-
-        const sysPrompt =
-          'You are J.A.R.V.I.S., an autonomous software engineer and system assistant. ' +
-          'Never use canned responses. Analyze the user instruction and any mounted directory files below. ' +
-          'If the user asks to find mistakes or write code, output exact bugs with line numbers and provide complete corrected code blocks.';
-
-        const userPayload =
-          `User Instruction: ${instruction}\n` +
-          (mountedContext
-            ? `\nMounted Local Directory Files (${Object.keys(state.mountedFiles).length} files):\n${mountedContext}`
-            : '\n(Note: No local folder mounted via browser button yet, and Python OS backend on port 8000 is offline.)');
-
-        const llmReply = await callDirectLLM(sysPrompt, userPayload);
-        document.getElementById('studioDiagnosticOutput').textContent = llmReply;
-        appendTraceCard('J.A.R.V.I.S. (LIVE LLM)', state.activeModel, llmReply);
-        speakText(llmReply);
-      } catch (err) {
-        const errMsg = err.message || String(err);
-        document.getElementById('liveJarvisTranscript').textContent = errMsg;
-        document.getElementById('studioDiagnosticOutput').textContent = errMsg;
-        appendTraceCard('CONNECTION ERROR (NO FAKE DIALOGUE)', 'Action Required', errMsg);
-      } finally {
-        state.orbPulse = 1.0;
-        if (coleader) coleader.status = 'idle';
-        renderAgentTaskMatrix();
-      }
-    }
-
-    function switchTab(tabName) {
-      const sections = {
-        voice: document.getElementById('tabVoice'),
-        memory: document.getElementById('tabMemory'),
-        studio: document.getElementById('tabStudio'),
-        chat: document.getElementById('tabChat')
-      };
-      Object.entries(sections).forEach(([k, el]) => {
-        if (k === tabName) el.classList.remove('hidden');
-        else el.classList.add('hidden');
-      });
-      document.querySelectorAll('.nav-pill').forEach(btn => {
-        if (btn.getAttribute('data-nav') === tabName) {
-          btn.className = 'nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold bg-red-600 text-white shadow-[0_0_16px_#ff1e27] flex items-center gap-1.5 transition';
-        } else {
-          btn.className = 'nav-pill px-3.5 py-1.5 rounded-full text-xs font-semibold text-red-300/80 hover:text-white transition flex items-center gap-1.5';
-        }
-      });
-    }
-
-    // Speech Recognition
-    function startVoiceInput() {
+    // ─── 9. VOICE SPEECH RECOGNITION (WEB SPEECH API) ──────────────────────────
+    let speechRecognition = null;
+    function initSpeechRecognition() {
       const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRec) {
-        alert('Web Speech API not supported in this browser window. Type your command in the input bar.');
-        return;
-      }
-      const rec = new SpeechRec();
-      rec.lang = 'en-IN';
-      rec.onstart = () => {
-        document.getElementById('micLabel').textContent = 'Listening...';
-        state.orbPulse = 2.8;
+      if (!SpeechRec) return;
+      speechRecognition = new SpeechRec();
+      speechRecognition.continuous = false;
+      speechRecognition.interimResults = false;
+      speechRecognition.lang = 'en-US';
+
+      speechRecognition.onstart = () => {
+        state.isListeningVoice = true;
+        elements.voiceMicIcon.textContent = '🔴';
+        elements.btnToggleVoiceMic.className = 'px-3.5 py-2.5 rounded-xl bg-red-600 text-white animate-pulse transition';
+        document.getElementById('voiceSpeechStatus').textContent = 'Listening to your voice... Speak now.';
       };
-      rec.onresult = (e) => {
+
+      speechRecognition.onresult = (e) => {
         const transcript = e.results[0][0].transcript;
-        document.getElementById('mainCommandInput').value = transcript;
-        executeCommand(transcript);
+        elements.jarvisPromptInput.value = transcript;
+        document.getElementById('voiceSpeechStatus').textContent = `Heard: "${transcript}"`;
+        executeUserPrompt(transcript);
       };
-      rec.onend = () => {
-        document.getElementById('micLabel').textContent = 'Speak to J.A.R.V.I.S.';
-        state.orbPulse = 1.0;
+
+      speechRecognition.onend = () => {
+        state.isListeningVoice = false;
+        elements.voiceMicIcon.textContent = '🎤';
+        elements.btnToggleVoiceMic.className = 'px-3.5 py-2.5 rounded-xl bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 transition';
       };
-      rec.start();
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initCrimson3DCore();
-      initMemoryGraphCanvas();
-      probeLiveConnections();
-
-      document.querySelectorAll('.nav-pill').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-nav')));
-      });
-
-      document.getElementById('btnExecuteCommand').addEventListener('click', () => executeCommand());
-      document.getElementById('mainCommandInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') executeCommand();
-      });
-
-      document.querySelectorAll('.quick-cmd').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const cmd = btn.getAttribute('data-cmd');
-          document.getElementById('mainCommandInput').value = cmd;
-          executeCommand(cmd);
-        });
-      });
-
-      document.getElementById('btnVoiceMic').addEventListener('click', startVoiceInput);
-      document.getElementById('btnPickLocalDir').addEventListener('click', mountLocalFolderInBrowser);
-
-      document.getElementById('btnScanCurrentDir').addEventListener('click', async () => {
-        if (state.mountedDirHandle) {
-          await scanMountedBrowserDirectory();
+    function toggleVoiceRecognition() {
+      if (!speechRecognition) {
+        initSpeechRecognition();
+        if (!speechRecognition) {
+          alert('Web Speech API is not supported in this browser. Please type your prompt.');
           return;
         }
-        const dirPath = document.getElementById('targetDirInput').value.trim() || '.';
-        if (state.backendOnline) {
-          const res = await fetch(`${state.backendUrl}/api/inspect-dir`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ instruction: 'scan', target_directory: dirPath })
-          });
-          const data = await res.json();
-          if (data.files) {
-            state.mountedFiles = {};
-            data.files.forEach(f => {
-              state.mountedFiles[f.path] = { content: f.full_content || f.preview, lines: f.lines };
-            });
-            state.detectedMistakes = data.detected_mistakes || [];
-            renderStudioFilesAndMistakes();
-            document.getElementById('studioDiagnosticOutput').textContent = JSON.stringify(data, null, 2);
-          }
-        } else {
-          await mountLocalFolderInBrowser();
+      }
+      if (state.isListeningVoice) {
+        speechRecognition.stop();
+      } else {
+        speechRecognition.start();
+      }
+    }
+
+    function speakText(text) {
+      if ('speechSynthesis' in window && text) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 1.05;
+        utterance.pitch = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    // ─── 10. EVENT LISTENERS & BOOTSTRAP ───────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      initMonacoEditor();
+      fetchWorkspaceFiles();
+      initWebSocket();
+      initSpeechRecognition();
+
+      // View Switcher Navigation
+      document.querySelectorAll('.nav-view-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          switchMainView(btn.getAttribute('data-view'));
+        });
+      });
+
+      // Tab Switcher on Right Column (Claude Code Stream vs Screen Viewport)
+      elements.btnTabClaudeStream.addEventListener('click', () => switchRightTab('claude'));
+      elements.btnTabScreenViewport.addEventListener('click', () => switchRightTab('screen'));
+      elements.btnCaptureFreshFrame.addEventListener('click', captureFreshScreenFrame);
+
+      // Prompt Submit Form
+      elements.jarvisPromptForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = elements.jarvisPromptInput.value.trim();
+        if (text) {
+          executeUserPrompt(text);
+          elements.jarvisPromptInput.value = '';
         }
       });
 
-      document.getElementById('btnAutoFixAll').addEventListener('click', () => {
-        switchTab('voice');
-        executeCommand('Inspect all files in the directory, explain every mistake and bug with exact line numbers, and write the corrected code.');
+      // Quick Chips
+      document.querySelectorAll('.quick-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          const prompt = chip.getAttribute('data-prompt');
+          elements.jarvisPromptInput.value = prompt;
+          executeUserPrompt(prompt);
+        });
       });
 
-      document.getElementById('btnSaveDiskFile').addEventListener('click', async () => {
-        if (!state.selectedFile || !state.mountedFiles[state.selectedFile]) return;
-        const newContent = document.getElementById('studioCodeEditor').value;
-        state.mountedFiles[state.selectedFile].content = newContent;
-        const handle = state.mountedFiles[state.selectedFile].handle;
-        if (handle && handle.createWritable) {
-          const writable = await handle.createWritable();
-          await writable.write(newContent);
-          await writable.close();
-          document.getElementById('studioAstBadge').textContent = 'Saved to Disk!';
+      // Voice Mic Toggle
+      elements.btnToggleVoiceMic.addEventListener('click', toggleVoiceRecognition);
+
+      // IDE File Action Buttons
+      elements.btnRefreshWorkspace.addEventListener('click', fetchWorkspaceFiles);
+      elements.inputWorkspaceDir.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') fetchWorkspaceFiles();
+      });
+      elements.btnSaveFileDisk.addEventListener('click', saveCurrentFileToDisk);
+      elements.btnRunCurrentFile.addEventListener('click', runCurrentFile);
+      elements.btnQuickAudit.addEventListener('click', auditDirectoryMistakes);
+      elements.btnClearTerminal.addEventListener('click', () => {
+        elements.terminalOutputBox.textContent = 'Terminal cleared.';
+      });
+
+      // Demo Triggers for Muse AI View
+      elements.btnTriggerBlenderDemo.addEventListener('click', () => {
+        executeUserPrompt('Open Blender and add a 3D mesh cube');
+      });
+      elements.btnTriggerCalcDemo.addEventListener('click', () => {
+        executeUserPrompt('Open Calculator and calculate 125 * 8');
+      });
+
+      // Settings Modal
+      elements.btnOpenConfig.addEventListener('click', () => elements.configModal.classList.remove('hidden'));
+      elements.btnCloseConfig.addEventListener('click', () => elements.configModal.classList.add('hidden'));
+      elements.btnSaveConfig.addEventListener('click', () => {
+        localStorage.setItem('jarvis_preferred_model', elements.cfgPreferredModel.value.trim());
+        localStorage.setItem('jarvis_gemini_key', elements.cfgGeminiKey.value.trim());
+        if (elements.cfgBackendUrl.value.trim()) {
+          state.backendUrl = elements.cfgBackendUrl.value.trim();
+          localStorage.setItem('jarvis_backend_url', state.backendUrl);
         }
+        elements.configModal.classList.add('hidden');
+        fetchWorkspaceFiles();
       });
 
-      document.getElementById('btnAddMemoryFact').addEventListener('click', () => {
-        const title = prompt('Enter Memory Block Title (e.g. "API Auth Key Rule" or "Project Stack: FastAPI + React"):');
-        if (!title) return;
-        const id = `mem_custom_${Date.now().toString().slice(-4)}`;
-        state.memoryGraph.nodes.push({
-          id,
-          label: title,
-          type: 'memory',
-          status: 'stored',
-          current_task: 'User-injected persistent memory rule',
-          x: 120 + Math.random() * 520,
-          y: 80 + Math.random() * 270
-        });
-        state.memoryGraph.edges.push({ source: 'agent_coleader', target: id, relation: 'remembers', active: true });
-        renderAgentTaskMatrix();
-      });
-
-      document.getElementById('btnSpawnGraphAgent').addEventListener('click', () => {
-        const name = prompt('Enter Specialist Sub-Agent Name (e.g. "Security Linter Agent"):', 'AST Bug Hunter Sub-Agent');
-        if (!name) return;
-        const id = `sub_${Date.now().toString().slice(-4)}`;
-        state.memoryGraph.nodes.push({
-          id,
-          label: name,
-          type: 'sub_agent',
-          status: 'working',
-          current_task: 'Dynamically spawned by user / Co-Leader',
-          x: 150 + Math.random() * 460,
-          y: 90 + Math.random() * 260
-        });
-        state.memoryGraph.edges.push({ source: 'agent_coleader', target: id, relation: 'spawned', active: true });
-        state.memoryGraph.edges.push({ source: id, target: 'mem_workspace', relation: 'audits', active: true });
-        renderAgentTaskMatrix();
-      });
-
-      document.getElementById('btnClearTrace').addEventListener('click', () => {
-        document.getElementById('chatTraceContainer').innerHTML = '';
-      });
-
-      document.getElementById('btnOpenConfig').addEventListener('click', () => {
-        document.getElementById('configModal').classList.remove('hidden');
-      });
-      document.getElementById('btnCloseConfig').addEventListener('click', () => {
-        document.getElementById('configModal').classList.add('hidden');
-      });
-      document.getElementById('btnSaveConfig').addEventListener('click', () => {
-        state.backendUrl = document.getElementById('cfgBackendUrl').value.trim() || 'http://127.0.0.1:8000';
-        state.ollamaUrl = document.getElementById('cfgOllamaUrl').value.trim() || 'http://127.0.0.1:11434';
-        state.geminiKey = document.getElementById('cfgGeminiKey').value.trim();
-        document.getElementById('configModal').classList.add('hidden');
-        probeLiveConnections();
+      // Keyboard Shortcut Ctrl+S to save
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          saveCurrentFileToDisk();
+        }
       });
     });
   </script>

@@ -41,6 +41,8 @@ COMMON_WINDOWS_APPS = {
     "firefox": "firefox",
     "spotify": "spotify:",
     "settings": "ms-settings:",
+    "blender": "blender",
+    "blender 3d": "blender",
 }
 
 
@@ -98,6 +100,13 @@ def open_system_app_or_url(target: str) -> Dict[str, Any]:
     )
 
     if sys.platform == "win32":
+        # Check explicit paths for Blender
+        if "blender" in lower or "blender" in clean_base:
+            for bp in [r"E:\blender.exe", r"E:\blender-launcher.exe"]:
+                if os.path.exists(bp):
+                    subprocess.Popen([bp], cwd=os.path.dirname(bp))
+                    return {"ok": True, "action": "launched_blender_binary", "target": bp}
+
         # Try direct os.startfile (works for registered apps, URI schemes like calc.exe, notepad.exe, spotify:, ms-settings:, chrome, etc.)
         try:
             os.startfile(mapped)
@@ -233,10 +242,30 @@ def inspect_directory_and_find_mistakes(directory_path: str) -> Dict[str, Any]:
     }
 
 
-def write_file_to_disk(base_dir: str, relative_path: str, content: str) -> Dict[str, Any]:
+PROTECTED_SYSTEM_FILES = {
+    "main.py", "computer_use_agent.py", "llm_autonomous_brain.py",
+    "memory_graph.py", "os_and_dir_tools.py", "jarvis_command_center.html", "index.html"
+}
+
+
+def write_file_to_disk(base_dir: str, relative_path: str, content: str, force: bool = False) -> Dict[str, Any]:
     """Writes or updates a real file on disk and validates syntax if Python."""
     root = Path(base_dir).expanduser().resolve()
-    target = (root / relative_path).resolve()
+    clean_rel = relative_path.replace("\\", "/").strip().lstrip("/")
+    
+    # Protect core backend infrastructure from accidental overwriting by generated scripts
+    if not force and (clean_rel in PROTECTED_SYSTEM_FILES or clean_rel.endswith("/main.py")):
+        # If writing to workspace root or backend dir, safely redirect to generated_projects or workspaces
+        if root.name in ("backend", "New folder", "."):
+            safe_folder = root / "generated_projects"
+            safe_folder.mkdir(parents=True, exist_ok=True)
+            target = (safe_folder / Path(clean_rel).name).resolve()
+            clean_rel = f"generated_projects/{Path(clean_rel).name}"
+        else:
+            target = (root / clean_rel).resolve()
+    else:
+        target = (root / clean_rel).resolve()
+
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(content, encoding="utf-8")
 
@@ -252,10 +281,52 @@ def write_file_to_disk(base_dir: str, relative_path: str, content: str) -> Dict[
     return {
         "ok": ast_valid,
         "path": str(target),
-        "relative_path": relative_path,
+        "relative_path": clean_rel,
         "bytes_written": len(content),
         "syntax_error": syntax_error,
     }
+
+
+def get_directory_tree(base_dir: str = ".") -> Dict[str, Any]:
+    """Returns a clean JSON tree of files and directories for the Antigravity IDE File Explorer."""
+    root = Path(base_dir).expanduser().resolve()
+    if root.is_file():
+        root = root.parent
+    if not root.exists() or not root.is_dir():
+        root = Path(".").resolve()
+
+    skip_dirs = {".git", ".venv", "venv", "node_modules", "__pycache__", ".pytest_cache", "dist", "build"}
+    
+    items: List[Dict[str, Any]] = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in skip_dirs]
+        rel_dir = os.path.relpath(dirpath, root)
+        depth = 0 if rel_dir == "." else len(Path(rel_dir).parts)
+        if depth > 4:
+            continue
+        
+        for fname in sorted(filenames):
+            fpath = Path(dirpath) / fname
+            rel_file = str(fpath.relative_to(root)).replace("\\", "/")
+            ext = fpath.suffix.lower()
+            try:
+                sz = fpath.stat().st_size
+            except Exception:
+                sz = 0
+            items.append({
+                "name": fname,
+                "path": rel_file,
+                "abs_path": str(fpath),
+                "extension": ext,
+                "size": sz,
+                "directory": ("" if rel_dir == "." else rel_dir.replace("\\", "/")),
+            })
+            if len(items) >= 250:
+                break
+        if len(items) >= 250:
+            break
+            
+    return {"ok": True, "root": str(root), "files": items, "count": len(items)}
 
 
 def run_terminal_command(command: str, cwd: str = ".", timeout: int = 45) -> Dict[str, Any]:

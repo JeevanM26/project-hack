@@ -187,9 +187,15 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
                         btn.Click()
                     time.sleep(0.04)
 
-            time.sleep(0.1)
-            res_ctrl = calc.TextControl(searchDepth=5, AutomationId="CalculatorResults")
-            disp = res_ctrl.Name if res_ctrl.Exists(0, 0) else ""
+            time.sleep(0.15)
+            disp = ""
+            res_ctrl = calc.TextControl(searchDepth=8, AutomationId="CalculatorResults")
+            if res_ctrl.Exists(0, 0):
+                disp = res_ctrl.Name
+            else:
+                fallback_ctrl = calc.TextControl(searchDepth=8, RegexName=".*Display is.*")
+                if fallback_ctrl.Exists(0, 0):
+                    disp = fallback_ctrl.Name
             return True, disp
     except Exception as exc:
         print("UIA Calc Error:", exc)

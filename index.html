@@ -377,22 +377,35 @@
 
 
 
-        <!-- LAYER 1: DEDICATED PROMINENT TYPING CONSOLE -->
-    <div class="w-full hud-glass rounded-2xl p-2.5 flex items-center gap-2.5 shadow-2xl border border-amber-500/40 pointer-events-auto bg-black/85 backdrop-blur-2xl">
-      <div class="flex items-center gap-2 pl-2 text-amber-400 font-bold mono text-sm shrink-0">
-        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-        <span class="hidden sm:inline">JARVIS &gt;</span>
+    <!-- LAYER 1: DEDICATED PROMINENT TYPING CONSOLE WITH QUICK-ACTION CHIPS -->
+    <div class="w-full flex flex-col gap-1.5 pointer-events-auto">
+      <!-- QUICK ACTION CHIPS FOR ONE-CLICK OR TYPE DISPATCH -->
+      <div class="w-full flex items-center justify-center gap-1.5 flex-wrap text-[11px] mono">
+        <button type="button" onclick="quickFillAndRun('open notepad and type Hello from J.A.R.V.I.S.')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 transition">📝 Notepad</button>
+        <button type="button" onclick="quickFillAndRun('open calculator and compute 125 * 8')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 transition">🧮 Calculator</button>
+        <button type="button" onclick="quickFillAndRun('open whatsapp and send msg to Mom: I am on my way home')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-200 transition">💬 WhatsApp</button>
+        <button type="button" onclick="quickFillAndRun('draft email to Alex regarding quarterly review')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 transition">✉️ Draft Gmail</button>
+        <button type="button" onclick="quickFillAndRun('download python')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 transition">📥 Download</button>
+        <button type="button" onclick="quickFillAndRun('search google for gemma 4 multimodal vision')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-sky-500/30 border border-sky-500/40 text-sky-200 transition">🔍 Google</button>
+        <button type="button" onclick="quickFillAndRun('play kalyani song on youtube')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 transition">🎬 YouTube</button>
       </div>
-      <input id="mainCommandInput" type="text" autocomplete="off" autofocus 
-        placeholder="Type any command... (e.g. 'open youtube and play kalyani song', 'calculate 150 * 3', 'send a gmail to mjeevan665@gmail.com', 'click #1 on screen')" 
-        class="flex-1 bg-transparent text-amber-50 placeholder-slate-400 text-sm mono px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-400/50 rounded-xl" />
-      <button id="btnVoiceMic" type="button" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono flex items-center gap-1.5 shrink-0 transition" title="Speak to J.A.R.V.I.S.">
-        <span class="w-2 h-2 rounded-full bg-black animate-ping"></span>
-        <span id="micLabel">Speak</span>
-      </button>
-      <button id="btnExecuteCommand" type="button" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-bold text-xs mono shrink-0 shadow-lg shadow-amber-500/20 transition">
-        Execute &#9654;
-      </button>
+
+      <div class="w-full hud-glass rounded-2xl p-2.5 flex items-center gap-2.5 shadow-2xl border-2 border-amber-500/50 bg-black/90 backdrop-blur-2xl ring-2 ring-amber-500/20">
+        <div class="flex items-center gap-2 pl-2 text-amber-400 font-bold mono text-sm shrink-0">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span class="hidden sm:inline">JARVIS &gt;</span>
+        </div>
+        <input id="mainCommandInput" type="text" autocomplete="off" autofocus 
+          placeholder="Type any command here... (e.g. 'open notepad and type hello', 'calculate 125 * 8', 'send msg to Mom on whatsapp', 'draft email')" 
+          class="flex-1 bg-transparent text-amber-50 placeholder-slate-400 text-sm mono px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-xl" />
+        <button id="btnVoiceMic" type="button" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono flex items-center gap-1.5 shrink-0 transition" title="Speak to J.A.R.V.I.S.">
+          <span class="w-2 h-2 rounded-full bg-black animate-ping"></span>
+          <span id="micLabel">Speak</span>
+        </button>
+        <button id="btnExecuteCommand" type="button" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-bold text-xs mono shrink-0 shadow-lg shadow-amber-500/20 transition">
+          Execute &#9654;
+        </button>
+      </div>
     </div>
 
     <!-- LAYER 2: MODULAR SYSTEM CONTROLS DOCK -->
@@ -521,7 +534,7 @@
 
     const state = {
 
-      backendUrl: 'http://127.0.0.1:8000',
+      backendUrl: (window.location.protocol === 'http:' || window.location.protocol === 'https:') ? window.location.origin : 'http://127.0.0.1:8000',
 
       ollamaUrl: 'http://127.0.0.1:11434',
 
@@ -1770,6 +1783,26 @@
         historyIndex = -1;
       }
       if (origExecute) return origExecute(text);
+      else return executeCommand(text);
+    };
+
+    window.quickFillAndRun = function(cmd) {
+      const inp = document.getElementById('mainCommandInput');
+      if (inp) {
+        inp.value = cmd;
+        inp.focus();
+      }
+      if (window.executeCommand) window.executeCommand(cmd);
+      else executeCommand(cmd);
+    };
+
+    window.focusMainInput = function() {
+      const inp = document.getElementById('mainCommandInput');
+      if (inp) {
+        inp.focus();
+        inp.classList.add('ring-4', 'ring-amber-400');
+        setTimeout(() => inp.classList.remove('ring-4', 'ring-amber-400'), 1200);
+      }
     };
 
   </script>

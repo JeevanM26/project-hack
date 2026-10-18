@@ -522,29 +522,45 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
     switch_to_default_desktop()
     try:
         import win32gui
+        import ctypes
         import uiautomation as auto
 
-        hwnd = win32gui.FindWindow("ApplicationFrameWindow", "Calculator")
-        if not hwnd:
+        user32 = ctypes.windll.user32
+
+        # 1. Find live Calculator window via UIA first
+        calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
+        if not calc_ctrl.Exists(0, 0):
             subprocess.Popen("calc.exe", shell=True)
             time.sleep(1.2)
-            hwnd = win32gui.FindWindow("ApplicationFrameWindow", "Calculator")
+            calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
 
-        calc = None
-        if hwnd:
-            try:
-                win32gui.ShowWindow(hwnd, 9)  # SW_RESTORE
-                win32gui.SetForegroundWindow(hwnd)
-            except Exception:
-                pass
-            time.sleep(0.2)
-            calc = auto.ControlFromHandle(hwnd)
-        else:
-            calc = auto.WindowControl(searchDepth=3, Name="Calculator")
+        if not calc_ctrl.Exists(1, 0):
+            def enum_cb(h, acc):
+                if win32gui.IsWindowVisible(h):
+                    t = win32gui.GetWindowText(h)
+                    if "calc" in t.lower() or "calculator" in t.lower():
+                        acc.append(h)
+            wins = []
+            win32gui.EnumWindows(enum_cb, wins)
+            if wins:
+                calc_ctrl = auto.ControlFromHandle(wins[0])
 
-        if calc and calc.Exists(0, 0):
+        if calc_ctrl and calc_ctrl.Exists(1, 0):
+            hwnd = calc_ctrl.NativeWindowHandle
+            if hwnd:
+                try:
+                    if user32.IsIconic(hwnd):
+                        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+                    else:
+                        user32.ShowWindow(hwnd, 5)  # SW_SHOW
+                    user32.keybd_event(0x12, 0, 0, 0)
+                    user32.keybd_event(0x12, 0, 2, 0)
+                    user32.SetForegroundWindow(hwnd)
+                    user32.BringWindowToTop(hwnd)
+                except Exception:
+                    pass
             try:
-                calc.SetFocus()
+                calc_ctrl.SetFocus()
             except Exception:
                 pass
 
@@ -571,9 +587,12 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
             }
 
             # Clear previous entry
-            clear_btn = calc.ButtonControl(searchDepth=10, AutomationId="clearButton")
+            clear_btn = calc_ctrl.ButtonControl(searchDepth=10, AutomationId="clearButton")
             if clear_btn.Exists(0, 0):
-                clear_btn.Click()
+                try:
+                    clear_btn.GetInvokePattern().Invoke()
+                except Exception:
+                    clear_btn.Click()
                 time.sleep(0.08)
 
             clean_expr = expr.replace(" ", "")
@@ -583,20 +602,23 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
             for ch in clean_expr:
                 autoid = btn_map.get(ch)
                 if autoid:
-                    btn = calc.ButtonControl(searchDepth=10, AutomationId=autoid)
-                    if btn.Exists(0, 0):
-                        btn.Click()
+                    btn = calc_ctrl.ButtonControl(searchDepth=10, AutomationId=autoid)
+                    if btn.Exists(1, 0):
+                        try:
+                            btn.GetInvokePattern().Invoke()
+                        except Exception:
+                            btn.Click()
                         time.sleep(0.04)
 
             time.sleep(0.2)
             disp = ""
-            res_ctrl = calc.TextControl(searchDepth=10, AutomationId="CalculatorResults")
-            if res_ctrl.Exists(0, 0):
+            res_ctrl = calc_ctrl.TextControl(searchDepth=10, AutomationId="CalculatorResults")
+            if res_ctrl.Exists(1, 0):
                 disp = res_ctrl.Name
 
             if not disp:
-                fallback_ctrl = calc.TextControl(searchDepth=10, RegexName=".*Display is.*")
-                if fallback_ctrl.Exists(0, 0):
+                fallback_ctrl = calc_ctrl.TextControl(searchDepth=10, RegexName=".*Display is.*")
+                if fallback_ctrl.Exists(1, 0):
                     disp = fallback_ctrl.Name
 
             # Last fallback to computed math if display control is slow to update

@@ -1216,40 +1216,91 @@ async def websocket_telemetry_endpoint(ws: WebSocket):
 
 
 
-def uia_focus_window(title: str) -> bool:
-
-    if platform.system() != "Windows":
-
+def force_foreground_window(hwnd: int) -> bool:
+    if platform.system() != "Windows" or not hwnd:
+        return False
+    try:
+        import ctypes
+        import win32gui
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenDesktopW("default", 0, False, 0x1FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+        if user32.IsIconic(hwnd):
+            user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+        else:
+            user32.ShowWindow(hwnd, 5)  # SW_SHOW
+        user32.keybd_event(0x12, 0, 0, 0)
+        user32.keybd_event(0x12, 0, 2, 0)
+        user32.SetForegroundWindow(hwnd)
+        user32.BringWindowToTop(hwnd)
+        return True
+    except Exception as exc:
+        logger.debug(f"force_foreground_window: {exc}")
         return False
 
+
+def bring_browser_to_foreground() -> bool:
+    if platform.system() != "Windows":
+        return False
     try:
+        import win32gui
+        browser_keywords = ["edge", "chrome", "brave", "firefox"]
+        found_hwnds = []
+        def enum_cb(h, _):
+            if win32gui.IsWindowVisible(h):
+                t = win32gui.GetWindowText(h).lower()
+                c = win32gui.GetClassName(h).lower()
+                rect = win32gui.GetWindowRect(h)
+                w = rect[2] - rect[0]
+                ht = rect[3] - rect[1]
+                if w > 100 and ht > 100:
+                    if any(k in t or k in c for k in browser_keywords):
+                        found_hwnds.append(h)
+        win32gui.EnumWindows(enum_cb, None)
+        if found_hwnds:
+            return force_foreground_window(found_hwnds[0])
+    except Exception as exc:
+        logger.debug(f"bring_browser_to_foreground: {exc}")
+    return False
 
-        import uiautomation as auto  # type: ignore
 
-
-
-        win = auto.WindowControl(searchDepth=1, SubName=title)
-
-        if win.Exists(0.3, 0.1):
-
-            win.SetActive()
-
-            win.SetFocus()
-
+def uia_focus_window(title: str) -> bool:
+    if platform.system() != "Windows":
+        return False
+    try:
+        import win32gui
+        low_title = title.lower()
+        matched = []
+        def enum_cb(h, _):
+            if win32gui.IsWindowVisible(h):
+                t = win32gui.GetWindowText(h).lower()
+                c = win32gui.GetClassName(h).lower()
+                if low_title in t or low_title in c:
+                    matched.append(h)
+        win32gui.EnumWindows(enum_cb, None)
+        if matched:
+            force_foreground_window(matched[0])
             return True
-
     except Exception:
-
         pass
 
     try:
-
-        p = subprocess.run(["powershell", "-NoProfile", "-Command", f"(New-Object -ComObject wscript.shell).AppActivate('{title}')"], capture_output=True, text=True, timeout=2.5)
-
-        return "True" in (p.stdout or "")
-
+        import uiautomation as auto  # type: ignore
+        win = auto.WindowControl(searchDepth=3, RegexName=f".*{re.escape(title)}.*")
+        if win.Exists(0.4, 0.1):
+            if win.NativeWindowHandle:
+                force_foreground_window(win.NativeWindowHandle)
+            win.SetActive()
+            win.SetFocus()
+            return True
     except Exception:
+        pass
 
+    try:
+        p = subprocess.run(["powershell", "-NoProfile", "-Command", f"(New-Object -ComObject wscript.shell).AppActivate('{title}')"], capture_output=True, text=True, timeout=2.5)
+        return "True" in (p.stdout or "")
+    except Exception:
         return False
 
 
@@ -1755,17 +1806,13 @@ def dispatch_to_antigravity_ide(prompt_text: str, target_dir: str = "./hackathon
 
 
 def open_system_target(target: str, tab_key: str = "") -> None:
-
     if target.startswith(("http://", "https://", "whatsapp://", "mailto:")):
-
         reused = bool(tab_key and tab_key in ACTIVE_BROWSER_TABS)
-
         if tab_key:
-
             ACTIVE_BROWSER_TABS[tab_key] = target
-
         webbrowser.open(target, new=0 if reused else 2)
-
+        time.sleep(0.3)
+        bring_browser_to_foreground()
         return
 
     p = str(Path(target).resolve())
@@ -2888,7 +2935,7 @@ async def camera_analyze_endpoint(req: JarvisCommandRequest):
 APP_COMMAND_MAP: Dict[str, Tuple[str, str, str]] = {
     "calculator": ("Calculator", "calc.exe", "Calculator"),
     "calc": ("Calculator", "calc.exe", "Calculator"),
-    "notepad": ("Notepad", "notepad.exe", "Notepad"),
+    "notepad": ("Notepad", r"explorer.exe shell:AppsFolder\Microsoft.WindowsNotepad_8wekyb3d8bbwe!App", "Notepad"),
     "vscode": ("Visual Studio Code", "code", "Visual Studio Code"),
     "code": ("Visual Studio Code", "code", "Visual Studio Code"),
     "vs code": ("Visual Studio Code", "code", "Visual Studio Code"),
@@ -3019,28 +3066,54 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
     # 6. Launch or Focus App
     if not already_open:
         if platform.system() == "Windows":
-            if exec_bin.startswith("start "):
+            if exec_bin.startswith("explorer.exe ") or exec_bin.startswith("start "):
                 subprocess.Popen(exec_bin, shell=True)
             else:
                 subprocess.Popen(f"start {exec_bin}", shell=True)
         ACTIVE_OS_APPS[target_name.lower()] = {"is_open": True, "opened_at": time.time()}
-        time.sleep(0.4)
+        time.sleep(0.6)
+        uia_focus_window(win_key)
     else:
         uia_focus_window(win_key)
 
-    # 7. Type text into target app if requested (e.g. "open notepad and type hello world")
-    type_m = re.search(r"\b(?:type|write|saying)\s+[\"']?([^\"'\n]+)[\"']?", raw, re.I)
-    type_text = type_m.group(1).strip() if type_m else ""
+    # 7. Type text into target app if requested (e.g. "open notepad and type hello world", "type hello in notepad")
+    type_m = re.search(r"\b(?:type|write|saying|enter|input)\s+[\"']?([^\"'\n]+)[\"']?", raw, re.I)
+    type_text = ""
+    if type_m:
+        raw_typed = type_m.group(1).strip(" \"'")
+        type_text = re.sub(r"\s+(?:in|into|on)\s+(?:notepad|word|doc|terminal|app|window)$", "", raw_typed, flags=re.I).strip(" \"'")
 
     if type_text and platform.system() == "Windows":
-        time.sleep(0.3)
-        try:
-            import pyautogui
-            pyautogui.write(type_text, interval=0.01)
-            pyautogui.press("enter")
-        except Exception:
-            safe_k = type_text.replace("{", "{{}").replace("}", "{}}")
-            subprocess.Popen(["powershell", "-NoProfile", "-Command", f"$w = New-Object -ComObject wscript.shell; $null = $w.AppActivate('{win_key}'); Start-Sleep -Milliseconds 250; $w.SendKeys('{safe_k}~')"])
+        time.sleep(0.4)
+        uia_focus_window(win_key)
+        typed_via_uia = False
+        if target_name.lower() == "notepad":
+            try:
+                import uiautomation as auto
+                np_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Notepad.*")
+                if np_ctrl.Exists(1, 0):
+                    force_foreground_window(np_ctrl.NativeWindowHandle)
+                    edit = np_ctrl.DocumentControl() or np_ctrl.EditControl()
+                    if edit.Exists(1, 0):
+                        try:
+                            vp = edit.GetValuePattern()
+                            curr = vp.Value or ""
+                            vp.SetValue(curr + ("\n" if curr else "") + type_text)
+                            typed_via_uia = True
+                        except Exception:
+                            edit.SendKeys(type_text + "{Enter}")
+                            typed_via_uia = True
+            except Exception as e:
+                logger.debug(f"Notepad UIA type error: {e}")
+
+        if not typed_via_uia:
+            try:
+                import pyautogui
+                pyautogui.write(type_text, interval=0.01)
+                pyautogui.press("enter")
+            except Exception:
+                safe_k = type_text.replace("{", "{{}").replace("}", "{}}")
+                subprocess.Popen(["powershell", "-NoProfile", "-Command", f"$w = New-Object -ComObject wscript.shell; $null = $w.AppActivate('{win_key}'); Start-Sleep -Milliseconds 250; $w.SendKeys('{safe_k}~')"])
 
     outcome = f"{'Reused open' if already_open else 'Opened'} {target_name}" + (f" and typed '{type_text}'" if type_text else "")
     BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "OS_WINDOW_DISPATCH", outcome)

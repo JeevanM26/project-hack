@@ -2885,47 +2885,89 @@ async def camera_analyze_endpoint(req: JarvisCommandRequest):
 
 
 
+APP_COMMAND_MAP: Dict[str, Tuple[str, str, str]] = {
+    "calculator": ("Calculator", "calc.exe", "Calculator"),
+    "calc": ("Calculator", "calc.exe", "Calculator"),
+    "notepad": ("Notepad", "notepad.exe", "Notepad"),
+    "vscode": ("Visual Studio Code", "code", "Visual Studio Code"),
+    "code": ("Visual Studio Code", "code", "Visual Studio Code"),
+    "vs code": ("Visual Studio Code", "code", "Visual Studio Code"),
+    "visual studio code": ("Visual Studio Code", "code", "Visual Studio Code"),
+    "edge": ("Microsoft Edge", "msedge.exe", "Edge"),
+    "msedge": ("Microsoft Edge", "msedge.exe", "Edge"),
+    "chrome": ("Google Chrome", "chrome.exe", "Chrome"),
+    "google chrome": ("Google Chrome", "chrome.exe", "Chrome"),
+    "brave": ("Brave", "brave.exe", "Brave"),
+    "brave browser": ("Brave", "brave.exe", "Brave"),
+    "firefox": ("Firefox", "firefox.exe", "Firefox"),
+    "browser": ("Web Browser", "msedge.exe", "Edge"),
+    "terminal": ("PowerShell", "powershell.exe", "PowerShell"),
+    "powershell": ("PowerShell", "powershell.exe", "PowerShell"),
+    "cmd": ("Command Prompt", "cmd.exe", "Command Prompt"),
+    "command prompt": ("Command Prompt", "cmd.exe", "Command Prompt"),
+    "explorer": ("File Explorer", "explorer.exe", "File Explorer"),
+    "file explorer": ("File Explorer", "explorer.exe", "File Explorer"),
+    "files": ("File Explorer", "explorer.exe", "File Explorer"),
+    "downloads": ("Downloads", "explorer.exe shell:Downloads", "Downloads"),
+    "documents": ("Documents", "explorer.exe shell:Personal", "Documents"),
+    "settings": ("Windows Settings", "start ms-settings:", "Settings"),
+    "task manager": ("Task Manager", "taskmgr.exe", "Task Manager"),
+    "taskmgr": ("Task Manager", "taskmgr.exe", "Task Manager"),
+    "spotify": ("Spotify", "spotify.exe", "Spotify"),
+    "discord": ("Discord", "discord.exe", "Discord"),
+    "paint": ("Paint", "mspaint.exe", "Paint"),
+    "word": ("Microsoft Word", "winword.exe", "Word"),
+    "excel": ("Microsoft Excel", "excel.exe", "Excel"),
+}
+
+
 @app.post("/api/open-app")
-
 async def open_or_reuse_os_app(req: JarvisCommandRequest):
-
     raw = (req.instruction or req.prompt or "").strip()
-
     low = raw.lower()
 
+    # 1. Resolve Target Application from APP_COMMAND_MAP
+    target_name = "Notepad"
+    exec_bin = "notepad.exe"
+    win_key = "Notepad"
+    found_app = False
+
+    # Check longer key matches first (e.g. "task manager" before "manager")
+    sorted_app_keys = sorted(APP_COMMAND_MAP.keys(), key=lambda k: len(k), reverse=True)
+    for k in sorted_app_keys:
+        if re.search(r"\b" + re.escape(k) + r"\b", low):
+            target_name, exec_bin, win_key = APP_COMMAND_MAP[k]
+            found_app = True
+            break
+
+    if not found_app:
+        if "calc" in low:
+            target_name, exec_bin, win_key = ("Calculator", "calc.exe", "Calculator")
+        elif "notepad" in low:
+            target_name, exec_bin, win_key = ("Notepad", "notepad.exe", "Notepad")
+        elif "terminal" in low or "powershell" in low or "cmd" in low:
+            target_name, exec_bin, win_key = ("PowerShell", "powershell.exe", "PowerShell")
+        elif any(b in low for b in ["browser", "edge", "chrome", "brave", "firefox"]):
+            target_name, exec_bin, win_key = ("Web Browser", "msedge.exe", "Edge")
+        else:
+            target_name, exec_bin, win_key = ("Notepad", "notepad.exe", "Notepad")
+
+    # 2. Math Expression Detection
     math_m = re.search(r"([0-9]+\s*[\+\-\*\/]\s*[0-9]+(?:\s*[\+\-\*\/]\s*[0-9]+)*)", low)
-
     expr = math_m.group(1).replace(" ", "") if math_m else ""
-
     result = str(eval(expr, {"__builtins__": None}, {})) if expr else None
 
-
-
-    target = "Calculator" if "calc" in low else ("Notepad" if "notepad" in low else "Visual Studio Code")
-
+    # 3. Check if Window Already Open
     uia = get_live_uia_tree()
+    open_wins = uia.get("open_windows", [])
+    already_open = any(win_key.lower() in str(w.get("title", "")).lower() for w in open_wins) or target_name.lower() in ACTIVE_OS_APPS
 
-    already_open = any(target.lower() in str(w.get("title", "")).lower() for w in uia.get("open_windows", [])) or target.lower() in ACTIVE_OS_APPS
-
-
-
-    if not already_open:
-
-        if platform.system() == "Windows":
-
-            bin_name = "calc.exe" if target == "Calculator" else ("notepad.exe" if target == "Notepad" else "code")
-
-            subprocess.Popen(f"start {bin_name}", shell=True)
-
-        ACTIVE_OS_APPS[target.lower()] = {"is_open": True, "opened_at": time.time()}
-
-        if expr:
-
-            time.sleep(0.6)
-
-
-
-    if target == "Calculator" and expr and perform_calculator_uia:
+    # 4. Calculator Authentic UIA Flow
+    if target_name == "Calculator" and expr and perform_calculator_uia:
+        if not already_open:
+            if platform.system() == "Windows":
+                subprocess.Popen("start calc.exe", shell=True)
+            time.sleep(0.5)
         ok_uia, disp_text = await asyncio.to_thread(perform_calculator_uia, expr)
         ACTIVE_OS_APPS["calculator"] = {"is_open": True, "opened_at": time.time()}
         res_val = disp_text.replace("Display is ", "").strip() if "Display is" in disp_text else (disp_text or result or "")
@@ -2939,49 +2981,155 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
             "performed_expression": expr,
             "calculated_result": res_val,
             "detail": outcome,
+            "spoken_response": outcome,
             "automation_log": f"Windows UIA Click Sequence on '{expr}' -> {disp_text}",
             "brain": BRAIN.snapshot(),
         }
 
-    log = send_keys_to_window(target, expr) if (already_open or expr) else f"Launched {target}"
+    # 5. Browser with Navigation or Search Query
+    if target_name in ["Web Browser", "Microsoft Edge", "Google Chrome", "Brave", "Firefox"]:
+        query_m = re.search(r"\b(?:search(?:\s+for)?|go\s+to|navigate\s+to|open)\s+(.+)$", raw, re.I)
+        target_url = ""
+        if query_m:
+            item = query_m.group(1).strip()
+            # Remove browser name if included
+            item = re.sub(r"^(?:in\s+)?(?:edge|chrome|brave|firefox|browser)\s*", "", item, flags=re.I).strip()
+            if item.startswith(("http://", "https://")):
+                target_url = item
+            elif re.match(r"^[a-zA-Z0-9-]+\.(?:com|org|io|dev|net|edu|gov|co|ai|in)(?:/.*)?$", item):
+                target_url = f"https://{item}"
+            elif item and item.lower() not in ["edge", "chrome", "brave", "browser", "firefox"]:
+                target_url = f"https://www.google.com/search?q={urllib.parse.quote_plus(item)}"
 
-    outcome = f"{'Reused open' if already_open else 'Opened'} {target}" + (f" & computed {expr} = {result}" if expr else "")
+        if target_url:
+            open_system_target(target_url, tab_key="browser")
+            uia_focus_window(win_key)
+            outcome = f"Opened {target_name} for '{target_url}'"
+            BRAIN.record_completed_task("browser", raw, outcome)
+            return {
+                "ok": True,
+                "already_open": already_open,
+                "target": target_name,
+                "url": target_url,
+                "detail": outcome,
+                "spoken_response": outcome,
+                "brain": BRAIN.snapshot(),
+            }
 
-    BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "OS_WINDOW_REUSE", outcome)
+    # 6. Launch or Focus App
+    if not already_open:
+        if platform.system() == "Windows":
+            if exec_bin.startswith("start "):
+                subprocess.Popen(exec_bin, shell=True)
+            else:
+                subprocess.Popen(f"start {exec_bin}", shell=True)
+        ACTIVE_OS_APPS[target_name.lower()] = {"is_open": True, "opened_at": time.time()}
+        time.sleep(0.4)
+    else:
+        uia_focus_window(win_key)
 
-    BRAIN.record_completed_task("os_app_uia", raw, outcome)
+    # 7. Type text into target app if requested (e.g. "open notepad and type hello world")
+    type_m = re.search(r"\b(?:type|write|saying)\s+[\"']?([^\"'\n]+)[\"']?", raw, re.I)
+    type_text = type_m.group(1).strip() if type_m else ""
 
-    return {"ok": True, "already_open": already_open, "target": target, "performed_expression": expr, "calculated_result": result, "detail": outcome, "automation_log": log, "brain": BRAIN.snapshot()}
+    if type_text and platform.system() == "Windows":
+        time.sleep(0.3)
+        try:
+            import pyautogui
+            pyautogui.write(type_text, interval=0.01)
+            pyautogui.press("enter")
+        except Exception:
+            safe_k = type_text.replace("{", "{{}").replace("}", "{}}")
+            subprocess.Popen(["powershell", "-NoProfile", "-Command", f"$w = New-Object -ComObject wscript.shell; $null = $w.AppActivate('{win_key}'); Start-Sleep -Milliseconds 250; $w.SendKeys('{safe_k}~')"])
 
+    outcome = f"{'Reused open' if already_open else 'Opened'} {target_name}" + (f" and typed '{type_text}'" if type_text else "")
+    BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "OS_WINDOW_DISPATCH", outcome)
+    BRAIN.record_completed_task("os_app_dispatch", raw, outcome)
 
-
+    return {
+        "ok": True,
+        "already_open": already_open,
+        "target": target_name,
+        "detail": outcome,
+        "spoken_response": outcome,
+        "typed_text": type_text,
+        "brain": BRAIN.snapshot(),
+    }
 
 
 @app.post("/api/whatsapp-send")
-
 async def whatsapp_send(req: JarvisCommandRequest):
-
     raw = (req.instruction or req.prompt or "").strip()
+    low = raw.lower()
 
-    m = re.search(r"(?:to\s+)?([a-zA-Z0-9_+]+)\s+(?:saying|that|:)\s*(.+)$", raw, re.I)
+    # 1. Detect pure "open whatsapp"
+    is_pure_open = bool(re.match(r"^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+)?(?:open|launch|start)\s+(?:whatsapp|whats app)(?:\s+web)?$", low))
 
-    contact = m.group(1).strip() if m else "Contact"
+    # 2. Extract phone number if present
+    phone_m = re.search(r"(\+?\d{8,15})", raw)
+    phone = re.sub(r"[^\d+]", "", phone_m.group(1)) if phone_m else ""
 
-    msg = m.group(2).strip(" \"'") if m else raw
+    contact = ""
+    msg = ""
 
-    phone = re.sub(r"[^\d+]", "", contact) if re.search(r"\d{7,}", contact) else ""
+    if not is_pure_open:
+        # Check if message is split by colon (e.g. "send msg to Mom on whatsapp: I am on my way home")
+        if ":" in raw:
+            before_colon, _, after_colon = raw.partition(":")
+            msg = after_colon.strip(" \"'")
+            cmd_ctx = before_colon.strip()
+        elif re.search(r"\b(?:saying|that)\b", raw, re.I):
+            parts = re.split(r"\b(?:saying|that)\b", raw, flags=re.I, maxsplit=1)
+            cmd_ctx = parts[0].strip()
+            msg = parts[1].strip(" :\"'")
+        elif re.search(r'["\']([^"\']+)["\']', raw):
+            quote_m = re.search(r'["\']([^"\']+)["\']', raw)
+            msg = quote_m.group(1).strip()
+            cmd_ctx = raw[:quote_m.start()] + raw[quote_m.end():]
+        else:
+            cmd_ctx = raw
+            msg = ""
 
-    url = f"https://web.whatsapp.com/send?phone={phone}&text={urllib.parse.quote(msg)}" if phone else f"https://web.whatsapp.com/send?text={urllib.parse.quote(msg)}"
+        # Extract contact name from command context
+        if not phone:
+            contact_m = re.search(r"\b(?:to|contact|message|text)\s+([a-zA-Z0-9_]+)(?:\s+(?!on|via|at|for|whatsapp|using|saying|that|with\b)[a-zA-Z0-9_]+)?\b", cmd_ctx, re.I)
+            if contact_m:
+                cand = contact_m.group(0).split()
+                # Remove leading keyword like 'to' or 'contact'
+                name_words = cand[1:] if len(cand) > 1 else [cand[0]]
+                name_cand = " ".join(w for w in name_words if w.lower() not in ["a", "the", "my", "someone", "contact", "whatsapp", "whats", "app", "on", "via"])
+                if name_cand:
+                    contact = name_cand
+
+    # 3. Formulate proper WhatsApp Web URL
+    if phone and msg:
+        url = f"https://web.whatsapp.com/send?phone={phone}&text={urllib.parse.quote(msg)}"
+        spoken = f"Opened WhatsApp to send '{msg}' to {phone}, sir."
+    elif phone:
+        url = f"https://web.whatsapp.com/send?phone={phone}"
+        spoken = f"Opened WhatsApp chat with {phone}, sir."
+    elif msg:
+        url = f"https://web.whatsapp.com/send?text={urllib.parse.quote(msg)}"
+        spoken = f"Opened WhatsApp with your message '{msg}' ready for {contact or 'recipient'}, sir."
+    else:
+        url = "https://web.whatsapp.com/"
+        spoken = "Opened WhatsApp Web for you, sir."
 
     open_system_target(url, tab_key="whatsapp")
+    time.sleep(0.3)
+    uia_focus_window("WhatsApp")
 
-    if platform.system() == "Windows":
-
-        subprocess.Popen(["powershell", "-NoProfile", "-Command", "$w = New-Object -ComObject wscript.shell; Start-Sleep -Milliseconds 1200; $null = $w.AppActivate('WhatsApp'); $w.SendKeys('~')"])
-
-    BRAIN.record_completed_task("whatsapp", raw, f"Dispatched WhatsApp message to {contact}: '{msg}'")
-
-    return {"ok": True, "contact": contact, "message": msg, "brain": BRAIN.snapshot()}
+    action_summary = f"WhatsApp dispatched for {contact or phone or 'user'}" + (f": '{msg}'" if msg else "")
+    BRAIN.record_completed_task("whatsapp", raw, action_summary)
+    return {
+        "ok": True,
+        "contact": contact or phone or "WhatsApp",
+        "phone": phone,
+        "message": msg,
+        "url": url,
+        "spoken_response": spoken,
+        "brain": BRAIN.snapshot(),
+    }
 
 
 
@@ -3185,77 +3333,290 @@ async def create_pdf(req: JarvisCommandRequest):
 
 
 
+OFFICIAL_SOFTWARE_DOWNLOADS: Dict[str, Tuple[str, str, str, bool]] = {
+    "vlc": ("VLC Media Player", "https://get.videolan.org/vlc/last/win64/vlc-3.0.21-win64.exe", "VideoLAN.VLC", True),
+    "python": ("Python 3.12", "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe", "Python.Python.3.12", True),
+    "vscode": ("Visual Studio Code", "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user", "Microsoft.VisualStudioCode", True),
+    "vs code": ("Visual Studio Code", "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user", "Microsoft.VisualStudioCode", True),
+    "code": ("Visual Studio Code", "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user", "Microsoft.VisualStudioCode", True),
+    "chrome": ("Google Chrome", "https://www.google.com/chrome/", "Google.Chrome", False),
+    "google chrome": ("Google Chrome", "https://www.google.com/chrome/", "Google.Chrome", False),
+    "brave": ("Brave Browser", "https://brave.com/download/", "Brave.Brave", False),
+    "firefox": ("Mozilla Firefox", "https://www.mozilla.org/firefox/new/", "Mozilla.Firefox", False),
+    "git": ("Git for Windows", "https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe", "Git.Git", True),
+    "nodejs": ("Node.js LTS", "https://nodejs.org/dist/v20.13.1/node-v20.13.1-x64.msi", "OpenJS.NodeJS.LTS", True),
+    "node": ("Node.js LTS", "https://nodejs.org/dist/v20.13.1/node-v20.13.1-x64.msi", "OpenJS.NodeJS.LTS", True),
+    "7zip": ("7-Zip", "https://www.7-zip.org/a/7z2405-x64.exe", "7zip.7zip", True),
+    "7-zip": ("7-Zip", "https://www.7-zip.org/a/7z2405-x64.exe", "7zip.7zip", True),
+    "discord": ("Discord", "https://discord.com/api/download?platform=win", "Discord.Discord", True),
+    "spotify": ("Spotify", "https://download.scdn.co/SpotifySetup.exe", "Spotify.Spotify", True),
+    "steam": ("Steam", "https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe", "Valve.Steam", True),
+    "blender": ("Blender 3D", "https://www.blender.org/download/", "BlenderFoundation.Blender", False),
+    "zoom": ("Zoom Workplace", "https://zoom.us/client/latest/ZoomInstaller.exe", "Zoom.Zoom", True),
+    "ollama": ("Ollama", "https://ollama.com/download/windows", "Ollama.Ollama", False),
+    "docker": ("Docker Desktop", "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe", "Docker.DockerDesktop", True),
+    "postman": ("Postman", "https://dl.pstmn.io/download/latest/win64", "Postman.Postman", True),
+    "obs": ("OBS Studio", "https://obsproject.com/download", "OBSProject.OBSStudio", False),
+    "slack": ("Slack", "https://slack.com/downloads/windows", "SlackTechnologies.Slack", False),
+    "notepad++": ("Notepad++", "https://notepad-plus-plus.org/downloads/", "Notepad++.Notepad++", False),
+    "rust": ("Rust", "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe", "Rustlang.Rustup", True),
+    "golang": ("Go", "https://go.dev/dl/", "GoLang.Go", False),
+    "go": ("Go", "https://go.dev/dl/", "GoLang.Go", False),
+}
+
+
 @app.post("/api/gmail-draft")
-
 async def gmail_draft(req: JarvisCommandRequest):
-
     raw = (req.instruction or req.prompt or "").strip()
+    low = raw.lower()
 
-    m = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", raw)
-    if m:
-        recip = m.group(1)
-        sub_m = re.search(r"(?:about|regarding|saying|subject)\s+([^.]+)", raw, re.I)
-        sub = sub_m.group(1).strip() if sub_m else "Message from J.A.R.V.I.S."
-        d = {"recipient": recip, "subject": sub, "body": raw}
-    else:
-        try:
-            res = await asyncio.wait_for(
-                query_llm(
-                    f"Extract recipient email, subject, and body for: {raw}. Return JSON: {{\"recipient\":\"\", \"subject\":\"\", \"body\":\"\"}}",
-                    model=req.model,
-                    ollama_url=req.ollama_url or OLLAMA_URL,
-                    gemini_key=req.gemini_api_key or "",
-                    json_mode=True,
-                ),
-                timeout=3.0
-            )
-            d = parse_json(res)
-        except Exception:
-            d = {"recipient": "", "subject": "Follow-up from J.A.R.V.I.S.", "body": raw}
+    # 1. Pure open Gmail
+    if re.match(r"^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+)?(?:open|launch|go to)\s+(?:gmail|email|mail)$", low):
+        url = "https://mail.google.com/"
+        open_system_target(url, tab_key="gmail")
+        BRAIN.record_completed_task("gmail_open", raw, "Opened Gmail inbox")
+        return {
+            "ok": True,
+            "recipient": "",
+            "subject": "",
+            "body": "",
+            "url": url,
+            "confirmation_prompt": "Opened Gmail for you, sir.",
+            "spoken_response": "Opened Gmail for you, sir.",
+            "brain": BRAIN.snapshot(),
+        }
 
+    # 2. Extract recipient email or name
+    em_m = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", raw)
+    to = em_m.group(1).strip() if em_m else ""
+    if not to:
+        name_m = re.search(r"\bto\s+([a-zA-Z0-9_]+)(?:\s+(?!regarding|about|saying|that|on|for|with|subject|titled|at|in\b)[a-zA-Z0-9_]+)?\b", raw, re.I)
+        if name_m:
+            cand = name_m.group(0).split()
+            name_words = cand[1:] if len(cand) > 1 else [cand[0]]
+            name_cand = " ".join(w for w in name_words if w.lower() not in ["a", "the", "my", "someone", "recipient", "gmail", "email", "mail", "regarding", "about", "saying", "that"])
+            if name_cand:
+                to = name_cand
 
+    # 3. Extract subject
+    sub_m = re.search(r"\b(?:about|regarding|subject|titled)\s+[\"']?([^\"'\n,]+?)[\"']?(?:\s+(?:body|saying|content|message)|$)", raw, re.I)
+    sub = sub_m.group(1).strip() if sub_m else ""
 
-    to, sub, body = d.get("recipient", ""), d.get("subject", "Update"), d.get("body", raw)
+    # 4. Extract body
+    body_m = re.search(r"\b(?:saying|body|content|message|that)\s+[:\s]*[\"']?(.+?)[\"']?$", raw, re.I)
+    body = body_m.group(1).strip(" \"'") if body_m else ""
 
-    url = f"https://mail.google.com/mail/?{urllib.parse.urlencode({'view': 'cm', 'fs': '1', 'to': to, 'su': sub, 'body': body})}"
+    # 5. Smart Defaults
+    if not sub:
+        clean_raw = re.sub(r"\b(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+)?(?:draft\s+(?:a\s+)?|send\s+(?:a\s+)?|compose\s+(?:a\s+)?)(?:gmail|email|mail)?(?:\s+to\s+[a-zA-Z0-9_@.]+)?", "", raw, flags=re.I).strip()
+        sub = clean_raw[:50].strip() or "Message from J.A.R.V.I.S."
+
+    if not body:
+        name_greeting = to.split("@")[0].capitalize() if to else "Colleague"
+        body = f"Hello {name_greeting},\n\nI hope this email finds you well.\n\nRegarding: {sub}.\n\nPlease let me know if you have any questions.\n\nBest regards,\nJ.A.R.V.I.S."
+
+    to_field = to if "@" in to else ""
+    compose_params = {'view': 'cm', 'fs': '1', 'to': to_field, 'su': sub, 'body': body}
+    url = f"https://mail.google.com/mail/?{urllib.parse.urlencode(compose_params)}"
 
     open_system_target(url, tab_key="gmail")
+    time.sleep(0.3)
+    uia_focus_window("Gmail")
 
     PENDING_GMAIL_DRAFTS["latest"] = {"recipient": to, "subject": sub, "body": body}
-
     BRAIN.record_completed_task("gmail_draft", raw, f"Drafted Gmail '{sub}' to {to or 'recipient'}")
 
-    return {"ok": True, "recipient": to, "subject": sub, "body": body, "confirmation_prompt": f"I have drafted the email '{sub}' in Gmail. Shall I send it now, sir?", "brain": BRAIN.snapshot()}
-
-
-
+    confirm = f"I have drafted the email to {to or 'recipient'} with subject '{sub}'. Shall I send it now, sir?"
+    return {
+        "ok": True,
+        "recipient": to,
+        "subject": sub,
+        "body": body,
+        "url": url,
+        "confirmation_prompt": confirm,
+        "spoken_response": confirm,
+        "brain": BRAIN.snapshot(),
+    }
 
 
 @app.post("/api/gmail-send-confirmed")
-
 async def gmail_send_confirmed(req: JarvisCommandRequest):
-
-    if GMAIL_ADDRESS and GMAIL_APP_PASSWORD and req.recipient:
-
+    if GMAIL_ADDRESS and GMAIL_APP_PASSWORD and req.recipient and "@" in req.recipient:
         msg = EmailMessage()
-
         msg["From"], msg["To"], msg["Subject"] = GMAIL_ADDRESS, req.recipient, req.subject or "Update"
-
         msg.set_content(req.body or "")
-
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
-
-            s.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
-
-            s.send_message(msg)
-
+        try:
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+                s.login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)
+                s.send_message(msg)
+        except Exception as exc:
+            logger.warning(f"SMTP send failed: {exc}")
     elif platform.system() == "Windows":
-
         subprocess.run(["powershell", "-NoProfile", "-Command", "$w = New-Object -ComObject wscript.shell; $null = $w.AppActivate('Gmail'); Start-Sleep -Milliseconds 250; $w.SendKeys('^{ENTER}')"], timeout=4, check=False)
-
     BRAIN.record_completed_task("gmail_sent", f"Sent email '{req.subject}'", f"Dispatched to {req.recipient or 'recipient'}")
-
     return {"ok": True, "brain": BRAIN.snapshot()}
+
+
+@app.post("/api/download")
+async def download_resource_endpoint(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "").strip()
+
+    # Clean software name from raw prompt
+    clean = re.sub(r"^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+)?(?:download|install|get)\s+(?:the\s+)?(?:latest\s+)?(?:version\s+of\s+)?", "", raw, flags=re.I).strip()
+    clean = re.sub(r"\b(?:for\s+windows|on\s+pc|in\s+browser|with\s+edge|with\s+chrome|with\s+brave)\b", "", clean, flags=re.I).strip()
+    clean_key = clean.lower().strip()
+
+    matched_entry = None
+    for k, v in OFFICIAL_SOFTWARE_DOWNLOADS.items():
+        if k == clean_key or k in clean_key or clean_key in k:
+            matched_entry = v
+            break
+
+    downloads_dir = Path.home() / "Downloads"
+    downloads_dir.mkdir(parents=True, exist_ok=True)
+    saved_path = None
+
+    if matched_entry:
+        app_name, dl_url, winget_id, is_direct = matched_entry
+    else:
+        app_name = clean.title() or "Software"
+        dl_url = f"https://www.google.com/search?q={urllib.parse.quote_plus('download ' + clean)}"
+        winget_id = ""
+        is_direct = False
+
+    if is_direct and dl_url.startswith("http"):
+        try:
+            filename = os.path.basename(urllib.parse.urlparse(dl_url).path) or f"{clean}_{int(time.time())}.exe"
+            target_file = downloads_dir / filename
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                resp = await client.get(dl_url)
+                if resp.status_code == 200:
+                    target_file.write_bytes(resp.content)
+                    saved_path = str(target_file)
+        except Exception as exc:
+            logger.warning(f"Direct download stream exception: {exc}")
+
+    if not saved_path:
+        open_system_target(dl_url, tab_key="download")
+
+    spoken = f"Initiated download for {app_name}, sir."
+    if saved_path:
+        spoken += f" Saved installer directly to your Downloads folder."
+    else:
+        spoken += f" Opened official download portal in your browser."
+
+    BRAIN.record_completed_task("download", raw, f"Downloaded {app_name} -> {saved_path or dl_url}")
+    return {
+        "ok": True,
+        "resource_name": app_name,
+        "url": dl_url,
+        "saved_path": saved_path,
+        "winget_id": winget_id,
+        "winget_command": f"winget install {winget_id}" if winget_id else "",
+        "spoken_response": spoken,
+        "brain": BRAIN.snapshot(),
+    }
+
+
+@app.post("/api/web-search")
+async def web_search_endpoint(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or req.query or "").strip()
+
+    q = re.sub(r"^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+)?(?:search(?:\s+google)?(?:\s+for)?|look\s+up|google|browse|navigate\s+to|open\s+website)\s+", "", raw, flags=re.I).strip()
+    if not q:
+        q = raw
+
+    if q.startswith(("http://", "https://")):
+        url = q
+        spoken = f"Navigating to {url}, sir."
+    elif re.match(r"^[a-zA-Z0-9-]+\.(?:com|org|io|dev|net|edu|gov|co|ai|in)(?:/.*)?$", q):
+        url = f"https://{q}"
+        spoken = f"Opening {q}, sir."
+    else:
+        url = f"https://www.google.com/search?q={urllib.parse.quote_plus(q)}"
+        spoken = f"Searching Google for '{q}', sir."
+
+    open_system_target(url, tab_key="search")
+    time.sleep(0.3)
+    uia_focus_window("Chrome") or uia_focus_window("Edge") or uia_focus_window("Brave")
+
+    BRAIN.record_completed_task("web_search", raw, f"Web Search for: '{q}' -> {url}")
+    return {
+        "ok": True,
+        "query": q,
+        "url": url,
+        "spoken_response": spoken,
+        "brain": BRAIN.snapshot(),
+    }
+
+
+@app.post("/api/system-control")
+async def system_control_endpoint(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "").strip()
+    low = raw.lower()
+
+    spoken = "Executed system command, sir."
+    action = "system_control"
+
+    if "screenshot" in low or "capture screen" in low:
+        action = "screenshot"
+        pic_dir = Path.home() / "Pictures" / "Screenshots"
+        pic_dir.mkdir(parents=True, exist_ok=True)
+        out_file = pic_dir / f"jarvis_snap_{int(time.time())}.png"
+        try:
+            from PIL import ImageGrab
+            im = ImageGrab.grab()
+            im.save(str(out_file))
+            if platform.system() == "Windows" and hasattr(os, "startfile"):
+                os.startfile(str(out_file))
+            spoken = "Captured screenshot and saved to your Screenshots folder, sir."
+        except Exception as ex:
+            spoken = f"Could not capture screenshot: {ex}"
+
+    elif "volume up" in low or "louder" in low or "increase volume" in low:
+        action = "volume_up"
+        try:
+            import pyautogui
+            for _ in range(5):
+                pyautogui.press("volumeup")
+            spoken = "Increased system volume, sir."
+        except Exception:
+            subprocess.Popen(["powershell", "-NoProfile", "-Command", "$w = New-Object -ComObject Wscript.Shell; 1..5 | % { $w.SendKeys([char]175) }"])
+            spoken = "Increased system volume, sir."
+
+    elif "volume down" in low or "quieter" in low or "decrease volume" in low:
+        action = "volume_down"
+        try:
+            import pyautogui
+            for _ in range(5):
+                pyautogui.press("volumedown")
+            spoken = "Decreased system volume, sir."
+        except Exception:
+            subprocess.Popen(["powershell", "-NoProfile", "-Command", "$w = New-Object -ComObject Wscript.Shell; 1..5 | % { $w.SendKeys([char]174) }"])
+            spoken = "Decreased system volume, sir."
+
+    elif "mute" in low and "unmute" not in low:
+        action = "mute"
+        subprocess.Popen(["powershell", "-NoProfile", "-Command", "$w = New-Object -ComObject Wscript.Shell; $w.SendKeys([char]173)"])
+        spoken = "Muted system audio, sir."
+
+    elif "unmute" in low:
+        action = "unmute"
+        subprocess.Popen(["powershell", "-NoProfile", "-Command", "$w = New-Object -ComObject Wscript.Shell; $w.SendKeys([char]173)"])
+        spoken = "Unmuted system audio, sir."
+
+    elif "minimize all" in low or "show desktop" in low:
+        action = "show_desktop"
+        subprocess.Popen(["powershell", "-NoProfile", "-Command", "(New-Object -ComObject Shell.Application).MinimizeAll()"])
+        spoken = "Minimized all windows and revealed your desktop, sir."
+
+    elif "lock" in low and ("pc" in low or "screen" in low or "computer" in low or "workstation" in low):
+        action = "lock_workstation"
+        subprocess.Popen(["rundll32.exe", "user32.dll,LockWorkStation"])
+        spoken = "Locked your workstation, sir."
+
+    BRAIN.record_completed_task(action, raw, spoken)
+    return {"ok": True, "action": action, "spoken_response": spoken, "brain": BRAIN.snapshot()}
 
 
 

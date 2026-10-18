@@ -377,48 +377,48 @@
 
 
 
-    <div class="w-full hud-glass rounded-full p-1.5 flex items-center gap-1.5 pointer-events-auto">
-
-      <button id="btnVoiceMic" type="button" class="px-3.5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono flex items-center gap-1.5 shrink-0">
-
+        <!-- LAYER 1: DEDICATED PROMINENT TYPING CONSOLE -->
+    <div class="w-full hud-glass rounded-2xl p-2.5 flex items-center gap-2.5 shadow-2xl border border-amber-500/40 pointer-events-auto bg-black/85 backdrop-blur-2xl">
+      <div class="flex items-center gap-2 pl-2 text-amber-400 font-bold mono text-sm shrink-0">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+        <span class="hidden sm:inline">JARVIS &gt;</span>
+      </div>
+      <input id="mainCommandInput" type="text" autocomplete="off" autofocus 
+        placeholder="Type any command... (e.g. 'open youtube and play kalyani song', 'calculate 150 * 3', 'send a gmail to mjeevan665@gmail.com', 'click #1 on screen')" 
+        class="flex-1 bg-transparent text-amber-50 placeholder-slate-400 text-sm mono px-3 py-2 focus:outline-none focus:ring-1 focus:ring-amber-400/50 rounded-xl" />
+      <button id="btnVoiceMic" type="button" class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono flex items-center gap-1.5 shrink-0 transition" title="Speak to J.A.R.V.I.S.">
         <span class="w-2 h-2 rounded-full bg-black animate-ping"></span>
-
         <span id="micLabel">Speak</span>
-
       </button>
-
-      <select id="voiceLangSelect" class="bg-black/70 border border-amber-500/35 text-amber-200 text-[11px] mono rounded-full px-2.5 py-2 focus:outline-none shrink-0" title="Sarvam AI Voice OS Language">
-
-        <option value="en-IN">EN-IN</option>
-
-        <option value="hi-IN">HI-IN</option>
-
-        <option value="kn-IN">KN-IN</option>
-
-      </select>
-
-      <button id="btnStopMedia" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-rose-500/25 border border-rose-500/40 text-rose-200 text-xs mono shrink-0" title="Stop / Pause Active Media & Voice">
-
-        &#9209; Stop
-
+      <button id="btnExecuteCommand" type="button" class="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-black font-bold text-xs mono shrink-0 shadow-lg shadow-amber-500/20 transition">
+        Execute &#9654;
       </button>
+    </div>
 
-      <button id="btnToggleCamera" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-xs mono shrink-0" title="Laptop Webcam Vision">&#128247;</button>
+    <!-- LAYER 2: MODULAR SYSTEM CONTROLS DOCK -->
+    <div class="w-full flex items-center justify-between gap-1.5 pointer-events-auto flex-wrap">
+      <div class="flex items-center gap-1.5 hud-glass rounded-full p-1 border border-amber-500/25">
+        <select id="voiceLangSelect" class="bg-black/70 border border-amber-500/35 text-amber-200 text-[11px] mono rounded-full px-2.5 py-1 focus:outline-none shrink-0" title="Sarvam AI Voice OS Language">
+          <option value="en-IN">EN-IN (English)</option>
+          <option value="hi-IN">HI-IN (Hinglish)</option>
+          <option value="kn-IN">KN-IN (Kannada)</option>
+        </select>
+        <button id="btnStopMedia" type="button" class="px-2.5 py-1 rounded-full bg-rose-500/20 hover:bg-rose-500/40 border border-rose-500/40 text-rose-300 text-[11px] mono shrink-0" title="Stop / Pause Active Media & Audio">&#9209; Stop</button>
+        <button id="btnToggleCamera" type="button" class="px-2.5 py-1 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-[11px] mono shrink-0" title="Laptop Webcam Vision">&#128247; Camera</button>
+      </div>
 
-      <button id="btnToggleSwarm" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs mono shrink-0" title="Open 5-Agent Swarm Blackboard & AST Matrix">&#9889; Swarm</button>
+      <div class="flex items-center gap-1.5 hud-glass rounded-full p-1 border border-sky-500/25">
+        <button id="btnToggleSwarm" type="button" class="px-3 py-1 rounded-full bg-black/60 hover:bg-sky-500/20 border border-sky-400/40 text-sky-200 text-[11px] mono shrink-0" title="Open 5-Agent Swarm Blackboard & AST Matrix">&#9889; Swarm</button>
+        <button id="btnToggleBrain" type="button" class="px-3 py-1 rounded-full bg-black/60 hover:bg-purple-500/20 border border-purple-400/40 text-purple-200 text-[11px] mono shrink-0" title="Open 4-Tier SQLite Cognitive Brain">&#129504; Brain</button>
+        <button id="btnToggleTasks" type="button" class="px-3 py-1 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-[11px] mono shrink-0" title="Toggle Ongoing Tasks HUD">&#128203; Tasks</button>
+        <button id="btnToggleTerminal" type="button" class="px-3 py-1 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-500/35 text-emerald-200 text-[11px] mono shrink-0" title="Open Interactive Terminal">&#128187; Terminal</button>
+      </div>
 
-      <button id="btnToggleBrain" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-purple-500/20 border border-purple-400/40 text-purple-200 text-xs mono shrink-0" title="Open 4-Tier SQLite Cognitive Brain">&#129504; Brain</button>
-      <button id="btnToggleTasks" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-xs mono shrink-0" title="Toggle Ongoing Tasks HUD">&#128203; Tasks</button>
-      <button id="btnToggleTerminal" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-500/35 text-emerald-200 text-xs mono shrink-0" title="Open Interactive Terminal">&#128187; Term</button>
-      <button id="btnToggleArcReactor" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-xs mono shrink-0" title="Arc Reactor Mode">&#9883; Arc</button>
-      <button id="btnToggleQuantumGrid" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs mono shrink-0" title="Quantum Grid Mode">&#127760; Grid</button>
-      <button id="btnProtocolZero" type="button" class="px-2.5 py-2.5 rounded-full bg-rose-950/60 hover:bg-rose-600/40 border border-rose-500/60 text-rose-300 text-xs mono font-bold shrink-0" title="Protocol Zero: Stop All Media & Wipe All Tasks">&#128721; Zero</button>
-
-
-      <input id="mainCommandInput" type="text" autocomplete="off" placeholder="Command J.A.R.V.I.S. (e.g. 'Click #1 on screen', 'Run 5-agent swarm to build a dashboard', 'Stop playing')..." class="flex-1 bg-transparent text-amber-50 placeholder-amber-200/40 text-xs md:text-sm mono px-2 focus:outline-none" />
-
-      <button id="btnExecuteCommand" type="button" class="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono shrink-0">Execute</button>
-
+      <div class="flex items-center gap-1.5 hud-glass rounded-full p-1 border border-cyan-500/25">
+        <button id="btnToggleArcReactor" type="button" class="px-2.5 py-1 rounded-full bg-black/60 hover:bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-[11px] mono shrink-0" title="Arc Reactor Mode">&#9883; Arc</button>
+        <button id="btnToggleQuantumGrid" type="button" class="px-2.5 py-1 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-[11px] mono shrink-0" title="Quantum Grid Mode">&#127760; Grid</button>
+        <button id="btnProtocolZero" type="button" class="px-3 py-1 rounded-full bg-rose-950/70 hover:bg-rose-600/50 border border-rose-500/60 text-rose-300 text-[11px] mono font-bold shrink-0" title="Protocol Zero: Stop All Media & Wipe All Tasks">&#128721; Protocol Zero</button>
+      </div>
     </div>
 
   </div>
@@ -1110,154 +1110,133 @@
 
 
       try {
-
-        if (/\b(camera|webcam|what am i holding|look at me)\b/.test(low)) {
-
+        // 3. Hardware & System Controls (Volume, Screenshot, Lock, Desktop)
+        if (/\b(volume up|volume down|louder|quieter|mute|unmute|screenshot|take screenshot|capture screen|minimize all|show desktop|lock screen|lock pc)\b/.test(low)) {
           state.orbColor = 'cyan';
-
-          if (!state.cameraStream) await toggleCamera();
-
-          const d = await postApi('/api/camera-analyze', { prompt: cmd });
-
-          await speak(d.spoken_response || 'Analyzed camera frame, sir.');
-
+          const d = await postApi('/api/system-control', { instruction: cmd });
+          await speak(d.spoken_response || 'Executed system command, sir.');
           return;
-
         }
 
+        // 4. Download & Installation Subsystem (Any Software / Resource)
+        if (/\b(download|install)\b/.test(low) && !/\b(song|music|video)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          const d = await postApi('/api/download', { instruction: cmd });
+          await speak(d.spoken_response || ('Initiated download for ' + d.resource_name + ', sir.'));
+          return;
+        }
 
-
-        if (/\b(click|double click|right click|type|scroll|drag|on my screen|on screen|in the window|button|search bar|like a human|visually|som|#\d+)\b/.test(low)) {
-
+        // 5. WhatsApp Automation (Send Message or Open WhatsApp)
+        if (/\b(whatsapp|whats app|text\s+[a-z0-9_+]|send\s+(?:a\s+)?(?:msg|message)\s+to)\b/.test(low)) {
           state.orbColor = 'emerald';
-
-          const d = await postApi('/api/human-gui-agent', { instruction: cmd, max_steps: 4 });
-
-          await speak(d.spoken_response || 'Executed Set-of-Mark visual actions on your screen, sir.');
-
-          return;
-
-        }
-
-
-
-        if (/\b(swarm|godmode|ast|build|write code|create a web|create an app|develop|code a|refactor|audit)\b/.test(low)) {
-
-          state.orbColor = 'cyan';
-
-          document.getElementById('swarmHudDrawer').classList.remove('hidden');
-
-          const d = await postApi('/api/godmode-swarm', { prompt: cmd });
-
-          await speak(d.spoken_response || '5-Agent Gemma 4 Swarm completed the task, sir.');
-
-          return;
-
-        }
-
-
-
-        const isFastAction = /\b(whatsapp|calculator|calc|notepad|youtube|netflix|book|reserve|gmail|email|mail|pdf|blender|3d model|generate image|create image|draw|open|play)\b/.test(low);
-
-        const isMemoryQuery = /\b(who are you|what are you|what did you do|tasks you did|what are you doing|doing right now|what is on my screen|what do you have to do|todo|goals|your memory|your brain|remember to|add goal|add todo)\b/.test(low);
-
-
-
-        if (isMemoryQuery || !isFastAction) {
-
-          state.orbColor = 'cyan';
-
-          const d = await postApi('/api/companion-brain', { message: cmd });
-
-          if (isMemoryQuery) document.getElementById('brainHudDrawer').classList.remove('hidden');
-
-          await speak(d.companion_reply || 'I am watching your screen in Godmode and right here with you, sir.');
-
-          return;
-
-        }
-
-
-
-        if (/\b(whatsapp)\b/.test(low)) {
-
-          state.orbColor = 'emerald';
-
           const d = await postApi('/api/whatsapp-send', { instruction: cmd });
-
-          await speak('Dispatched WhatsApp message to ' + d.contact + ', sir.');
-
-        } else if (/\b(calculator|calc|notepad)\b/.test(low)) {
-
-          state.orbColor = 'emerald';
-
-          const d = await postApi('/api/open-app', { instruction: cmd });
-
-          await speak(d.detail + ', sir.');
-
-        } else if (/\b(youtube|netflix|play)\b/.test(low)) {
-
-          state.orbColor = 'crimson';
-
-          const d = await postApi('/api/media-play', { instruction: cmd });
-
-          await speak('Playing ' + d.query + ' on ' + d.platform + ', sir.');
-
-        } else if (/\b(book|reserve)\b/.test(low)) {
-
-          state.orbColor = 'emerald';
-
-          const d = await postApi('/api/booking-concierge', { instruction: cmd });
-
-          await speak('Opened ' + d.provider + ' for your booking, sir.');
-
-        } else if (/\b(image|picture|photo|poster|draw)\b/.test(low)) {
-
-          state.orbColor = 'cyan';
-
-          const d = await postApi('/api/generate-image', { prompt: cmd });
-
-          await speak('Generated image for ' + d.prompt + ', sir.');
-
-        } else if (/\bpdf\b/.test(low)) {
-
-          state.orbColor = 'cyan';
-
-          const d = await postApi('/api/create-pdf', { instruction: cmd });
-
-          await speak('Compiled and opened your PDF report, sir.');
-
-        } else if (/\b(gmail|email|mail)\b/.test(low)) {
-
-          state.orbColor = 'crimson';
-
-          const d = await postApi('/api/gmail-draft', { instruction: cmd });
-
-          state.pendingGmailDraft = { recipient: d.recipient, subject: d.subject, body: d.body };
-
-          document.getElementById('gmailConfirmText').textContent = 'Send "' + d.subject + '" to ' + (d.recipient || 'recipient') + '?';
-
-          document.getElementById('gmailConfirmBar').classList.remove('hidden');
-
-          await speak(d.confirmation_prompt);
-
-        } else if (/\b(blender|3d model|3d mesh)\b/.test(low)) {
-
-          state.orbColor = 'cyan';
-
-          await postApi('/api/blender-3d', { instruction: cmd });
-
-          await speak('Generated Blender 3D Python script and launched your 3D workspace, sir.');
-
-        } else {
-
-          state.orbColor = 'emerald';
-
-          const d = await postApi('/api/human-gui-agent', { instruction: cmd, max_steps: 4 });
-
-          await speak(d.spoken_response || 'Completed the task visually on your screen, sir.');
-
+          await speak(d.spoken_response || ('Dispatched WhatsApp message to ' + d.contact + ', sir.'));
+          return;
         }
+
+        // 6. Gmail / Email Drafting
+        if (/\b(gmail|email|mail|draft)\b/.test(low) && !/\b(terminal|voice|blackboard)\b/.test(low)) {
+          state.orbColor = 'crimson';
+          const d = await postApi('/api/gmail-draft', { instruction: cmd });
+          if (d.recipient || d.subject) {
+            state.pendingGmailDraft = { recipient: d.recipient, subject: d.subject, body: d.body };
+            document.getElementById('gmailConfirmText').textContent = 'Send "' + d.subject + '" to ' + (d.recipient || 'recipient') + '?';
+            document.getElementById('gmailConfirmBar').classList.remove('hidden');
+          }
+          await speak(d.confirmation_prompt || d.spoken_response || 'Drafted your email in Gmail, sir.');
+          return;
+        }
+
+        // 7. Web Search & Browsing (Google, Lookup, Direct URLs)
+        if (/\b(search google|search for|google|look up|browse|navigate to|open website|open url)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          const d = await postApi('/api/web-search', { instruction: cmd });
+          await speak(d.spoken_response || ('Searching for ' + d.query + ', sir.'));
+          return;
+        }
+
+        // 8. Media Playback (YouTube, Netflix, Songs, Music)
+        if (/\b(youtube|netflix|play\s+[a-z0-9]|song|music|soundtrack)\b/.test(low)) {
+          state.orbColor = 'crimson';
+          const d = await postApi('/api/media-play', { instruction: cmd });
+          await speak('Playing ' + (d.query || 'requested media') + ' on ' + (d.platform || 'YouTube') + ', sir.');
+          return;
+        }
+
+        // 9. OS App Launching, Window Reuse & Calculator UIA
+        if (/\b(open|launch|start|run|switch to)\s+(calculator|calc|notepad|edge|chrome|brave|firefox|browser|terminal|powershell|cmd|code|vs code|vscode|task manager|taskmgr|settings|file explorer|explorer|files|downloads|documents|spotify|discord|paint|word|excel)\b/.test(low) ||
+            /\b(calculator|calc|compute|math|\d+\s*[\+\-\*\/]\s*\d+)\b/.test(low) ||
+            /\b(open notepad and type|type into notepad)\b/.test(low)) {
+          state.orbColor = 'emerald';
+          const d = await postApi('/api/open-app', { instruction: cmd });
+          await speak(d.spoken_response || d.detail + ', sir.');
+          return;
+        }
+
+        // 10. Booking Concierge (Movies, Dining)
+        if (/\b(book|reserve|tickets|cinema|zomato|bookmyshow)\b/.test(low)) {
+          state.orbColor = 'emerald';
+          const d = await postApi('/api/booking-concierge', { instruction: cmd });
+          await speak('Opened ' + d.provider + ' for your booking, sir.');
+          return;
+        }
+
+        // 11. Image Generation
+        if (/\b(generate image|create image|draw|make an image|photo of|picture of)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          const d = await postApi('/api/generate-image', { prompt: cmd });
+          await speak('Generated image for ' + d.prompt + ', sir.');
+          return;
+        }
+
+        // 12. PDF Document Compilation
+        if (/\b(pdf|create pdf|generate report)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          const d = await postApi('/api/create-pdf', { instruction: cmd });
+          await speak('Compiled and opened your PDF report, sir.');
+          return;
+        }
+
+        // 13. Blender 3D Mesh
+        if (/\b(blender|3d model|3d mesh)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          await postApi('/api/blender-3d', { instruction: cmd });
+          await speak('Generated Blender 3D Python script and launched your 3D workspace, sir.');
+          return;
+        }
+
+        // 14. Camera Vision
+        if (/\b(camera|webcam|what am i holding|look at me)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          if (!state.cameraStream) await toggleCamera();
+          const d = await postApi('/api/camera-analyze', { prompt: cmd });
+          await speak(d.spoken_response || 'Analyzed camera frame, sir.');
+          return;
+        }
+
+        // 15. 5-Agent Swarm Coding & AST Grounding
+        if (/\b(swarm|godmode|ast|build|write code|create a web|create an app|develop|code a|refactor|audit)\b/.test(low)) {
+          state.orbColor = 'cyan';
+          document.getElementById('swarmHudDrawer').classList.remove('hidden');
+          const d = await postApi('/api/godmode-swarm', { prompt: cmd });
+          await speak(d.spoken_response || '5-Agent Gemma 4 Swarm completed the task, sir.');
+          return;
+        }
+
+        // 16. Screen Visual Interaction (Set-of-Mark Click / Type)
+        if (/\b(click\s+(?:on|element|button|#\d+)|double click|right click|scroll down|scroll up|drag\s+to|visually click|act on screen|som click)\b/.test(low)) {
+          state.orbColor = 'emerald';
+          const d = await postApi('/api/human-gui-agent', { instruction: cmd, max_steps: 4 });
+          await speak(d.spoken_response || 'Executed Set-of-Mark visual actions on your screen, sir.');
+          return;
+        }
+
+        // 17. J.A.R.V.I.S. Companion Brain & Working Memory (Default Intelligent Assistant)
+        state.orbColor = 'cyan';
+        const d = await postApi('/api/companion-brain', { message: cmd });
+        const isMemoryQuery = /\b(who are you|what are you|what did you do|tasks you did|what are you doing|doing right now|what is on my screen|what do you have to do|todo|goals|your memory|your brain|remember to|add goal|add todo)\b/.test(low);
+        if (isMemoryQuery) document.getElementById('brainHudDrawer').classList.remove('hidden');
+        await speak(d.companion_reply || 'I am watching your screen in Godmode and right here with you, sir.');
 
       } catch (err) {
 
@@ -1573,7 +1552,7 @@
     // =========================================================================
     // J.A.R.V.I.S. EXTENSIONS: ON-SCREEN ACTIVE TASKS, TERMINAL & SPHERE MODES
     // =========================================================================
-    const API_BASE = window.location.origin;
+    const API_BASE = (window.location.protocol === 'http:' || window.location.protocol === 'https:') ? window.location.origin : (state.backendUrl || 'http://127.0.0.1:8000');
     let sphereMode = 'classic'; // 'classic' | 'arc_reactor' | 'quantum_grid'
 
     function escapeHtml(str) {
@@ -1747,6 +1726,51 @@
     // Auto-poll tasks every 2.5s
     setInterval(refreshActiveTasks, 2500);
     setTimeout(refreshActiveTasks, 800);
+
+  
+    // Command History & '/' Focus Shortcut
+    const commandHistory = [];
+    let historyIndex = -1;
+
+    document.addEventListener('keydown', (e) => {
+      const inp = document.getElementById('mainCommandInput');
+      if (e.key === '/' && document.activeElement !== inp && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        e.preventDefault();
+        inp?.focus();
+      }
+    });
+
+    const origInput = document.getElementById('mainCommandInput');
+    if (origInput) {
+      origInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp') {
+          if (commandHistory.length > 0 && historyIndex < commandHistory.length - 1) {
+            historyIndex++;
+            origInput.value = commandHistory[commandHistory.length - 1 - historyIndex];
+          }
+        } else if (e.key === 'ArrowDown') {
+          if (historyIndex > 0) {
+            historyIndex--;
+            origInput.value = commandHistory[commandHistory.length - 1 - historyIndex];
+          } else if (historyIndex === 0) {
+            historyIndex = -1;
+            origInput.value = '';
+          }
+        }
+      });
+    }
+
+    // Save commands into history on execute
+    const origExecute = window.executeCommand;
+    window.executeCommand = async function(text) {
+      const inp = document.getElementById('mainCommandInput');
+      const cmd = text || inp?.value?.trim();
+      if (cmd) {
+        commandHistory.push(cmd);
+        historyIndex = -1;
+      }
+      if (origExecute) return origExecute(text);
+    };
 
   </script>
 

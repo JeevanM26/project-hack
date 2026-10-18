@@ -1,3 +1,3 @@
 # Antigravity IDE Autonomous Swarm Directive
 
-create a simple calculator with ui designing and all
+open notepad and type Hello from J.A.R.V.I.S. SOTA Godmode

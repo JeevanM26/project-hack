@@ -58,3 +58,6 @@ scratch/
 *.db
 workspace_app/
 backend/workspace_app/
+recorded_videos/
+*.mp4
+*.webm

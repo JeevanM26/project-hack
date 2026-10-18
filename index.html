@@ -423,11 +423,25 @@
     }
 
     async function speak(text) {
+      if (!text) return;
       stopJarvisVoice();
-      document.getElementById('jarvisSubtitle').textContent = text.toUpperCase();
+      const sub = document.getElementById('jarvisSubtitle');
+      if (sub) sub.textContent = text.toUpperCase();
       state.orbEnergy = 2.7;
       setTimeout(() => { state.orbEnergy = 1.0; state.orbColor = 'gold'; }, Math.min(6000, Math.max(2200, text.length * 50)));
 
+      // 1. Proactively trigger native Windows SAPI voice via backend
+      if (state.backendOnline) {
+        try {
+          fetch(state.backendUrl + '/api/speak', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+          }).catch(() => {});
+        } catch (_) {}
+      }
+
+      // 2. Sarvam Cloud TTS if key configured
       if (state.sarvamKey && state.backendOnline) {
         try {
           const r = await fetch(state.backendUrl + '/api/sarvam-tts', {
@@ -443,10 +457,19 @@
           }
         } catch (_) {}
       }
+
+      // 3. Browser SpeechSynthesis fallback
       if ('speechSynthesis' in window) {
-        const u = new SpeechSynthesisUtterance(text.slice(0, 480));
-        u.lang = state.voiceLang || 'en-IN'; u.rate = 1.05; u.pitch = 0.95;
-        window.speechSynthesis.speak(u);
+        try {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.resume();
+          const clean = text.replace(/[*_#`~]/g, '').slice(0, 320);
+          const u = new SpeechSynthesisUtterance(clean);
+          u.lang = state.voiceLang || 'en-US';
+          u.rate = 1.05;
+          u.pitch = 0.95;
+          window.speechSynthesis.speak(u);
+        } catch (_) {}
       }
     }
 
@@ -643,7 +666,23 @@
       }
 
       try {
-        // Camera vision
+        // 1. Software Creation / UI Designing / Code Generation / Swarm
+        if ((/\b(create|build|make|design|code|develop|generate|write|craft|compose)\b/i.test(low) &&
+             /\b(app|application|calculator|game|website|web\s*page|ui|frontend|tool|script|project|html|dashboard|calc|form|page|todo|timer|clock)\b/i.test(low)) ||
+            /\b(swarm|godmode|ast|build|write code|create a web|create an app|develop|code a|refactor|audit)\b/i.test(low)) {
+          state.orbColor = 'cyan';
+          document.getElementById('swarmHudDrawer').classList.remove('hidden');
+          await speak('Synthesizing modern UI application architecture for ' + cmd + ', sir.');
+          const d = await postApi('/api/godmode-swarm', { prompt: cmd, instruction: cmd, target_directory: './hackathon_app' });
+          const targetUrl = d.preview_url || d.url || (state.backendUrl + '/hackathon_app/index.html');
+          if (targetUrl) {
+            window.open(targetUrl, '_blank');
+          }
+          await speak(d.spoken_response || ('Built and deployed your ' + (d.project_name || 'application') + ' with full UI design, sir.'));
+          return;
+        }
+
+        // 2. Camera vision
         if (/\b(camera|webcam|what am i holding|look at me)\b/.test(low)) {
           state.orbColor = 'cyan';
           if (!state.cameraStream) await toggleCamera();
@@ -652,7 +691,7 @@
           return;
         }
 
-        // WhatsApp Automation (matches 'send hi to one of my contact', 'whatsapp ...', 'text ...')
+        // 3. WhatsApp Automation (matches 'send hi to one of my contact', 'whatsapp ...', 'text ...')
         if (/\b(whatsapp|whats app|text\b|send\s+.*to|send\s+(?:a\s+)?(?:msg|message))\b/i.test(low) && !/\b(gmail|email|mail|pdf)\b/.test(low)) {
           state.orbColor = 'emerald';
           const d = await postApi('/api/whatsapp-send', { instruction: cmd });
@@ -661,61 +700,21 @@
           return;
         }
 
-        // Calculator & Notepad Apps
+        // 4. Calculator & Notepad Apps
         if (/\b(calculator|calc|notepad)\b/.test(low)) {
           state.orbColor = 'emerald';
           const d = await postApi('/api/open-app', { instruction: cmd });
-          await speak((d.detail || 'Executed application command') + ', sir.');
+          if (d.preview_url || d.url) { window.open(d.preview_url || d.url, '_blank'); }
+          await speak((d.spoken_response || d.detail || 'Executed application command') + ', sir.');
           return;
         }
 
-        // YouTube & Media Playback
+        // 5. YouTube & Media Playback
         if (/\b(youtube|netflix|play\b|song|music|soundtrack|video)\b/.test(low)) {
           state.orbColor = 'crimson';
           const d = await postApi('/api/media-play', { instruction: cmd });
           if (d.watch_url || d.url) { window.open(d.watch_url || d.url, '_blank'); }
-          await speak('Playing ' + (d.query || 'media') + ' on ' + (d.platform || 'YouTube') + ', sir.');
-          return;
-        }
-
-        // Gmail Drafting
-        if (/\b(gmail|email|mail|draft)\b/.test(low) && !/\b(terminal|voice|blackboard)\b/.test(low)) {
-          state.orbColor = 'crimson';
-          const d = await postApi('/api/gmail-draft', { instruction: cmd });
-          if (d.url) { window.open(d.url, '_blank'); }
-          if (d.recipient || d.subject) {
-            state.pendingGmailDraft = { recipient: d.recipient, subject: d.subject, body: d.body };
-            document.getElementById('gmailConfirmText').textContent = 'Send "' + d.subject + '" to ' + (d.recipient || 'recipient') + '?';
-            document.getElementById('gmailConfirmBar').classList.remove('hidden');
-          }
-          await speak(d.confirmation_prompt || ('Drafted email to ' + (d.recipient || 'recipient') + ', sir.'));
-          return;
-        }
-
-        // Web Search / Google
-        if (/\b(search google|search for|google|look up|browse|navigate to|open website)\b/.test(low)) {
-          state.orbColor = 'cyan';
-          const d = await postApi('/api/web-search', { instruction: cmd });
-          if (d.search_url || d.url) { window.open(d.search_url || d.url, '_blank'); }
-          await speak(d.spoken_response || ('Searching for ' + (d.query || 'topic') + ', sir.'));
-          return;
-        }
-
-        // Download
-        if (/\b(download|install)\b/.test(low) && !/\b(song|music|video)\b/.test(low)) {
-          state.orbColor = 'cyan';
-          const d = await postApi('/api/download', { instruction: cmd });
-          if (d.download_url || d.url) { window.open(d.download_url || d.url, '_blank'); }
-          await speak(d.spoken_response || ('Initiated download for ' + d.resource_name + ', sir.'));
-          return;
-        }
-
-        // Swarm Coding
-        if (/\b(swarm|godmode|ast|build|write code|create a web|create an app|develop|code a|refactor|audit)\b/.test(low)) {
-          state.orbColor = 'cyan';
-          document.getElementById('swarmHudDrawer').classList.remove('hidden');
-          const d = await postApi('/api/godmode-swarm', { prompt: cmd });
-          await speak(d.spoken_response || '5-Agent Gemma 4 Swarm completed the task, sir.');
+          await speak(d.spoken_response || ('Playing ' + (d.query || 'media') + ' on ' + (d.platform || 'YouTube') + ', sir.'));
           return;
         }
 
@@ -747,7 +746,7 @@
         // Companion Brain Default
         state.orbColor = 'cyan';
         const d = await postApi('/api/companion-brain', { message: cmd });
-        await speak(d.companion_reply || 'I am watching your screen in Godmode and right here with you, sir.');
+        await speak(d.spoken_response || d.companion_reply || 'I am watching your screen in Godmode and right here with you, sir.');
       } catch (err) {
         await speak('Encountered an execution error: ' + err.message);
       }
@@ -755,14 +754,28 @@
 
     function startVoiceInput() {
       const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!Rec) return;
+      if (!Rec) {
+        speak('Web Speech recognition is not available in this browser window. Please type your command in the input bar, sir.');
+        return;
+      }
       stopJarvisVoice();
       const rec = new Rec();
       rec.lang = state.voiceLang || 'en-IN';
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.onerror = (e) => {
+        document.getElementById('micLabel').textContent = 'Speak';
+        state.orbEnergy = 1.0;
+        if (e.error === 'not-allowed') {
+          speak('Microphone access was denied. Please allow microphone permissions or type in the command bar, sir.');
+        }
+      };
       rec.onstart = () => { document.getElementById('micLabel').textContent = 'Listening...'; state.orbColor = 'cyan'; state.orbEnergy = 2.4; };
       rec.onresult = (e) => { const t = e.results[0][0].transcript; document.getElementById('mainCommandInput').value = t; executeCommand(t); };
       rec.onend = () => { document.getElementById('micLabel').textContent = 'Speak'; state.orbEnergy = 1.0; };
-      rec.start();
+      try {
+        rec.start();
+      } catch (_) {}
     }
 
     function initSphere() {

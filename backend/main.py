@@ -31,12 +31,13 @@ if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
 try:
-    from computer_use import execute_computer_use
+    from computer_use import execute_computer_use, stop_all_media
 except ImportError:
     try:
-        from backend.computer_use import execute_computer_use
+        from backend.computer_use import execute_computer_use, stop_all_media
     except ImportError:
         execute_computer_use = None
+        stop_all_media = None
 
 try:
     from jarvis_memory import get_cognitive_brain_summary, query_memory, record_episodic_memory
@@ -1489,6 +1490,22 @@ async def jarvis_screen_scan():
             )
         return res
     return {"ok": False, "error": "Vision module unavailable"}
+
+
+@app.post("/api/jarvis/stop-media")
+async def jarvis_stop_media():
+    """Immediately stops all background media, audio, YouTube tabs, and dispatches hardware media keys."""
+    if stop_all_media:
+        res = stop_all_media()
+        if record_episodic_memory and res.get("ok"):
+            record_episodic_memory(
+                user_prompt="Stop all media playback",
+                action_name="media_playback_stopped",
+                tool_used="hardware_media_stop",
+                outcome_summary="Stopped all background audio and closed YouTube sessions."
+            )
+        return res
+    return {"ok": False, "error": "Media control unavailable"}
 
 
 @app.post("/api/jarvis/command")

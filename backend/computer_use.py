@@ -276,6 +276,54 @@ def open_url_in_browser(url: str) -> bool:
     return launched
 
 
+def stop_all_media() -> Dict[str, Any]:
+    """
+    Halts all audio/video playback across the entire system:
+    1. Sends Windows hardware VK_MEDIA_STOP and VK_MEDIA_PLAY_PAUSE key events.
+    2. Closes browser tabs/windows playing YouTube or audio.
+    """
+    switch_to_default_desktop()
+    user32 = ctypes.windll.user32
+    
+    # 1. Hardware Media Stop & Pause Keys
+    VK_MEDIA_STOP = 0xB2
+    VK_MEDIA_PLAY_PAUSE = 0xB3
+    try:
+        user32.keybd_event(VK_MEDIA_STOP, 0, 0, 0)
+        time.sleep(0.04)
+        user32.keybd_event(VK_MEDIA_STOP, 0, 2, 0)
+
+        user32.keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 0, 0)
+        time.sleep(0.04)
+        user32.keybd_event(VK_MEDIA_PLAY_PAUSE, 0, 2, 0)
+    except Exception as exc:
+        logger.warning(f"Error sending media keys: {exc}")
+
+    # 2. Find and close any window with YouTube or media in title
+    closed_windows = []
+    try:
+        import win32gui, win32con
+        def cb(h, _):
+            if win32gui.IsWindowVisible(h):
+                title = win32gui.GetWindowText(h)
+                lower = title.lower()
+                if any(k in lower for k in ["youtube", "kalyani", "interstellar", "soundtrack"]):
+                    win32gui.PostMessage(h, win32con.WM_CLOSE, 0, 0)
+                    closed_windows.append(title)
+        win32gui.EnumWindows(cb, None)
+    except Exception:
+        pass
+
+    return {
+        "ok": True,
+        "action": "media_playback_stopped",
+        "closed_windows": closed_windows,
+        "target": "Windows Audio & Media Subsystem",
+        "speech": "All background audio and media playback has been stopped, sir.",
+        "message": f"Dispatched hardware media stop signals and closed {len(closed_windows)} media windows.",
+    }
+
+
 def safe_eval_math(expr: str) -> Optional[float]:
     """Safely calculates math expression without executing arbitrary code."""
     try:
@@ -478,10 +526,12 @@ Your capabilities and tools:
    - "prompt": question or target UI area to analyze
 12. "query_brain_memory": User asks what you did, what happened earlier, or asks about companion memory (e.g. "what did you do today?", "what tasks did we complete?", "what is in your memory?", "who are you?", "companion status"). Parameters:
    - "query": search keywords or question about past actions
+13. "stop_playback": User wants to stop, pause, mute, or halt playing songs, music, YouTube videos, background audio, or media (e.g. "stop", "stop all", "stop music", "pause", "stop playing", "mute", "quiet", "silence", "shut up", "close youtube", "kill media"). Parameters:
+   - "scope": "all" | "music" | "youtube"
 
 Analyze the user's instruction and return ONLY a valid JSON object matching this schema:
 {{
-  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app" | "optical_camera_scan" | "desktop_screen_scan" | "query_brain_memory",
+  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app" | "optical_camera_scan" | "desktop_screen_scan" | "query_brain_memory" | "stop_playback",
   "thought": "<concise reasoning why you chose this tool>",
   "speech": "<concise spoken response for voice feedback to user>",
   "parameters": {{}}
@@ -547,6 +597,12 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             except Exception as ex:
                 logger.warning(f"Failed to record episodic memory: {ex}")
         return res
+
+    raw_lower = raw.lower()
+
+    # Fast-path 0: Instant hardware media stop on any stop/pause directive
+    if any(k in raw_lower for k in ["stop", "pause", "mute", "quiet", "silence", "shut up", "kill song", "kill music", "close youtube", "stop music", "stop song", "stop playing", "stop all", "stop everything"]):
+        return finish(stop_all_media())
 
     # Inspect current OS state to provide full awareness to Gemma 4
     calc_running, calc_pid = is_process_running("calc")
@@ -673,12 +729,15 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             elif not target_url.startswith("http://") and not target_url.startswith("https://"):
                 target_url = "https://" + target_url
 
-            open_url_in_browser(target_url)
+            # Only open external browser if NOT youtube HUD playback (or if user asked for external browser)
+            if not is_youtube or "in browser" in raw.lower() or "tab" in raw.lower():
+                open_url_in_browser(target_url)
+
             latency = round((time.perf_counter() - t0) * 1000, 1)
 
             speech_text = speech
             if is_youtube and not speech_text:
-                speech_text = "Opening YouTube and playing the requested song for you, sir."
+                speech_text = "Playing the requested song cleanly in your J.A.R.V.I.S. HUD, sir."
             elif not speech_text:
                 speech_text = f"Opened web browser for {target_url}."
 
@@ -1081,6 +1140,13 @@ Target File: {file_name}
             if record_episodic_memory:
                 record_episodic_memory(user_prompt=raw, agent_thought=thought, action_name="query_brain_memory", tool_used="query_brain_memory", outcome_summary=res["message"], metadata={"query": q})
             return res
+
+        # -------------------------------------------------------------
+        # 13. TOOL: STOP PLAYBACK (Hardware Media Stop & Window Close)
+        # -------------------------------------------------------------
+        if tool == "stop_playback":
+            res = stop_all_media()
+            return finish(res)
 
     # -------------------------------------------------------------
     # Fallback Direct Heuristics in case LLM is busy or unparseable

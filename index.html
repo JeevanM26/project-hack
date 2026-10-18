@@ -110,11 +110,14 @@
       </div>
     </div>
 
-    <!-- Latency, Vision & Memory Controls -->
+    <!-- Latency, Vision, Audio & Memory Controls -->
     <div class="flex items-center gap-2">
       <div id="latencyPill" class="text-[11px] mono px-2.5 py-1 rounded bg-cyan-950/60 border border-cyan-500/40 text-cyan-300">
         0ms READY
       </div>
+      <button id="btnGlobalStopAudio" type="button" class="text-[11px] mono px-3 py-1 rounded bg-red-950/90 hover:bg-red-800 border border-red-500 text-red-200 hover:text-white transition flex items-center gap-1.5 shadow-lg shadow-red-950/50 font-bold">
+        <span>⏹️</span> Stop Audio
+      </button>
       <button id="btnOpticalScan" type="button" class="text-[11px] mono px-3 py-1 rounded bg-cyan-950/80 hover:bg-cyan-850 border border-cyan-400 text-cyan-300 transition flex items-center gap-1.5 shadow-lg shadow-cyan-950/50">
         <span>👁️</span> Optical Sensor
       </button>
@@ -186,6 +189,9 @@
 
     <!-- 3. Quick Directive Chips (One-Click Demonstrations for Judges) -->
     <div class="flex items-center justify-center flex-wrap gap-1.5 max-w-5xl w-full text-[10px] mono">
+      <button type="button" data-cmd="stop all media playback and music immediately" class="quick-chip px-2.5 py-1 rounded-lg bg-red-950/90 hover:bg-red-800 border border-red-500 text-red-200 hover:text-white transition shadow-sm shadow-red-950 font-bold">
+        ⏹️ STOP ALL AUDIO
+      </button>
       <button type="button" data-cmd="look at me through the laptop camera and tell me what you observe" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-cyan-900/50 border border-cyan-400 text-cyan-300 hover:text-white transition shadow-sm shadow-cyan-950">
         👁️ Look at Me (Camera)
       </button>
@@ -519,9 +525,39 @@
     // -------------------------------------------------------------
     // 4. MAIN COMMAND DISPATCHER (ZERO HARDCODING -> GEMMA 4)
     // -------------------------------------------------------------
+    async function stopAllAudioPlayback(sendBackend = true) {
+      // 1. Destroy In-UI iframe player
+      const ov = document.getElementById('jarvisMediaOverlay');
+      if (ov) {
+        ov.innerHTML = '';
+        ov.remove();
+      }
+
+      // 2. Cancel Speech synthesis
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      state.isSpeaking = false;
+      state.spherePulse = 1.0;
+      const wave = document.getElementById('soundwaveBars');
+      if (wave) wave.classList.add('opacity-30');
+      document.getElementById('speechSubtitleText').textContent = '"All audio playback stopped, sir."';
+
+      // 3. Inform Backend to dispatch hardware VK_MEDIA_STOP and close YouTube windows
+      if (sendBackend) {
+        logHud('\n[SYSTEM] Dispatched global media stop signals.');
+        try {
+          await fetch(`${state.backendUrl}/api/jarvis/stop-media`, { method: 'POST' });
+        } catch (_) {}
+      }
+    }
+
     function renderMediaOverlay(watchUrl, embedUrl, query) {
       const existing = document.getElementById('jarvisMediaOverlay');
-      if (existing) existing.remove();
+      if (existing) {
+        existing.innerHTML = '';
+        existing.remove();
+      }
 
       const box = document.createElement('div');
       box.id = 'jarvisMediaOverlay';
@@ -533,8 +569,9 @@
             <span class="orbitron text-[10px] text-red-400 font-bold tracking-wider">LIVE YOUTUBE PLAYBACK</span>
           </div>
           <div class="flex items-center gap-2">
+            <button onclick="stopAllAudioPlayback()" class="px-2 py-0.5 rounded bg-red-900/90 hover:bg-red-700 text-red-200 text-[9px] mono font-bold border border-red-500/50">⏹️ Stop</button>
             <a href="${watchUrl}" target="_blank" class="text-[10px] mono text-cyan-400 hover:text-white underline">Full Tab &nearr;</a>
-            <button onclick="document.getElementById('jarvisMediaOverlay').remove()" class="text-sm text-slate-400 hover:text-white">&times;</button>
+            <button onclick="stopAllAudioPlayback()" class="text-sm text-slate-400 hover:text-white">&times;</button>
           </div>
         </div>
         <iframe src="${embedUrl}" class="w-full h-44 rounded-xl border border-cyan-500/30" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
@@ -577,10 +614,17 @@
       const cmd = (rawCmd || document.getElementById('mainCommandInput').value).trim();
       if (!cmd) return;
 
-      // Pre-open tab synchronously on user click/Enter to bypass Chrome popup blockers
+      // Check if user wants to stop audio/media
+      const isStopDirective = /stop|pause|mute|silence|quiet|shut up|kill.*(music|song|media)|close.*(music|song|youtube)/i.test(cmd);
+      if (isStopDirective) {
+        stopAllAudioPlayback(false);
+      }
+
+      // Pre-open tab synchronously ONLY for external web browsing (NOT YouTube HUD playback)
       let preOpenedTab = null;
-      const isWebDirective = /youtube|kalyani|song|play|netflix|gmail|email|mail|browse|search|movie|restaurant|book|download|brave|chrome|http/i.test(cmd);
-      if (isUserClick && isWebDirective) {
+      const isYouTubePlay = /youtube|song|music|soundtrack|play.*(song|music|kalyani)/i.test(cmd);
+      const isExternalWeb = !isYouTubePlay && !isStopDirective && /netflix|gmail|email|mail|browse|search|movie|restaurant|book|download|brave|chrome|http/i.test(cmd);
+      if (isUserClick && isExternalWeb) {
         try {
           preOpenedTab = window.open('about:blank', '_blank');
         } catch (_) {}
@@ -616,8 +660,13 @@
           // Speak voice response
           speakText(d.speech || `Completed directive ${cmd}.`);
 
-          // 1. If URL returned, route to preOpenedTab or open new tab
-          if (d.url) {
+          // 1. If media stopped, ensure audio elements and overlays are destroyed
+          if (d.action === 'media_playback_stopped') {
+            stopAllAudioPlayback(false);
+          } else if (d.action === 'youtube_live_playback') {
+            if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
+            if (d.embed_url) renderMediaOverlay(d.url, d.embed_url, cmd);
+          } else if (d.url && !isYouTubePlay) {
             if (preOpenedTab && !preOpenedTab.closed) {
               preOpenedTab.location.href = d.url;
             } else {
@@ -630,9 +679,7 @@
           }
 
           // 2. Specialized Holographic In-UI Overlays
-          if (d.action === 'youtube_live_playback' && d.embed_url) {
-            renderMediaOverlay(d.url, d.embed_url, cmd);
-          } else if (d.action === 'gmail_draft_created') {
+          if (d.action === 'gmail_draft_created') {
             renderGmailOverlay(d.to, d.subject, d.body, d.url);
           } else if (d.action === 'optical_camera_scan') {
             const modal = document.getElementById('opticalVisionModal');
@@ -756,6 +803,11 @@
       document.getElementById('mainCommandInput').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') executeCommand(null, true);
       });
+
+      const btnStopAudio = document.getElementById('btnGlobalStopAudio');
+      if (btnStopAudio) {
+        btnStopAudio.addEventListener('click', () => stopAllAudioPlayback(true));
+      }
 
       document.getElementById('btnVoiceMic').addEventListener('click', startVoiceInput);
 

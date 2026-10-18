@@ -84,6 +84,14 @@ except ImportError:
     except ImportError:
         TASK_MANAGER = None
 
+try:
+    from computer_use import perform_calculator_uia
+except ImportError:
+    try:
+        from backend.computer_use import perform_calculator_uia
+    except ImportError:
+        perform_calculator_uia = None
+
 
 
 app = FastAPI(title="J.A.R.V.I.S. v11.0 GODMODE — Single-Model Gemma 4 Swarm & Visual OS", version="11.0.0")
@@ -2916,6 +2924,24 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
             time.sleep(0.6)
 
 
+
+    if target == "Calculator" and expr and perform_calculator_uia:
+        ok_uia, disp_text = await asyncio.to_thread(perform_calculator_uia, expr)
+        ACTIVE_OS_APPS["calculator"] = {"is_open": True, "opened_at": time.time()}
+        res_val = disp_text.replace("Display is ", "").strip() if "Display is" in disp_text else (disp_text or result or "")
+        outcome = f"Automated Windows Calculator via authentic UIA button clicks: {expr} = {res_val}"
+        BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "CALCULATOR_UIA_BUTTONS", outcome)
+        BRAIN.record_completed_task("os_app_uia", raw, outcome)
+        return {
+            "ok": True,
+            "already_open": already_open,
+            "target": "Calculator",
+            "performed_expression": expr,
+            "calculated_result": res_val,
+            "detail": outcome,
+            "automation_log": f"Windows UIA Click Sequence on '{expr}' -> {disp_text}",
+            "brain": BRAIN.snapshot(),
+        }
 
     log = send_keys_to_window(target, expr) if (already_open or expr) else f"Launched {target}"
 

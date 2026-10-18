@@ -279,13 +279,32 @@ def open_url_in_browser(url: str) -> bool:
 def stop_all_media() -> Dict[str, Any]:
     """
     Halts all audio/video playback across the entire system:
-    1. Sends Windows hardware VK_MEDIA_STOP and VK_MEDIA_PLAY_PAUSE key events.
-    2. Closes browser tabs/windows playing YouTube or audio.
+    1. Uses pycaw Windows Audio Session API to directly mute all browser audio sessions (Edge, Chrome, Brave, Firefox, etc.).
+    2. Sends Windows hardware VK_MEDIA_STOP and VK_MEDIA_PLAY_PAUSE key events.
+    3. Closes browser tabs/windows playing YouTube or audio.
     """
     switch_to_default_desktop()
     user32 = ctypes.windll.user32
+    muted_sessions = []
+
+    # 1. Direct Windows Core Audio Session Mute (Guaranteed kill of browser audio)
+    try:
+        from pycaw.pycaw import AudioUtilities, ISimpleAudioVolume
+        sessions = AudioUtilities.GetAllSessions()
+        for session in sessions:
+            if session.Process:
+                pname = session.Process.name().lower()
+                if any(b in pname for b in ['edge', 'chrome', 'brave', 'firefox', 'opera', 'vlc', 'spotify']):
+                    try:
+                        vol = session._ctl.QueryInterface(ISimpleAudioVolume)
+                        vol.SetMute(1, None)
+                        muted_sessions.append(f"{session.Process.name()} (PID {session.ProcessId})")
+                    except Exception:
+                        pass
+    except Exception as exc:
+        logger.warning(f"pycaw session mute error: {exc}")
     
-    # 1. Hardware Media Stop & Pause Keys
+    # 2. Hardware Media Stop & Pause Keys
     VK_MEDIA_STOP = 0xB2
     VK_MEDIA_PLAY_PAUSE = 0xB3
     try:
@@ -299,7 +318,7 @@ def stop_all_media() -> Dict[str, Any]:
     except Exception as exc:
         logger.warning(f"Error sending media keys: {exc}")
 
-    # 2. Find and close any window with YouTube or media in title
+    # 3. Find and close any window with YouTube or media in title
     closed_windows = []
     try:
         import win32gui, win32con
@@ -317,10 +336,167 @@ def stop_all_media() -> Dict[str, Any]:
     return {
         "ok": True,
         "action": "media_playback_stopped",
+        "muted_sessions": muted_sessions,
         "closed_windows": closed_windows,
         "target": "Windows Audio & Media Subsystem",
         "speech": "All background audio and media playback has been stopped, sir.",
-        "message": f"Dispatched hardware media stop signals and closed {len(closed_windows)} media windows.",
+        "message": f"Muted {len(muted_sessions)} active audio sessions and dispatched media stop signals.",
+    }
+
+
+def execute_terminal_command(command: str, timeout: int = 30, cwd: str = ".") -> Dict[str, Any]:
+    """
+    Executes a shell/PowerShell command on behalf of Gemma 4 and J.A.R.V.I.S.,
+    returning stdout, stderr, exit code, and execution latency.
+    """
+    t0 = time.perf_counter()
+    clean_cmd = command.strip()
+    if clean_cmd.lower().startswith("terminal:"):
+        clean_cmd = clean_cmd[9:].strip()
+    elif clean_cmd.lower().startswith("powershell:"):
+        clean_cmd = clean_cmd[11:].strip()
+    elif clean_cmd.lower().startswith("cmd:"):
+        clean_cmd = clean_cmd[4:].strip()
+
+    try:
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", clean_cmd],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=cwd,
+            shell=False
+        )
+        duration_ms = round((time.perf_counter() - t0) * 1000, 1)
+        return {
+            "ok": proc.returncode == 0,
+            "exit_code": proc.returncode,
+            "stdout": proc.stdout,
+            "stderr": proc.stderr,
+            "command": clean_cmd,
+            "duration_ms": duration_ms
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "ok": False,
+            "exit_code": -1,
+            "stdout": "",
+            "stderr": f"Command timed out after {timeout} seconds.",
+            "command": clean_cmd,
+            "duration_ms": round((time.perf_counter() - t0) * 1000, 1)
+        }
+    except Exception as exc:
+        return {
+            "ok": False,
+            "exit_code": -1,
+            "stdout": "",
+            "stderr": str(exc),
+            "command": clean_cmd,
+            "duration_ms": round((time.perf_counter() - t0) * 1000, 1)
+        }
+
+
+def download_any_resource(raw_prompt: str, resource_name: str = "", download_url: str = "", is_direct_file: bool = False) -> Dict[str, Any]:
+    """
+    Downloads ANY file, software, tool, package, or resource requested by the user.
+    Saves to ~/Downloads for direct binaries or launches the official download portal.
+    Zero hardcoded preference - completely dynamic.
+    """
+    downloads_dir = Path.home() / "Downloads"
+    downloads_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Extract resource name from prompt if empty
+    if not resource_name:
+        for prefix in ["download", "install", "get", "fetch"]:
+            if prefix in raw_prompt.lower():
+                idx = raw_prompt.lower().find(prefix) + len(prefix)
+                candidate = raw_prompt[idx:].strip()
+                for f in ["the", "latest", "official", "version of", "tool", "app", "application", "browser"]:
+                    if candidate.lower().startswith(f + " "):
+                        candidate = candidate[len(f) + 1:].strip()
+                resource_name = candidate.split()[0] if candidate else "file"
+                break
+    if not resource_name:
+        resource_name = "file"
+
+    res_clean = resource_name.strip(" '\"`").lower()
+
+    # Dynamic registry of common software download URLs (expanded autonomously by Gemma 4)
+    OFFICIAL_DOWNLOAD_REGISTRY = {
+        "python": "https://www.python.org/downloads/",
+        "vscode": "https://code.visualstudio.com/Download",
+        "visual studio code": "https://code.visualstudio.com/Download",
+        "git": "https://git-scm.com/download/win",
+        "vlc": "https://www.videolan.org/vlc/",
+        "blender": "https://www.blender.org/download/",
+        "chrome": "https://www.google.com/chrome/",
+        "google chrome": "https://www.google.com/chrome/",
+        "brave": "https://brave.com/download/",
+        "brave browser": "https://brave.com/download/",
+        "firefox": "https://www.mozilla.org/firefox/new/",
+        "discord": "https://discord.com/download",
+        "spotify": "https://www.spotify.com/download/windows/",
+        "nodejs": "https://nodejs.org/en/download/",
+        "node": "https://nodejs.org/en/download/",
+        "steam": "https://store.steampowered.com/about/",
+        "7zip": "https://www.7-zip.org/download.html",
+        "7-zip": "https://www.7-zip.org/download.html",
+        "postman": "https://www.postman.com/downloads/",
+        "docker": "https://www.docker.com/products/docker-desktop/",
+        "ollama": "https://ollama.com/download/windows",
+        "rust": "https://www.rust-lang.org/tools/install",
+        "golang": "https://go.dev/dl/",
+        "go": "https://go.dev/dl/",
+        "obs": "https://obsproject.com/download",
+        "notepad++": "https://notepad-plus-plus.org/downloads/",
+        "zoom": "https://zoom.us/download",
+        "slack": "https://slack.com/downloads/windows"
+    }
+
+    if not download_url:
+        for k, v in OFFICIAL_DOWNLOAD_REGISTRY.items():
+            if k in res_clean or res_clean in k:
+                download_url = v
+                break
+        if not download_url:
+            download_url = f"https://www.google.com/search?q={urllib.parse.quote_plus('download ' + resource_name)}"
+
+    # If the URL is a direct downloadable binary (e.g., ends with .exe, .msi, .zip, .pdf, .iso, .tar.gz)
+    is_direct = is_direct_file or any(download_url.lower().endswith(ext) for ext in [".exe", ".msi", ".zip", ".tar.gz", ".iso", ".pdf", ".png", ".jpg"])
+    saved_path = None
+    
+    if is_direct and download_url.startswith("http"):
+        try:
+            filename = os.path.basename(urllib.parse.urlparse(download_url).path) or f"{resource_name}_{int(time.time())}.download"
+            target_file = downloads_dir / filename
+            resp = requests.get(download_url, stream=True, timeout=20)
+            if resp.status_code == 200:
+                with open(target_file, "wb") as f:
+                    for chunk in resp.iter_content(chunk_size=65536):
+                        if chunk:
+                            f.write(chunk)
+                saved_path = str(target_file)
+        except Exception as exc:
+            logger.warning(f"Direct download stream failed: {exc}")
+
+    # Launch browser to download page or direct link
+    open_url_in_browser(download_url)
+
+    speech_out = f"Initiated download for {resource_name}, sir."
+    if saved_path:
+        speech_out += f" File saved directly to your Downloads folder."
+    else:
+        speech_out += f" Opened the official download portal."
+
+    return {
+        "ok": True,
+        "action": "resource_downloaded" if saved_path else "download_portal_opened",
+        "resource_name": resource_name,
+        "url": download_url,
+        "saved_path": saved_path,
+        "target": "Windows Downloads Subsystem",
+        "speech": speech_out,
+        "message": f"Successfully initiated download for {resource_name} via {download_url}" + (f" (Saved to: {saved_path})" if saved_path else ""),
     }
 
 
@@ -492,7 +668,7 @@ Current Desktop State:
 - Calculator open: {system_state.get('calc_running', False)} (PID: {system_state.get('calc_pid')})
 - Notepad open: {system_state.get('notepad_running', False)} (PID: {system_state.get('notepad_pid')})
 - Blender open: {system_state.get('blender_running', False)} (PID: {system_state.get('blender_pid')})
-- Installed Browser: {system_state.get('browser', 'Brave')}
+- Installed Browser: {system_state.get('browser', 'Default System Browser')}
 
 Your capabilities and tools:
 1. "calculator": User wants to do math or use calculator. Parameter: "expression" (e.g. "10+20", "45 * 12").
@@ -502,9 +678,10 @@ Your capabilities and tools:
    - "body": complete, professional, personalized email body text written by you
 3. "browser": User wants to search, watch a video (YouTube), stream (Netflix), book restaurants/tables/food, book movie tickets, flights, or visit websites.
    - "url": full valid URL with query parameters (e.g. https://www.youtube.com/results?search_query=..., https://www.netflix.com/search?q=..., https://www.google.com/search?q=..., https://in.bookmyshow.com/explore/movies, or restaurant search in requested city).
-4. "download_tool": User wants to download the best browser (Brave, Chrome) or install a tool. Parameters:
-   - "tool_name": "brave" | "chrome" | "vscode" | "blender"
-   - "url": official download URL (e.g. https://brave.com/download/)
+4. "download_resource": User wants to download ANY software, application, file, dataset, tool, package, or resource (e.g. "download vscode", "download python", "download git", "download vlc", "download blender", "download discord", "download chrome", "download nodejs", "download linux iso", "download file https://..."). Parameters:
+   - "resource_name": name of the software, file, or package to download (e.g. "vscode", "python", "vlc", "git", "blender", "discord", "chrome", "nodejs")
+   - "download_url": official download page or direct binary URL formulated dynamically by you
+   - "is_direct_file": true if URL points directly to an installer/binary (.exe, .msi, .zip, .tar.gz, etc.)
 5. "generate_pdf": User wants to create or export a PDF document. Parameters:
    - "title": document title
    - "content": detailed document text with sections and paragraphs
@@ -528,10 +705,12 @@ Your capabilities and tools:
    - "query": search keywords or question about past actions
 13. "stop_playback": User wants to stop, pause, mute, or halt playing songs, music, YouTube videos, background audio, or media (e.g. "stop", "stop all", "stop music", "pause", "stop playing", "mute", "quiet", "silence", "shut up", "close youtube", "kill media"). Parameters:
    - "scope": "all" | "music" | "youtube"
+14. "terminal_execute": User wants to run a shell command, execute terminal/powershell/cmd instructions, query processes, list files, run scripts, kill tasks, check network, or inspect system terminal directly (e.g. "terminal", "run command", "execute in terminal", "powershell", "cmd", "fit in terminal", "terminal access", "taskkill", "dir", "ipconfig", "git"). Parameters:
+   - "command": exact shell/PowerShell command string to execute
 
 Analyze the user's instruction and return ONLY a valid JSON object matching this schema:
 {{
-  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app" | "optical_camera_scan" | "desktop_screen_scan" | "query_brain_memory" | "stop_playback",
+  "tool": "calculator" | "draft_email" | "browser" | "download_resource" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app" | "optical_camera_scan" | "desktop_screen_scan" | "query_brain_memory" | "stop_playback" | "terminal_execute",
   "thought": "<concise reasoning why you chose this tool>",
   "speech": "<concise spoken response for voice feedback to user>",
   "parameters": {{}}
@@ -603,6 +782,25 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
     # Fast-path 0: Instant hardware media stop on any stop/pause directive
     if any(k in raw_lower for k in ["stop", "pause", "mute", "quiet", "silence", "shut up", "kill song", "kill music", "close youtube", "stop music", "stop song", "stop playing", "stop all", "stop everything"]):
         return finish(stop_all_media())
+
+    # Fast-path Terminal: explicit shell prefixes
+    if raw_lower.startswith(("terminal:", "powershell:", "cmd:")):
+        t_res = execute_terminal_command(raw)
+        return finish({
+            "ok": t_res["ok"],
+            "action": "terminal_executed",
+            "command": t_res["command"],
+            "stdout": t_res.get("stdout", "").strip(),
+            "stderr": t_res.get("stderr", "").strip(),
+            "exit_code": t_res.get("exit_code", 0),
+            "duration_ms": t_res.get("duration_ms", 0),
+            "speech": f"Executed terminal command in {t_res['duration_ms']} milliseconds, sir." if t_res["ok"] else f"Command returned exit code {t_res['exit_code']}.",
+            "message": t_res.get("stdout", "").strip() or t_res.get("stderr", "").strip() or "Terminal execution complete.",
+            "thought": "Direct terminal command execution directive.",
+            "target": "Windows PowerShell Terminal",
+            "model": "Fast-Path Terminal Engine",
+            "latency_ms": t_res["duration_ms"]
+        })
 
     # Inspect current OS state to provide full awareness to Gemma 4
     calc_running, calc_pid = is_process_running("calc")
@@ -756,26 +954,26 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             })
 
         # -------------------------------------------------------------
-        # 4. TOOL: DOWNLOAD TOOL / BEST BROWSER
+        # 4. TOOL: DOWNLOAD ANY RESOURCE / SOFTWARE / FILE (ZERO HARDCODING)
         # -------------------------------------------------------------
-        if tool == "download_tool":
-            tool_name = params.get("tool_name", "brave").lower()
-            download_url = params.get("url", "https://brave.com/download/")
-            if "brave" in tool_name or "best" in raw.lower():
-                download_url = "https://brave.com/download/"
-            elif "chrome" in tool_name:
-                download_url = "https://www.google.com/chrome/"
+        if tool in ["download_resource", "download_tool"]:
+            res_name = params.get("resource_name") or params.get("tool_name") or ""
+            target_dl = params.get("download_url") or params.get("url") or ""
+            is_direct = bool(params.get("is_direct_file", False))
 
-            open_url_in_browser(download_url)
+            dl_res = download_any_resource(raw, res_name, target_dl, is_direct)
             latency = round((time.perf_counter() - t0) * 1000, 1)
+
+            speech_text = speech or dl_res.get("speech")
             return finish({
                 "ok": True,
-                "action": "browser_download_opened",
-                "tool_name": tool_name,
-                "url": download_url,
-                "target": "Browser Download Portal",
-                "speech": f"Opened the official download portal for Brave Browser, the fastest and most secure modern browser.",
-                "message": f"[Gemma 4 ({model_used})] Navigated to official installer for {tool_name}: {download_url}",
+                "action": dl_res.get("action", "resource_download_initiated"),
+                "resource_name": dl_res.get("resource_name", res_name),
+                "url": dl_res.get("url"),
+                "saved_path": dl_res.get("saved_path"),
+                "target": dl_res.get("target", "Windows Downloads Subsystem"),
+                "speech": speech_text,
+                "message": f"[Gemma 4 ({model_used})] Initiated dynamic download for {dl_res.get('resource_name')}: {dl_res.get('url')}" + (f" (Saved to: {dl_res.get('saved_path')})" if dl_res.get("saved_path") else ""),
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
@@ -1148,6 +1346,42 @@ Target File: {file_name}
             res = stop_all_media()
             return finish(res)
 
+        # -------------------------------------------------------------
+        # 14. TOOL: TERMINAL EXECUTE (Direct Shell/PowerShell Execution)
+        # -------------------------------------------------------------
+        if tool == "terminal_execute":
+            cmd_str = parameters.get("command") or ""
+            if not cmd_str:
+                cmd_str = raw
+            t_res = execute_terminal_command(cmd_str)
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            stdout_txt = t_res.get("stdout", "").strip()
+            stderr_txt = t_res.get("stderr", "").strip()
+
+            speech_out = speech
+            if not speech_out:
+                if t_res["ok"]:
+                    speech_out = f"Terminal command executed successfully in {t_res['duration_ms']} milliseconds, sir."
+                else:
+                    speech_out = f"Terminal command returned exit code {t_res['exit_code']}, sir."
+
+            res = {
+                "ok": t_res["ok"],
+                "action": "terminal_executed",
+                "command": t_res["command"],
+                "stdout": stdout_txt,
+                "stderr": stderr_txt,
+                "exit_code": t_res["exit_code"],
+                "duration_ms": t_res["duration_ms"],
+                "speech": speech_out,
+                "message": stdout_txt or stderr_txt or f"Command finished with exit code {t_res['exit_code']}.",
+                "thought": thought,
+                "target": "Windows PowerShell Terminal",
+                "model": model_used,
+                "latency_ms": latency,
+            }
+            return finish(res)
+
     # -------------------------------------------------------------
     # Fallback Direct Heuristics in case LLM is busy or unparseable
     # -------------------------------------------------------------
@@ -1187,6 +1421,50 @@ Target File: {file_name}
         if record_episodic_memory:
             record_episodic_memory(user_prompt=raw, action_name="query_brain_memory", tool_used="query_brain_memory", outcome_summary=res["message"])
         return res
+
+    if any(k in raw_lower for k in ["terminal", "powershell", "cmd", "fit in terminal", "terminal access", "run in terminal"]):
+        cmd_candidate = raw
+        for pfx in ["run in terminal", "terminal execute", "execute in terminal", "open terminal and run", "run command", "terminal"]:
+            if pfx in raw_lower:
+                idx = raw_lower.find(pfx) + len(pfx)
+                sub = raw[idx:].strip(" :-\"'")
+                if sub:
+                    cmd_candidate = sub
+                    break
+        t_res = execute_terminal_command(cmd_candidate if cmd_candidate != raw else "Get-Process | Select-Object -First 10 Id, ProcessName")
+        res = {
+            "ok": t_res["ok"],
+            "action": "terminal_executed",
+            "command": t_res["command"],
+            "stdout": t_res.get("stdout", "").strip(),
+            "stderr": t_res.get("stderr", "").strip(),
+            "exit_code": t_res.get("exit_code", 0),
+            "duration_ms": t_res.get("duration_ms", 0),
+            "speech": "Terminal access granted. Command executed, sir.",
+            "message": t_res.get("stdout", "").strip() or t_res.get("stderr", "").strip() or "Terminal execution complete.",
+            "target": "Windows PowerShell Terminal",
+            "model": "Fallback Terminal Engine",
+            "latency_ms": round((time.perf_counter() - t0) * 1000, 1),
+        }
+        return finish(res)
+
+    if any(k in raw_lower for k in ["download ", "install ", "download"]):
+        dl_res = download_any_resource(raw)
+        latency = round((time.perf_counter() - t0) * 1000, 1)
+        res = {
+            "ok": True,
+            "action": dl_res.get("action", "resource_download_initiated"),
+            "resource_name": dl_res.get("resource_name"),
+            "url": dl_res.get("url"),
+            "saved_path": dl_res.get("saved_path"),
+            "target": "Windows Downloads Subsystem",
+            "speech": dl_res.get("speech"),
+            "message": dl_res.get("message"),
+            "thought": "Autonomous download directive fallback.",
+            "model": "Fallback Universal Downloader",
+            "latency_ms": latency,
+        }
+        return finish(res)
 
     return None
 

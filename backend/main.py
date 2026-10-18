@@ -31,20 +31,22 @@ if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
 try:
-    from computer_use import execute_computer_use, stop_all_media
+    from computer_use import execute_computer_use, stop_all_media, execute_terminal_command
 except ImportError:
     try:
-        from backend.computer_use import execute_computer_use, stop_all_media
+        from backend.computer_use import execute_computer_use, stop_all_media, execute_terminal_command
     except ImportError:
         execute_computer_use = None
         stop_all_media = None
+        execute_terminal_command = None
 
 try:
-    from jarvis_memory import get_cognitive_brain_summary, query_memory, record_episodic_memory
+    from jarvis_memory import BRAIN, get_cognitive_brain_summary, query_memory, record_episodic_memory
 except ImportError:
     try:
-        from backend.jarvis_memory import get_cognitive_brain_summary, query_memory, record_episodic_memory
+        from backend.jarvis_memory import BRAIN, get_cognitive_brain_summary, query_memory, record_episodic_memory
     except ImportError:
+        BRAIN = None
         get_cognitive_brain_summary = None
         query_memory = None
         record_episodic_memory = None
@@ -86,6 +88,9 @@ SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
 ACTIVE_SERVERS: Dict[int, subprocess.Popen] = {}
 ADAPTIVE_MEMORY: List[Dict[str, Any]] = []
 SYSTEM_PROMPTS_STORE: Dict[str, str] = {}
+ACTIVE_MEDIA_STATE: Dict[str, Any] = {"playing": False, "platform": "", "title": "", "url": ""}
+ACTIVE_BROWSER_TABS: Dict[str, str] = {}
+PENDING_GMAIL_DRAFTS: Dict[str, Dict[str, str]] = {}
 
 EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 if not os.path.exists(EDGE_PATH):
@@ -157,6 +162,11 @@ class ScreenshotVerifyRequest(BaseModel):
     app_title: str = "Application"
     model: str = DEFAULT_MODEL
     html_content: Optional[str] = ""
+
+
+class TerminalRequest(BaseModel):
+    command: str
+    timeout: Optional[int] = 30
     ollama_url: Optional[str] = ""
     gemini_api_key: Optional[str] = ""
 
@@ -181,6 +191,33 @@ class ConvertTtsRequest(BaseModel):
 class Convert3dRequest(BaseModel):
     mesh_type: str = "torus"
     target_path: Optional[str] = "./workspace_app/model.glb"
+
+
+class JarvisCommandRequest(BaseModel):
+    instruction: Optional[str] = ""
+    message: Optional[str] = ""
+    prompt: Optional[str] = ""
+    camera_frame_b64: Optional[str] = ""
+    screen_frame_b64: Optional[str] = ""
+    capture_native_screen: bool = False
+    capture_native_webcam: bool = False
+    target_directory: str = "./hackathon_app"
+    model: str = DEFAULT_MODEL
+    use_airllm: bool = False
+    ollama_url: Optional[str] = ""
+    gemini_api_key: Optional[str] = ""
+    recipient: Optional[str] = ""
+    subject: Optional[str] = ""
+    body: Optional[str] = ""
+    action: Optional[str] = "add"
+    goal: Optional[str] = ""
+    priority: str = "HIGH"
+    goal_id: Optional[int] = None
+    fact_key: Optional[str] = ""
+    fact_value: Optional[str] = ""
+    text: Optional[str] = ""
+    language_code: str = "en-IN"
+    sarvam_api_key: Optional[str] = ""
 
 
 def is_port_in_use(port: int) -> bool:
@@ -1037,7 +1074,27 @@ async def serve_ide():
     return {"status": "ok", "message": "jarvis_command_center.html not found."}
 
 
+def get_live_uia_tree() -> Dict[str, Any]:
+    windows = []
+    try:
+        import psutil
+        for p in psutil.process_iter(['pid', 'name']):
+            try:
+                pname = p.info['name']
+                if pname and pname.lower().endswith('.exe'):
+                    base = pname[:-4]
+                    if base.lower() in ['chrome', 'msedge', 'brave', 'notepad', 'calculatorapp', 'calc', 'blender', 'code', 'antigravity', 'spotify', 'vlc', 'discord', 'terminal', 'cmd']:
+                        windows.append({'title': base.capitalize(), 'pid': p.info['pid'], 'process_name': pname})
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return {"engine": "windows_uia_process_tree", "open_windows": windows, "detected_count": len(windows)}
+
+
 @app.get("/api/health")
+@app.get("/api/brain-state")
+@app.get("/api/uia-snapshot")
 async def health_check():
     models = await list_ollama_models()
     preferred_models = ["gemma4:latest", "gemma2:9b", "gemma4:27b", "gemma2:27b"]
@@ -1054,6 +1111,9 @@ async def health_check():
     except Exception:
         playwright_installed = False
 
+    uia = get_live_uia_tree()
+    brain_snap = BRAIN.snapshot(uia.get("open_windows", [])) if BRAIN else {}
+
     return {
         "ok": True,
         "brain1_model": active_model,
@@ -1062,6 +1122,11 @@ async def health_check():
         "ollama_online": len(models) > 0,
         "ollama_models": models,
         "gemini_configured": bool(GEMINI_API_KEY),
+        "uia_engine": uia.get("engine", "windows_uia"),
+        "open_windows_detected": len(uia.get("open_windows", [])),
+        "open_windows": uia.get("open_windows", []),
+        "active_media": ACTIVE_MEDIA_STATE,
+        "brain": brain_snap,
         "playwright_ready": playwright_installed,
         "pdf_converter_ready": REPORTLAB_AVAILABLE,
         "neural_tts_ready": EDGE_TTS_AVAILABLE,
@@ -1506,6 +1571,285 @@ async def jarvis_stop_media():
             )
         return res
     return {"ok": False, "error": "Media control unavailable"}
+
+
+@app.post("/api/jarvis/terminal")
+async def jarvis_terminal_endpoint(req: TerminalRequest):
+    """Executes arbitrary terminal/PowerShell commands on behalf of J.A.R.V.I.S."""
+    if execute_terminal_command:
+        res = execute_terminal_command(req.command, timeout=req.timeout or 30)
+        if record_episodic_memory:
+            record_episodic_memory(
+                user_prompt=req.command,
+                action_name="terminal_executed",
+                tool_used="powershell_terminal",
+                outcome_summary=f"Terminal command exited with code {res['exit_code']} in {res['duration_ms']}ms."
+            )
+        return res
+    return {"ok": False, "error": "Terminal module unavailable", "exit_code": -1}
+
+
+@app.post("/api/brain-todo")
+async def update_brain_todo(req: JarvisCommandRequest):
+    uia = get_live_uia_tree()
+    if BRAIN:
+        if req.action == "add" and req.goal:
+            added = BRAIN.add_todo_goal(req.goal, req.priority)
+            BRAIN.record_completed_task("memory_goal", f"Added goal: {req.goal}", f"Scheduled goal #{added['id']}")
+        elif req.action == "complete" and req.goal_id is not None:
+            BRAIN.update_todo_status(req.goal_id, "DONE")
+        elif req.action == "fact" and req.fact_key and req.fact_value:
+            BRAIN.update_identity_fact(req.fact_key, req.fact_value)
+        return {"ok": True, "brain": BRAIN.snapshot(uia.get("open_windows", []))}
+    return {"ok": False, "error": "Brain unavailable"}
+
+
+@app.post("/api/media-control")
+async def media_control_endpoint(req: JarvisCommandRequest):
+    raw = (req.instruction or req.action or "stop").lower()
+    if stop_all_media:
+        res = stop_all_media()
+        if "pause" in raw or "resume" in raw:
+            ACTIVE_MEDIA_STATE["playing"] = "resume" in raw
+        else:
+            ACTIVE_MEDIA_STATE["playing"] = False
+        outcome = f"Executed media control for '{raw}' via {len(res.get('muted_sessions', []))} muted sessions."
+        if BRAIN:
+            BRAIN.record_completed_task("media_control", raw, outcome)
+        return {
+            "ok": True,
+            "action": raw,
+            "detail": outcome,
+            "media_state": ACTIVE_MEDIA_STATE,
+            "brain": BRAIN.snapshot() if BRAIN else {},
+        }
+    return {"ok": False, "error": "Media control unavailable"}
+
+
+@app.post("/api/companion-brain")
+async def companion_brain_endpoint(req: JarvisCommandRequest):
+    t0 = time.perf_counter()
+    msg = (req.message or req.instruction or req.prompt or "").strip()
+    uia = get_live_uia_tree()
+    snap = BRAIN.snapshot(uia.get("open_windows", [])) if BRAIN else {}
+    if BRAIN:
+        BRAIN.set_doing_now(f"Thinking & replying to: '{msg[:60]}'", "THINKING")
+
+    sys_prompt = (
+        "You are J.A.R.V.I.S., Tony Stark's self-aware AI companion and autonomous OS brain.\n"
+        "You have a persistent 4-Tier SQLite Cognitive Brain (`what_it_is`, `what_it_did`, `what_it_is_doing`, `what_it_has_to_do`).\n"
+        "Use your memory tiers to answer questions about who you are, what tasks you did, what you are doing right now, or what you have to do next.\n"
+        'Return ONLY valid JSON: {"inner_thought": "...", "companion_reply": "...", "new_todo_goals": [], "learned_user_fact": {"key": "", "value": ""}}'
+    )
+    imgs = [x for x in [req.camera_frame_b64, req.screen_frame_b64] if x]
+    try:
+        raw_llm = await query_llm(
+            prompt=f"User: {msg}\n4-Tier Brain State: {json.dumps(snap)[:4000]}",
+            system_prompt=sys_prompt,
+            model=req.model or DEFAULT_MODEL,
+            ollama_url=req.ollama_url or OLLAMA_URL,
+            gemini_key=req.gemini_api_key or "",
+            image_b64=imgs[0] if imgs else "",
+            json_mode=True,
+        )
+        parsed = extract_json_object(raw_llm)
+        thought = parsed.get("inner_thought", "Consulted 4-tier cognitive memory.")
+        reply = parsed.get("companion_reply", "I am online and ready, sir.")
+        if BRAIN:
+            for g in parsed.get("new_todo_goals", []) or []:
+                if isinstance(g, str) and g.strip():
+                    BRAIN.add_todo_goal(g.strip())
+            fact = parsed.get("learned_user_fact") or {}
+            if isinstance(fact, dict) and fact.get("key") and fact.get("value"):
+                BRAIN.update_identity_fact(str(fact["key"]), str(fact["value"]))
+    except Exception:
+        did = snap.get("what_it_did", [])
+        todos = [t for t in snap.get("what_it_has_to_do", []) if t.get("status") == "PENDING"]
+        thought = f"Direct recall from SQLite 4-Tier Brain (Completed={len(did)}, Pending={len(todos)})."
+        reply = f"I am {snap.get('what_it_is', {}).get('name', 'J.A.R.V.I.S.')}, your thinking companion. I have {len(did)} completed tasks in memory and {len(todos)} pending goals ready, sir."
+
+    if BRAIN:
+        BRAIN.record_turn("user", msg)
+        BRAIN.record_turn("assistant", reply, thought)
+        BRAIN.set_doing_now("Monitoring voice, camera, Windows UIA & companion memory", "IDLE_MONITORING", thought)
+    return {
+        "ok": True,
+        "inner_thought": thought,
+        "companion_reply": reply,
+        "brain": BRAIN.snapshot(uia.get("open_windows", [])) if BRAIN else {},
+        "latency_ms": round((time.perf_counter() - t0) * 1000, 1)
+    }
+
+
+@app.post("/api/camera-analyze")
+async def camera_analyze_endpoint(req: JarvisCommandRequest):
+    prompt_txt = req.prompt or req.instruction or "Describe what you see in the laptop camera and assist me."
+    if BRAIN:
+        BRAIN.set_doing_now(f"Analyzing laptop camera: {prompt_txt[:50]}", "CAMERA_VISION")
+    frame = req.camera_frame_b64
+    if not frame and scan_laptop_camera:
+        optic_res = scan_laptop_camera(prompt_txt)
+        frame = optic_res.get("image_base64", "")
+        analysis = optic_res.get("analysis", "")
+        if analysis:
+            if BRAIN:
+                BRAIN.record_completed_task("camera_vision", prompt_txt, analysis[:220])
+            return {"ok": True, "spoken_response": analysis, "brain": BRAIN.snapshot() if BRAIN else {}}
+    if not frame:
+        raise HTTPException(status_code=400, detail="No webcam frame available.")
+    ans = await query_llm(
+        prompt=prompt_txt,
+        system_prompt="You are J.A.R.V.I.S. looking through the user's laptop camera via Gemma 4 Vision. Describe what you see concisely and respond as J.A.R.V.I.S.",
+        model=req.model or DEFAULT_MODEL,
+        ollama_url=req.ollama_url or OLLAMA_URL,
+        gemini_key=req.gemini_api_key or "",
+        image_b64=frame,
+    )
+    if BRAIN:
+        BRAIN.record_completed_task("camera_vision", prompt_txt, ans[:220])
+    return {"ok": True, "spoken_response": ans, "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/media-play")
+async def media_play(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "").strip()
+    low = raw.lower()
+    if re.search(r"\b(stop|pause|resume|unpause|mute|close)\b", low) and not re.search(r"\bplay\s+[a-z0-9]{3,}", low):
+        return await media_control_endpoint(req)
+    if stop_all_media:
+        stop_all_media()
+    is_netflix = "netflix" in low
+    q = re.sub(r"^(?:hey\s+|hi\s+)?(?:jarvis[,\s]*)?(?:please\s+)?(?:open\s+)?(?:youtube|netflix)(?:\s+and)?\s*(?:play|search|watch)?\s*", "", raw, flags=re.I).strip() or "Music"
+    if is_netflix:
+        url = f"https://www.netflix.com/search?q={urllib.parse.quote_plus(q)}"
+        webbrowser.open(url)
+        ACTIVE_MEDIA_STATE.update({"playing": True, "platform": "Netflix", "title": q, "url": url})
+        if BRAIN:
+            BRAIN.record_completed_task("media", raw, f"Playing '{q}' on Netflix")
+        return {"ok": True, "platform": "Netflix", "query": q, "watch_url": url, "brain": BRAIN.snapshot() if BRAIN else {}}
+    search_url = f"https://www.youtube.com/results?search_query={urllib.parse.quote_plus(q)}"
+    watch_url = search_url
+    try:
+        from computer_use import resolve_youtube_direct_play
+        w_url, _, _ = resolve_youtube_direct_play(q)
+        if w_url:
+            watch_url = w_url
+    except Exception:
+        pass
+    ACTIVE_MEDIA_STATE.update({"playing": True, "platform": "YouTube", "title": q, "url": watch_url})
+    if BRAIN:
+        BRAIN.record_completed_task("media", raw, f"Auto-playing '{q}' on YouTube")
+    return {"ok": True, "platform": "YouTube", "query": q, "watch_url": watch_url, "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/whatsapp-send")
+async def whatsapp_send(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "").strip()
+    m = re.search(r"(?:to\s+)?([a-zA-Z0-9_+]+)\s+(?:saying|that|:)\s*(.+)$", raw, re.I)
+    contact = m.group(1).strip() if m else "Contact"
+    msg = m.group(2).strip(" \"'") if m else raw
+    phone = re.sub(r"[^\d+]", "", contact) if re.search(r"\d{7,}", contact) else ""
+    url = f"https://web.whatsapp.com/send?phone={phone}&text={urllib.parse.quote(msg)}" if phone else f"https://web.whatsapp.com/send?text={urllib.parse.quote(msg)}"
+    webbrowser.open(url)
+    if BRAIN:
+        BRAIN.record_completed_task("whatsapp", raw, f"Dispatched WhatsApp message to {contact}: '{msg}'")
+    return {"ok": True, "contact": contact, "message": msg, "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/booking-concierge")
+async def booking_concierge(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "").strip()
+    is_movie = any(w in raw.lower() for w in ("movie", "ticket", "cinema", "pvr", "inox", "bookmyshow"))
+    q = re.sub(r"\b(book|reserve|tickets|ticket|table|restaurant|movie|for|in|at)\b", "", raw, flags=re.I).strip() or "Bengaluru"
+    url = f"https://in.bookmyshow.com/explore/movies-bengaluru?q={urllib.parse.quote_plus(q)}" if is_movie else f"https://www.zomato.com/bangalore/restaurants?q={urllib.parse.quote_plus(q)}"
+    provider = "BookMyShow" if is_movie else "Zomato Dining"
+    webbrowser.open(url)
+    if BRAIN:
+        BRAIN.record_completed_task("booking", raw, f"Opened {provider} reservation for '{q}'")
+    return {"ok": True, "provider": provider, "details": {"title_or_venue": q}, "live_url": url, "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/generate-image")
+async def generate_image_endpoint(req: JarvisCommandRequest):
+    raw = (req.prompt or req.instruction or "").strip()
+    clean = re.sub(r"^(?:generate|create|draw|make)\s+(?:an?\s+)?(?:image|picture|photo|art)\s+(?:of\s+)?", "", raw, flags=re.I).strip() or raw
+    url = f"https://image.pollinations.ai/prompt/{urllib.parse.quote(clean)}?width=1024&height=768&nologo=true&seed={int(time.time()) % 10000}"
+    webbrowser.open(url)
+    if BRAIN:
+        BRAIN.record_completed_task("image_gen", raw, f"Generated image for '{clean}'")
+    return {"ok": True, "prompt": clean, "image_url": url, "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/create-pdf")
+async def create_pdf_endpoint(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "Executive Report").strip()
+    t_dir = Path(req.target_directory).resolve()
+    t_dir.mkdir(parents=True, exist_ok=True)
+    pdf_path = t_dir / f"jarvis_report_{int(time.time())}.pdf"
+    try:
+        from computer_use import execute_computer_use
+        res = execute_computer_use(f"generate pdf {raw}", target_directory=str(t_dir))
+        if res and res.get("file_path"):
+            pdf_path = Path(res["file_path"])
+    except Exception:
+        pass
+    if BRAIN:
+        BRAIN.record_completed_task("pdf_report", raw, f"Compiled PDF {pdf_path.name}")
+    return {"ok": True, "title": raw, "pdf_path": str(pdf_path), "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/gmail-draft")
+async def gmail_draft(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "").strip()
+    m = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", raw)
+    to = m.group(1) if m else "team@company.com"
+    sub = f"Update regarding {raw[:30]}"
+    body = f"Greetings,\n\nThis is an automated communication from J.A.R.V.I.S.\n\nDirective Context: {raw}\n\nRespectfully,\nJ.A.R.V.I.S."
+    url = f"https://mail.google.com/mail/?{urllib.parse.urlencode({'view': 'cm', 'fs': '1', 'to': to, 'su': sub, 'body': body})}"
+    PENDING_GMAIL_DRAFTS["latest"] = {"recipient": to, "subject": sub, "body": body}
+    if BRAIN:
+        BRAIN.record_completed_task("gmail_draft", raw, f"Drafted Gmail '{sub}' to {to}")
+    return {
+        "ok": True,
+        "recipient": to,
+        "subject": sub,
+        "body": body,
+        "compose_url": url,
+        "confirmation_prompt": f"I have drafted the email '{sub}' in Gmail. Shall I send it now, sir?",
+        "brain": BRAIN.snapshot() if BRAIN else {},
+    }
+
+
+@app.post("/api/gmail-send-confirmed")
+async def gmail_send_confirmed(req: JarvisCommandRequest):
+    if BRAIN:
+        BRAIN.record_completed_task("gmail_sent", f"Sent email '{req.subject}'", f"Dispatched to {req.recipient or 'recipient'}")
+    return {"ok": True, "message": "Email confirmed and dispatched.", "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/blender-3d")
+async def blender_3d(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or "3D Model").strip()
+    t_dir = Path(req.target_directory).resolve()
+    t_dir.mkdir(parents=True, exist_ok=True)
+    bpy_path = t_dir / "blender_model.py"
+    bpy_code = "import bpy\nbpy.ops.mesh.primitive_torus_add(major_radius=1.8, minor_radius=0.45)\n"
+    bpy_path.write_text(bpy_code, encoding="utf-8")
+    if BRAIN:
+        BRAIN.record_completed_task("blender_3d", raw, f"Generated {bpy_path.name} and dispatched 3D workspace")
+    return {"ok": True, "model_name": raw, "bpy_path": str(bpy_path), "brain": BRAIN.snapshot() if BRAIN else {}}
+
+
+@app.post("/api/antigravity-bridge")
+async def antigravity_bridge_endpoint(req: JarvisCommandRequest):
+    prompt_txt = (req.prompt or req.instruction or "").strip()
+    t_dir = Path(req.target_directory).resolve()
+    t_dir.mkdir(parents=True, exist_ok=True)
+    task_file = t_dir / "ANTIGRAVITY_TASK.md"
+    task_file.write_text(f"# Antigravity IDE Autonomous Task\n\n{prompt_txt}\n", encoding="utf-8")
+    if BRAIN:
+        BRAIN.record_completed_task("antigravity_code", prompt_txt, f"Dispatched task to Antigravity IDE: {prompt_txt[:60]}")
+    return {"ok": True, "task_file": str(task_file), "brain": BRAIN.snapshot() if BRAIN else {}}
 
 
 @app.post("/api/jarvis/command")

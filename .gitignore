@@ -54,3 +54,7 @@ backend/check_*
 backend/fix_*
 backend/solution.py
 backend/swap_variables.py
+scratch/
+*.db
+workspace_app/
+backend/workspace_app/

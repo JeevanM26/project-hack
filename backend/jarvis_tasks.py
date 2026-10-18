@@ -171,6 +171,14 @@ class JarvisTaskManager:
             except Exception:
                 pass
 
+        # Extra safety: Terminate any lingering notepad.exe processes
+        for proc in psutil.process_iter(['name']):
+            try:
+                if proc.info.get('name') and proc.info['name'].lower() in ('notepad.exe', 'notepad'):
+                    proc.kill()
+            except Exception:
+                pass
+
         if BRAIN:
             try:
                 BRAIN.record_completed_task(

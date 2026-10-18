@@ -1,1349 +1,1755 @@
 <!DOCTYPE html>
+
 <html lang="en" class="dark">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>J.A.R.V.I.S. &mdash; Mark VII Autonomous AI System (Gemma 4 Neural Core)</title>
+
+  <title>J.A.R.V.I.S. v11.0 GODMODE</title>
+
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
+
     * { box-sizing: border-box; }
+
     html, body {
+
       margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
-      background: radial-gradient(circle at 50% 45%, #091222 0%, #03060c 55%, #000000 100%);
+
+      background: radial-gradient(circle at 50% 45%, #0d1627 0%, #03060c 52%, #000000 100%);
+
       color: #f8fafc; font-family: 'Inter', sans-serif; user-select: none;
+
     }
-    .orbitron { font-family: 'Orbitron', sans-serif; }
+
     .mono { font-family: 'JetBrains Mono', monospace; }
+
     #jarvisSphereCanvas { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; z-index: 1; cursor: pointer; }
-    
-    /* Stark Holographic Glass */
+
     .hud-glass {
-      background: rgba(7, 11, 20, 0.84); backdrop-filter: blur(20px);
-      border: 1px solid rgba(245, 158, 11, 0.35);
-      box-shadow: 0 0 45px rgba(245, 158, 11, 0.16), inset 0 0 20px rgba(245, 158, 11, 0.08);
-    }
-    .hud-glass-terminal {
-      background: rgba(5, 10, 18, 0.94); backdrop-filter: blur(22px);
-      border: 1px solid rgba(16, 185, 129, 0.45);
-      box-shadow: 0 0 40px rgba(16, 185, 129, 0.16), inset 0 0 16px rgba(16, 185, 129, 0.06);
-    }
-    .hud-glass-task {
-      background: rgba(10, 15, 26, 0.88); backdrop-filter: blur(18px);
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      box-shadow: 0 0 35px rgba(56, 189, 248, 0.14), inset 0 0 14px rgba(56, 189, 248, 0.06);
-    }
-    .hud-glass-vitals {
-      background: rgba(6, 10, 18, 0.86); backdrop-filter: blur(18px);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      box-shadow: 0 0 35px rgba(245, 158, 11, 0.12);
+
+      background: rgba(7, 11, 20, 0.80); backdrop-filter: blur(16px);
+
+      border: 1px solid rgba(245, 158, 11, 0.34);
+
+      box-shadow: 0 0 40px rgba(245, 158, 11, 0.14), inset 0 0 16px rgba(245, 158, 11, 0.06);
+
     }
 
-    /* Glows */
-    .hud-glow-text { text-shadow: 0 0 16px rgba(245, 158, 11, 0.7); }
-    .hud-glow-cyan { text-shadow: 0 0 16px rgba(56, 189, 248, 0.7); }
-    .hud-glow-emerald { text-shadow: 0 0 16px rgba(16, 185, 129, 0.7); }
-    .hud-glow-crimson { text-shadow: 0 0 16px rgba(244, 63, 94, 0.8); }
+    .hud-glow-text { text-shadow: 0 0 16px rgba(245, 158, 11, 0.65); }
 
-    /* Scrollbars */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: transparent; }
+
     ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.35); border-radius: 9999px; }
-    .term-scroll::-webkit-scrollbar-thumb { background: rgba(16, 185, 129, 0.4); border-radius: 9999px; }
-    .task-scroll::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.4); border-radius: 9999px; }
 
-    /* Flight HUD Grid Lines */
-    .flight-hud-grid {
-      background-image: 
-        linear-gradient(rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
-      background-size: 48px 48px;
-    }
   </style>
+
 </head>
-<body class="relative flight-hud-grid">
 
-  <!-- FULL-SCREEN AVENGERS J.A.R.V.I.S. 3D HOLOGRAPHIC SPHERE (3200 FIBONACCI POINTS) -->
-  <canvas id="jarvisSphereCanvas" title="Click anywhere on sphere to activate voice recognition"></canvas>
+<body>
 
-  <!-- ===================================================================== -->
-  <!-- TOP HEADER: STARK INDUSTRIES TELEMETRY & TACTICAL CONTROLS            -->
-  <!-- ===================================================================== -->
-  <header class="fixed top-0 left-0 right-0 z-20 flex items-center justify-between px-5 py-3 border-b border-amber-500/20 bg-black/50 backdrop-blur-md pointer-events-auto">
-    <!-- Left: Identity & Arc Reactor Emblem -->
-    <div class="flex items-center gap-3">
-      <div id="arcReactorEmblem" class="relative w-8 h-8 rounded-full border border-amber-400 flex items-center justify-center bg-amber-950/40 shadow-lg shadow-amber-950/50 cursor-pointer" title="Click to trigger Arc Pulse">
-        <div class="w-2.5 h-2.5 rounded-full bg-amber-300 animate-ping"></div>
-        <div class="absolute w-5 h-5 rounded-full border border-dashed border-amber-200/50 animate-spin"></div>
-      </div>
-      <div>
-        <div class="orbitron font-black text-sm tracking-widest text-amber-300 flex items-center gap-2 hud-glow-text">
-          J.A.R.V.I.S.
-          <span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">MARK VII</span>
-        </div>
-        <div class="text-[9px] mono text-slate-400 tracking-wider">AUTONOMOUS MULTIMODAL COMPANION &bull; GEMMA 4 NEURAL CORE</div>
-      </div>
-    </div>
 
-    <!-- Center: 3D Holographic Geometry Modes -->
-    <div class="hidden lg:flex items-center gap-1.5 bg-black/60 border border-amber-500/25 rounded-full p-1 text-[10px] mono">
-      <button id="btnModeSphere" type="button" class="px-3 py-1 rounded-full bg-amber-500 text-black font-bold transition shadow-md" title="Avengers Mark VII Neural Sphere">⚛️ Mark VII Sphere</button>
-      <button id="btnModeReactor" type="button" class="px-3 py-1 rounded-full bg-transparent hover:bg-amber-500/20 text-amber-200 transition" title="Iron Man Arc Reactor Plasma Core">⚡ Arc Reactor</button>
-      <button id="btnModeGrid" type="button" class="px-3 py-1 rounded-full bg-transparent hover:bg-amber-500/20 text-amber-200 transition" title="Global Satellite Defense Grid">🛰️ Quantum Grid</button>
-    </div>
 
-    <!-- Right: Vitals, SFX Toggle, Connection Status & Settings -->
-    <div class="flex items-center gap-2 text-xs mono">
-      <!-- Live Vitals Pill -->
-      <div id="topVitalsPill" class="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-black/70 border border-amber-500/30 text-amber-300 text-[10px]" title="Hardware Vitals">
-        <span class="flex items-center gap-1">CPU: <strong id="vitalsCpuText" class="text-white">12%</strong></span>
-        <span class="text-amber-500/40">&bull;</span>
-        <span class="flex items-center gap-1">RAM: <strong id="vitalsRamText" class="text-white">6.8G</strong></span>
-        <span class="text-amber-500/40">&bull;</span>
-        <span class="text-emerald-400 font-bold" id="vitalsGpuText">RTX 5060</span>
-      </div>
+  <!-- FULL-SCREEN AVENGERS J.A.R.V.I.S. 3D HOLOGRAPHIC SPHERE -->
 
-      <!-- SFX Toggle -->
-      <button id="btnToggleSfx" type="button" class="px-2.5 py-1 rounded-full bg-amber-950/60 hover:bg-amber-800 border border-amber-500/40 text-amber-300 text-[10px] transition" title="Toggle Procedural Stark Sci-Fi Audio FX">
-        🔊 SFX ON
-      </button>
+  <canvas id="jarvisSphereCanvas" title="Click sphere to speak to J.A.R.V.I.S."></canvas>
 
-      <!-- Connection Status Dot -->
-      <span id="connStatusDot" class="w-3 h-3 rounded-full bg-amber-400 animate-pulse shadow-md" title="Backend: Initializing..."></span>
 
-      <!-- Settings Icon -->
-      <button id="btnOpenSettings" type="button" class="w-8 h-8 rounded-full hud-glass flex items-center justify-center text-amber-300 hover:text-amber-100 transition shadow-lg" title="Runtime Settings">&#9881;</button>
-    </div>
-  </header>
 
-  <!-- ===================================================================== -->
-  <!-- LIVE ON-SCREEN ONGOING TASKS & PROTOCOL ZERO HUD WIDGET               -->
-  <!-- ===================================================================== -->
-  <aside id="liveTasksHudBox" class="fixed top-16 left-5 z-20 w-80 md:w-96 rounded-2xl hud-glass-task p-3.5 flex flex-col gap-2.5 text-xs mono pointer-events-auto transition-all shadow-2xl">
-    <div class="flex items-center justify-between border-b border-sky-500/30 pb-2">
-      <div class="flex items-center gap-2">
-        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-        <span class="text-sky-300 font-bold uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-          <span>⚡</span> Active Operations
-        </span>
-        <span id="activeTasksCountBadge" class="text-[9px] px-1.5 py-0.2 rounded-full bg-sky-500/25 text-sky-200 border border-sky-400/30">1 Running</span>
-      </div>
-      <button id="btnProtocolZero" type="button" class="px-2.5 py-1 rounded-lg bg-rose-950/90 hover:bg-rose-800 border border-rose-500/60 text-rose-200 text-[10px] font-bold transition flex items-center gap-1 shadow-lg shadow-rose-950/50" title="Emergency Protocol Zero: Terminate ALL active operations and mute audio immediately">
-        <span>🛑</span> Protocol Zero
-      </button>
-    </div>
+  <!-- TOP-LEFT: ALWAYS-ON SET-OF-MARK (SoM) SCREEN CORTEX & CAMERA HUD -->
 
-    <!-- Active Tasks Live List -->
-    <div id="activeTasksContainer" class="max-h-48 overflow-y-auto space-y-2 task-scroll pr-1">
-      <!-- Populated dynamically via JS -->
-      <div class="bg-black/60 border border-sky-500/20 rounded-xl p-2.5 flex items-center justify-between gap-2 text-[11px]">
-        <div class="space-y-0.5 min-w-0">
-          <div class="text-sky-300 font-semibold truncate flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            <span>Gemma 4 Cognitive Neural Core</span>
-          </div>
-          <div class="text-[9px] text-slate-400">Multimodal Vision &amp; UIA Desktop Observer</div>
-        </div>
-        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0 font-bold">CORE</span>
-      </div>
-    </div>
-  </aside>
+  <div id="visionHudBox" class="fixed top-5 left-5 z-20 w-72 rounded-2xl hud-glass overflow-hidden p-2.5 space-y-1.5">
 
-  <!-- ===================================================================== -->
-  <!-- LIVE CAMERA & SCREEN VISION LENS (SHOWN ONLY WHEN ACTIVE)            -->
-  <!-- ===================================================================== -->
-  <div id="visionHudBox" class="hidden fixed top-16 right-5 z-20 w-64 rounded-2xl hud-glass overflow-hidden p-2.5 space-y-1.5 pointer-events-auto shadow-2xl">
-    <div class="flex items-center justify-between text-[10px] mono text-amber-300 px-1">
+    <div class="flex items-center justify-between text-[10px] mono text-amber-300">
+
       <span class="flex items-center gap-1.5 font-bold">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>GEMMA 4 LIVE VISION LENS</span>
+
+        <span id="watchPulseDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+
+        <span>SoM SCREEN CORTEX v11</span>
+
       </span>
-      <button id="btnCloseVisionHud" type="button" class="text-slate-400 hover:text-white font-bold">&times;</button>
+
+      <div class="flex items-center gap-1">
+
+        <button id="btnToggleSom" type="button" class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold" title="Toggle Set-of-Mark (#1, #2) UIA Bounding Boxes">SoM: ON</button>
+
+        <button id="btnToggleAlwaysWatch" type="button" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-bold">LIVE</button>
+
+      </div>
+
     </div>
-    <video id="laptopCameraVideo" autoplay muted playsinline class="w-full h-36 object-cover rounded-xl bg-black border border-amber-500/30"></video>
-    <video id="screenShareVideo" autoplay muted playsinline class="hidden w-full h-28 object-cover rounded-xl bg-black border border-sky-500/30"></video>
+
+
+
+    <img id="nativeScreenPreview" alt="Set-of-Mark Live Desktop" class="w-full h-36 object-cover rounded-xl bg-black/80 border border-amber-500/30" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+
+    <video id="laptopCameraVideo" autoplay muted playsinline class="hidden w-full h-28 object-cover rounded-xl bg-black border border-amber-500/30"></video>
+
+    <video id="screenShareVideo" autoplay muted playsinline class="hidden w-full h-24 object-cover rounded-xl bg-black border border-sky-500/30"></video>
+
     <canvas id="visionCaptureCanvas" width="640" height="480" class="hidden"></canvas>
-    <div class="flex items-center justify-between text-[9px] mono text-slate-300 px-1 pt-1">
-      <span id="uiaStatusPill" class="text-emerald-400 flex items-center gap-1">
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> UIA + Vision Ready
-      </span>
-      <button id="btnSnapAndAnalyze" type="button" class="px-2.5 py-1 rounded bg-amber-500 text-black font-bold hover:bg-amber-400 transition">Analyze</button>
+
+
+
+    <div class="text-[9px] mono text-slate-300 space-y-1">
+
+      <div class="flex items-center justify-between">
+
+        <span id="uiaStatusPill" class="text-emerald-400 truncate max-w-[165px]">SoM UIA: Watching Desktop</span>
+
+        <button id="btnHumanActNow" type="button" class="px-2 py-0.5 rounded bg-amber-500 text-black font-bold hover:bg-amber-400">Act on Screen</button>
+
+      </div>
+
+      <div id="fgWindowLabel" class="text-sky-300 truncate">Active: Desktop</div>
+
     </div>
+
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- 4-TIER COGNITIVE MEMORY BRAIN DRAWER (TOGGLED VIA 🧠 BRAIN)           -->
-  <!-- ===================================================================== -->
-  <div id="brainHudDrawer" class="hidden fixed top-16 right-5 z-30 w-80 md:w-96 max-h-[82vh] rounded-2xl hud-glass p-4 flex flex-col gap-2.5 text-xs mono overflow-hidden pointer-events-auto shadow-2xl">
+
+
+  <!-- TOP-RIGHT: WS TELEMETRY + RTX 5060 BADGE + SETTINGS -->
+
+  <div class="fixed top-5 right-5 z-20 flex items-center gap-2">
+
+    <div id="hwBadge" class="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full hud-glass text-[10px] mono text-amber-200">
+
+      <span id="connStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+
+      <span id="hwBadgeText">Gemma 4 Swarm • RTX 5060 QLoRA</span>
+
+    </div>
+
+    <button id="btnOpenSettings" type="button" class="w-9 h-9 rounded-full hud-glass flex items-center justify-center text-amber-300 hover:text-amber-100">&#9881;</button>
+
+  </div>
+
+
+
+  <!-- GODMODE DRAWER 1: 5-AGENT SWARM BLACKBOARD & AST GROUNDING (`JeevanM26/project-hack`) -->
+
+  <div id="swarmHudDrawer" class="hidden fixed top-16 left-5 z-30 w-80 md:w-96 max-h-[75vh] rounded-2xl hud-glass p-3.5 flex flex-col gap-2.5 text-xs mono overflow-hidden">
+
     <div class="flex items-center justify-between border-b border-amber-500/25 pb-2">
-      <span class="text-amber-300 font-bold uppercase text-[11px] flex items-center gap-1.5">
-        <span>🧠</span> J.A.R.V.I.S. 4-Tier Cognitive Brain
-      </span>
-      <button id="btnCloseBrainHud" type="button" class="text-slate-400 hover:text-white text-base font-bold">&times;</button>
+
+      <span class="text-amber-300 font-bold uppercase text-[11px]">⚡ 5-Agent Swarm Blackboard &amp; AST</span>
+
+      <button id="btnCloseSwarmHud" type="button" class="text-slate-400 hover:text-white text-sm font-bold">&times;</button>
+
     </div>
+
+
+
     <div class="overflow-y-auto space-y-2.5 pr-1">
-      <div class="bg-black/55 border border-amber-500/25 rounded-xl p-2.5 space-y-1">
-        <div class="text-[10px] text-amber-400 font-bold uppercase flex items-center gap-1">
-          <span>1.</span> What I Am (Identity &amp; Persona)
-        </div>
-        <div id="brainIdentityBox" class="text-[11px] text-slate-200 leading-relaxed"></div>
+
+      <div class="grid grid-cols-5 gap-1 text-[9px] text-center">
+
+        <div class="p-1.5 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-bold">ORCH</div>
+
+        <div class="p-1.5 rounded bg-sky-500/15 border border-sky-500/30 text-sky-300 font-bold">AST</div>
+
+        <div class="p-1.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">CODER</div>
+
+        <div class="p-1.5 rounded bg-purple-500/15 border border-purple-500/30 text-purple-300 font-bold">AUDIT</div>
+
+        <div class="p-1.5 rounded bg-rose-500/15 border border-rose-500/30 text-rose-300 font-bold">SoM GUI</div>
+
       </div>
+
+
+
       <div class="bg-black/55 border border-sky-500/30 rounded-xl p-2.5 space-y-1">
+
         <div class="flex items-center justify-between">
-          <span class="text-[10px] text-sky-400 font-bold uppercase flex items-center gap-1">
-            <span>2.</span> Doing Right Now (Working Memory)
-          </span>
-          <span id="brainDoingBadge" class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">ONLINE</span>
+
+          <span class="text-[10px] text-sky-400 font-bold uppercase">AST Symbol Grounding Index</span>
+
+          <button id="btnRefreshAst" type="button" class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[9px] hover:bg-sky-500/35">Scan AST</button>
+
         </div>
-        <div id="brainDoingTask" class="text-[11px] text-white font-medium"></div>
-        <div id="brainThoughtTrace" class="text-[10px] text-amber-200/85 italic"></div>
+
+        <div id="astSummaryText" class="text-[10px] text-slate-300">Deterministic Python/JS symbol table prevents LLM hallucinations.</div>
+
+        <div id="astSymbolsList" class="text-[9px] text-sky-200/80 max-h-20 overflow-y-auto space-y-0.5"></div>
+
       </div>
+
+
+
+      <div class="bg-black/55 border border-amber-500/30 rounded-xl p-2.5 space-y-1.5">
+
+        <div class="flex items-center justify-between">
+
+          <span class="text-[10px] text-amber-400 font-bold uppercase">Shared Global Blackboard</span>
+
+          <span id="wsStatusBadge" class="text-[9px] text-emerald-400">WS LIVE</span>
+
+        </div>
+
+        <ul id="blackboardList" class="space-y-1 max-h-32 overflow-y-auto text-[10px] text-slate-300"></ul>
+
+      </div>
+
+
+
       <div class="bg-black/55 border border-emerald-500/30 rounded-xl p-2.5 space-y-1.5">
+
         <div class="flex items-center justify-between">
-          <span class="text-[10px] text-emerald-400 font-bold uppercase flex items-center gap-1">
-            <span>3.</span> Tasks I Did (Episodic Memory)
-          </span>
+
+          <span class="text-[10px] text-emerald-400 font-bold uppercase">RTX 5060 QLoRA Trajectories</span>
+
+          <span id="qloraCountBadge" class="text-[9px] text-emerald-300">0 logged</span>
+
+        </div>
+
+        <div class="text-[9px] text-slate-400">Every SoM human GUI action is saved to `gui_trajectories.jsonl` for Unsloth QLoRA fine-tuning.</div>
+
+        <button id="btnExportModelfile" type="button" class="w-full py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/35 border border-emerald-400/40 text-emerald-200 font-bold text-[10px]">
+
+          Export `Modelfile.rtx5060` &amp; QLoRA Trainer
+
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+  <!-- GODMODE DRAWER 2: 4-TIER COGNITIVE MEMORY BRAIN (`🧠 Brain`) -->
+
+  <div id="brainHudDrawer" class="hidden fixed top-16 right-5 z-30 w-80 md:w-96 max-h-[75vh] rounded-2xl hud-glass p-3.5 flex flex-col gap-2.5 text-xs mono overflow-hidden">
+
+    <div class="flex items-center justify-between border-b border-amber-500/25 pb-2">
+
+      <span class="text-amber-300 font-bold uppercase text-[11px]">🧠 4-Tier SQLite Cognitive Brain</span>
+
+      <button id="btnCloseBrainHud" type="button" class="text-slate-400 hover:text-white text-sm font-bold">&times;</button>
+
+    </div>
+
+    <div class="overflow-y-auto space-y-2.5 pr-1">
+
+      <div class="bg-black/55 border border-amber-500/25 rounded-xl p-2.5 space-y-1">
+
+        <div class="text-[10px] text-amber-400 font-bold uppercase">1. What I Am (Identity &amp; Hardware)</div>
+
+        <div id="brainIdentityBox" class="text-[11px] text-slate-200 leading-relaxed"></div>
+
+      </div>
+
+      <div class="bg-black/55 border border-sky-500/30 rounded-xl p-2.5 space-y-1">
+
+        <div class="flex items-center justify-between">
+
+          <span class="text-[10px] text-sky-400 font-bold uppercase">2. Doing Right Now (Working Memory)</span>
+
+          <span id="brainDoingBadge" class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300">GODMODE</span>
+
+        </div>
+
+        <div id="brainDoingTask" class="text-[11px] text-white font-medium"></div>
+
+        <div id="brainThoughtTrace" class="text-[10px] text-amber-200/85 italic"></div>
+
+      </div>
+
+      <div class="bg-black/55 border border-emerald-500/30 rounded-xl p-2.5 space-y-1.5">
+
+        <div class="flex items-center justify-between">
+
+          <span class="text-[10px] text-emerald-400 font-bold uppercase">3. Tasks I Did (Episodic Memory)</span>
+
           <span id="brainDidCount" class="text-[9px] text-emerald-300">0 completed</span>
+
         </div>
+
         <ul id="brainDidList" class="space-y-1 max-h-28 overflow-y-auto text-[10px] text-slate-300"></ul>
+
       </div>
+
       <div class="bg-black/55 border border-purple-500/30 rounded-xl p-2.5 space-y-1.5">
+
         <div class="flex items-center justify-between">
-          <span class="text-[10px] text-purple-300 font-bold uppercase flex items-center gap-1">
-            <span>4.</span> What I Have To Do (Goal Queue)
-          </span>
+
+          <span class="text-[10px] text-purple-300 font-bold uppercase">4. What I Have To Do (Goal Queue)</span>
+
           <span id="brainTodoCount" class="text-[9px] text-purple-300">0 pending</span>
+
         </div>
+
         <ul id="brainTodoList" class="space-y-1 max-h-28 overflow-y-auto text-[10px] text-slate-200"></ul>
+
         <div class="flex gap-1.5 pt-1">
-          <input id="newGoalInput" type="text" placeholder="Add goal for J.A.R.V.I.S. to remember..." class="flex-1 bg-black/75 border border-amber-500/30 rounded-lg px-2.5 py-1 text-[10px] text-white focus:outline-none focus:border-amber-400" />
-          <button id="btnAddGoal" type="button" class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px]">+ Goal</button>
+
+          <input id="newGoalInput" type="text" placeholder="Add goal for J.A.R.V.I.S. to remember..." class="flex-1 bg-black/75 border border-amber-500/30 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none" />
+
+          <button id="btnAddGoal" type="button" class="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-[10px]">+ Goal</button>
+
         </div>
+
       </div>
+
+    </div>
+
+  </div>
+
+
+
+  
+  <!-- ON-SCREEN ACTIVE OPERATIONS & PROTOCOL ZERO HUD -->
+  <div id="liveTasksHudBox" class="fixed bottom-24 left-5 z-20 w-80 max-h-64 rounded-2xl hud-glass p-3 flex flex-col gap-2 text-xs mono overflow-hidden shadow-2xl">
+    <div class="flex items-center justify-between border-b border-amber-500/25 pb-1.5">
+      <div class="flex items-center gap-1.5 font-bold text-amber-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>ONGOING TASKS (<span id="activeTasksCount">0</span>)</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button id="btnRefreshTasks" type="button" class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 text-[10px] hover:bg-sky-500/40" title="Refresh Tasks">&#8635;</button>
+        <button id="btnKillAllTasks" type="button" class="px-2 py-0.5 rounded bg-rose-500/30 text-rose-300 text-[10px] font-bold hover:bg-rose-500 hover:text-black transition" title="Engage Protocol Zero & Wipe All">🛑 WIPE ALL</button>
+      </div>
+    </div>
+    <div id="activeTasksList" class="overflow-y-auto space-y-1.5 max-h-48 pr-1">
+      <div class="text-slate-400 text-[11px] italic">No active background tasks</div>
     </div>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- NATIVE WINDOWS POWERSHELL TERMINAL DRAWER (TOGGLED VIA 💻 TERM)        -->
-  <!-- ===================================================================== -->
-  <div id="jarvisTerminalDrawer" class="hidden fixed top-16 left-5 md:left-20 z-30 w-80 md:w-[500px] max-h-[82vh] rounded-2xl hud-glass-terminal p-4 flex flex-col gap-2.5 text-xs mono overflow-hidden pointer-events-auto shadow-2xl">
-    <div class="flex items-center justify-between border-b border-emerald-500/30 pb-2">
-      <div class="flex items-center gap-2">
-        <span class="text-emerald-400 font-bold uppercase text-[11px] flex items-center gap-1.5">
-          <span>💻</span> Windows PowerShell Shell
-        </span>
-        <span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">NATIVE SYSTEM ACCESS</span>
+  <!-- INTERACTIVE TERMINAL SHELL DRAWER -->
+  <div id="jarvisTerminalDrawer" class="hidden fixed bottom-24 right-5 z-30 w-96 md:w-[480px] max-h-[75vh] rounded-2xl hud-glass p-3.5 flex flex-col gap-2.5 text-xs mono overflow-hidden shadow-2xl">
+    <div class="flex items-center justify-between border-b border-amber-500/25 pb-2">
+      <div class="flex items-center gap-2 font-bold text-amber-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>J.A.R.V.I.S. TERMINAL SHELL</span>
       </div>
-      <button id="btnCloseTerminal" type="button" class="text-slate-400 hover:text-white text-base font-bold">&times;</button>
+      <div class="flex items-center gap-1.5">
+        <button id="btnClearTerminal" type="button" class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:text-white">Clear</button>
+        <button id="btnCloseTerminal" type="button" class="text-slate-400 hover:text-white text-base font-bold">&times;</button>
+      </div>
     </div>
-    
-    <!-- Quick Presets -->
-    <div class="flex flex-wrap gap-1.5 text-[10px]">
-      <button type="button" class="termPresetBtn px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-800 transition" data-cmd="Get-Process | Sort-Object CPU -Descending | Select-Object -First 5">Top CPU</button>
-      <button type="button" class="termPresetBtn px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-800 transition" data-cmd="Get-Service | Where-Object Status -eq 'Running' | Select-Object -First 6">Services</button>
-      <button type="button" class="termPresetBtn px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-800 transition" data-cmd="dir">dir</button>
-      <button type="button" class="termPresetBtn px-2 py-0.5 rounded bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-800 transition" data-cmd="git status">git status</button>
-      <button type="button" class="termPresetBtn px-2 py-0.5 rounded bg-rose-950/70 border border-rose-500/40 text-rose-300 hover:bg-rose-800 transition" data-cmd="python -c 'from backend.computer_use import stop_all_media_playback; print(stop_all_media_playback())'">Test Media Stop</button>
+    <div id="terminalLog" class="flex-1 min-h-[180px] max-h-72 overflow-y-auto bg-black/70 border border-amber-500/20 rounded-xl p-2.5 space-y-1 text-[11px] text-slate-300 whitespace-pre-wrap select-text font-mono">
+<span class="text-emerald-400">J.A.R.V.I.S. PowerShell System Terminal Ready.</span>
     </div>
-
-    <!-- Output Terminal Box -->
-    <div id="terminalOutputBox" class="flex-1 min-h-[220px] max-h-[360px] bg-black/85 border border-emerald-500/30 rounded-xl p-3 overflow-y-auto text-[11px] text-emerald-300 whitespace-pre-wrap font-mono leading-relaxed term-scroll">
-PowerShell Session Armed.
-Ready to run any native command or system diagnostic.
-    </div>
-
-    <!-- Command Input -->
-    <div class="flex gap-1.5 pt-1">
-      <input id="termCmdInput" type="text" placeholder="Enter PowerShell command (e.g. dir, git log, ipconfig)..." class="flex-1 bg-black/80 border border-emerald-500/40 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-400" />
-      <button id="btnRunTermCmd" type="button" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs">Run</button>
-      <button id="btnClearTermOut" type="button" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">Clear</button>
-    </div>
+    <form id="terminalForm" class="flex items-center gap-2">
+      <input id="terminalInput" type="text" placeholder="Enter shell command (e.g. dir, git status, python)..." class="flex-1 bg-black/70 border border-amber-500/30 rounded-xl px-3 py-2 text-xs text-amber-100 placeholder-slate-500 focus:outline-none focus:border-amber-400 font-mono" />
+      <button type="submit" class="px-3.5 py-2 rounded-xl bg-amber-500 text-black font-bold hover:bg-amber-400 text-xs shrink-0">Run</button>
+    </form>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- BOTTOM FLOATING THOUGHT STREAM + SUBTITLE + COMMAND BAR               -->
-  <!-- ===================================================================== -->
-  <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-20 w-full max-w-3xl px-4 flex flex-col items-center gap-2 pointer-events-none">
-    
-    <!-- Real-time Cognitive Thought Pill -->
-    <div id="jarvisThoughtPill" class="px-4 py-1.5 rounded-full bg-black/60 border border-sky-500/30 text-sky-300/90 text-[11px] mono text-center max-w-xl truncate pointer-events-auto shadow-lg shadow-sky-950/40">
-      🧠 COGNITIVE BRAIN: 4-TIER MEMORY, GEMMA 4 MULTIMODAL VISION &amp; WINDOWS UIA READY
+  <!-- BOTTOM FLOATING THOUGHT STREAM + SUBTITLE + MULTILINGUAL GODMODE BAR -->
+
+  <div class="fixed bottom-5 left-1/2 -translate-x-1/2 z-20 w-full max-w-4xl px-4 flex flex-col items-center gap-2 pointer-events-none">
+
+    <div id="jarvisThoughtPill" class="px-3.5 py-1 rounded-full bg-black/60 border border-sky-500/30 text-sky-300 text-[11px] mono text-center max-w-2xl truncate pointer-events-auto">
+
+      ⚡ GODMODE v11.0 ACTIVE &mdash; SET-OF-MARK VISION + 5-AGENT GEMMA 4 SWARM + AST SYMBOL GROUNDING
+
     </div>
 
-    <!-- Movie-Accurate Hologram Subtitle -->
-    <div id="jarvisSubtitle" class="px-5 py-2 rounded-2xl bg-black/75 border border-amber-500/30 text-amber-200/95 text-xs md:text-sm mono text-center tracking-wide hud-glow-text max-w-2xl line-clamp-2 pointer-events-auto shadow-xl shadow-amber-950/40">
-      J.A.R.V.I.S. ONLINE &mdash; SPEAK, SHOW ON CAMERA, RUN TERMINAL, OR TYPE ANY DIRECTIVE
+    <div id="jarvisSubtitle" class="px-4 py-1.5 rounded-2xl bg-black/75 border border-amber-500/30 text-amber-200 text-xs md:text-sm mono text-center tracking-wide hud-glow-text max-w-2xl line-clamp-2 pointer-events-auto">
+
+      J.A.R.V.I.S. v11.0 GODMODE &mdash; UNIFIED `JEEVANM26/PROJECT-HACK` SWARM &amp; HUMAN VISUAL OS
+
     </div>
 
-    <!-- Gmail Confirmation Bar (Shown only when drafting emails) -->
-    <div id="gmailConfirmBar" class="hidden hud-glass rounded-full px-4 py-2 flex items-center gap-3 text-xs mono pointer-events-auto shadow-2xl shadow-amber-500/20">
+
+
+    <div id="gmailConfirmBar" class="hidden hud-glass rounded-full px-4 py-2 flex items-center gap-3 text-xs mono pointer-events-auto">
+
       <span id="gmailConfirmText" class="text-amber-100 truncate max-w-xs">Draft ready in Gmail. Send now?</span>
-      <button id="btnConfirmSendGmail" type="button" class="px-3.5 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold transition">Yes, Send Now</button>
-      <button id="btnCancelSendGmail" type="button" class="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 transition">Keep Draft</button>
+
+      <button id="btnConfirmSendGmail" type="button" class="px-3.5 py-1 rounded-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold">Yes, Send Now</button>
+
+      <button id="btnCancelSendGmail" type="button" class="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300">Keep Draft</button>
+
     </div>
 
-    <!-- Bottom Action Dock -->
-    <div class="w-full hud-glass rounded-full p-2 flex items-center gap-1.5 pointer-events-auto shadow-2xl shadow-black/80">
-      <button id="btnVoiceMic" type="button" class="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono flex items-center gap-1.5 shrink-0 transition shadow-lg shadow-amber-500/30" title="Click or tap to speak">
+
+
+    <div class="w-full hud-glass rounded-full p-1.5 flex items-center gap-1.5 pointer-events-auto">
+
+      <button id="btnVoiceMic" type="button" class="px-3.5 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono flex items-center gap-1.5 shrink-0">
+
         <span class="w-2 h-2 rounded-full bg-black animate-ping"></span>
+
         <span id="micLabel">Speak</span>
+
       </button>
 
-      <!-- Instant Media Stop Button -->
-      <button id="btnStopMedia" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-rose-500/25 border border-rose-500/50 text-rose-200 text-xs mono shrink-0 transition flex items-center gap-1" title="Instantly Mute &amp; Halt All Background Browser Audio (Win32 + Pycaw)">
-        <span>⏹️</span> Stop
+      <select id="voiceLangSelect" class="bg-black/70 border border-amber-500/35 text-amber-200 text-[11px] mono rounded-full px-2.5 py-2 focus:outline-none shrink-0" title="Sarvam AI Voice OS Language">
+
+        <option value="en-IN">EN-IN</option>
+
+        <option value="hi-IN">HI-IN</option>
+
+        <option value="kn-IN">KN-IN</option>
+
+      </select>
+
+      <button id="btnStopMedia" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-rose-500/25 border border-rose-500/40 text-rose-200 text-xs mono shrink-0" title="Stop / Pause Active Media & Voice">
+
+        &#9209; Stop
+
       </button>
 
-      <button id="btnToggleCamera" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-xs mono shrink-0 transition flex items-center gap-1">
-        <span>📷</span> Cam
-      </button>
-      <button id="btnToggleScreenVision" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-sky-500/20 border border-sky-500/35 text-sky-200 text-xs mono shrink-0 transition flex items-center gap-1">
-        <span>🖥️</span> Vision
-      </button>
-      <button id="btnToggleBrain" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-purple-500/20 border border-purple-400/40 text-purple-200 text-xs mono shrink-0 transition flex items-center gap-1">
-        <span>🧠</span> Brain
-      </button>
-      <button id="btnToggleTerminal" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs mono shrink-0 transition flex items-center gap-1" title="Open Native Windows PowerShell Terminal Drawer">
-        <span>💻</span> Term
-      </button>
+      <button id="btnToggleCamera" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-xs mono shrink-0" title="Laptop Webcam Vision">&#128247;</button>
 
-      <input id="mainCommandInput" type="text" autocomplete="off" placeholder="Say 'stop playing', 'download python', 'calc', 'open youtube', or run any task..." class="flex-1 bg-transparent text-amber-50 placeholder-amber-200/40 text-xs md:text-sm mono px-3 focus:outline-none" />
+      <button id="btnToggleSwarm" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs mono shrink-0" title="Open 5-Agent Swarm Blackboard & AST Matrix">&#9889; Swarm</button>
 
-      <button id="btnExecuteCommand" type="button" class="px-4 py-2.5 rounded-full bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/50 text-amber-200 font-semibold text-xs mono shrink-0 transition">Send</button>
+      <button id="btnToggleBrain" type="button" class="px-3 py-2.5 rounded-full bg-black/60 hover:bg-purple-500/20 border border-purple-400/40 text-purple-200 text-xs mono shrink-0" title="Open 4-Tier SQLite Cognitive Brain">&#129504; Brain</button>
+      <button id="btnToggleTasks" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-amber-500/20 border border-amber-500/35 text-amber-200 text-xs mono shrink-0" title="Toggle Ongoing Tasks HUD">&#128203; Tasks</button>
+      <button id="btnToggleTerminal" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-500/35 text-emerald-200 text-xs mono shrink-0" title="Open Interactive Terminal">&#128187; Term</button>
+      <button id="btnToggleArcReactor" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 text-xs mono shrink-0" title="Arc Reactor Mode">&#9883; Arc</button>
+      <button id="btnToggleQuantumGrid" type="button" class="px-2.5 py-2.5 rounded-full bg-black/60 hover:bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs mono shrink-0" title="Quantum Grid Mode">&#127760; Grid</button>
+      <button id="btnProtocolZero" type="button" class="px-2.5 py-2.5 rounded-full bg-rose-950/60 hover:bg-rose-600/40 border border-rose-500/60 text-rose-300 text-xs mono font-bold shrink-0" title="Protocol Zero: Stop All Media & Wipe All Tasks">&#128721; Zero</button>
+
+
+      <input id="mainCommandInput" type="text" autocomplete="off" placeholder="Command J.A.R.V.I.S. (e.g. 'Click #1 on screen', 'Run 5-agent swarm to build a dashboard', 'Stop playing')..." class="flex-1 bg-transparent text-amber-50 placeholder-amber-200/40 text-xs md:text-sm mono px-2 focus:outline-none" />
+
+      <button id="btnExecuteCommand" type="button" class="px-4 py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs mono shrink-0">Execute</button>
+
     </div>
+
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- SETTINGS MODAL                                                        -->
-  <!-- ===================================================================== -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 pointer-events-auto">
-    <div class="hud-glass rounded-2xl max-w-md w-full p-5 space-y-3.5 text-xs mono shadow-2xl">
-      <div class="flex items-center justify-between border-b border-amber-500/25 pb-2">
-        <span class="text-amber-300 font-bold uppercase flex items-center gap-1.5">
-          <span>⚙️</span> J.A.R.V.I.S. Runtime Settings
-        </span>
-        <button id="btnCloseSettings" type="button" class="text-slate-400 hover:text-white text-base">&times;</button>
+
+
+  <!-- SETTINGS MODAL -->
+
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+
+    <div class="hud-glass rounded-2xl max-w-md w-full p-5 space-y-3.5 text-xs mono">
+
+      <div class="flex items-center justify-between border-b border-amber-500/20 pb-2">
+
+        <span class="text-amber-300 font-bold uppercase">J.A.R.V.I.S. v11.0 GODMODE Settings</span>
+
+        <button id="btnCloseSettings" type="button" class="text-slate-400 hover:text-white text-sm">&times;</button>
+
       </div>
+
       <div>
-        <label class="block text-amber-200/80 mb-1">Backend URL (`uvicorn backend.main:app --port 8000`):</label>
-        <input id="cfgBackendUrl" type="text" value="http://127.0.0.1:8000" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-amber-400" />
+
+        <label class="block text-amber-200/80 mb-1">Backend URL (`uvicorn main:app --port 8000`):</label>
+
+        <input id="cfgBackendUrl" type="text" value="http://127.0.0.1:8000" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white" />
+
       </div>
+
       <div class="grid grid-cols-2 gap-2">
+
         <div>
+
           <label class="block text-amber-200/80 mb-1">Ollama URL:</label>
-          <input id="cfgOllamaUrl" type="text" value="http://127.0.0.1:11434" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white focus:outline-none" />
+
+          <input id="cfgOllamaUrl" type="text" value="http://127.0.0.1:11434" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white" />
+
         </div>
+
         <div>
+
           <label class="block text-amber-200/80 mb-1">Gemma Model:</label>
-          <input id="cfgOllamaModel" type="text" value="gemma4:27b" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white focus:outline-none" />
+
+          <input id="cfgOllamaModel" type="text" value="gemma4:27b" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white" />
+
         </div>
+
       </div>
+
       <div class="flex items-center justify-between bg-black/50 border border-amber-500/20 rounded-lg px-3 py-1.5">
+
         <span class="text-amber-200">Enable AirLLM 27B Layer-wise Inference:</span>
-        <input id="cfgUseAirllm" type="checkbox" class="accent-amber-400 w-4 h-4 cursor-pointer" />
+
+        <input id="cfgUseAirllm" type="checkbox" class="accent-amber-400 w-4 h-4" />
+
       </div>
+
       <div>
+
         <label class="block text-amber-200/80 mb-1">Antigravity IDE Project Directory:</label>
-        <input id="cfgTargetDir" type="text" value="./hackathon_app" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white focus:outline-none" />
+
+        <input id="cfgTargetDir" type="text" value="./hackathon_app" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white" />
+
       </div>
+
       <div class="grid grid-cols-2 gap-2">
+
         <div>
+
           <label class="block text-amber-200/80 mb-1">Gemini Key (Optional):</label>
-          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white focus:outline-none" />
+
+          <input id="cfgGeminiKey" type="password" placeholder="AIzaSy..." class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white" />
+
         </div>
+
         <div>
+
           <label class="block text-amber-200/80 mb-1">Sarvam TTS Key:</label>
-          <input id="cfgSarvamKey" type="password" placeholder="Optional" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white focus:outline-none" />
+
+          <input id="cfgSarvamKey" type="password" placeholder="Optional" class="w-full bg-black/70 border border-amber-500/30 rounded-lg px-3 py-1.5 text-white" />
+
         </div>
+
       </div>
-      <div class="flex justify-end pt-2">
-        <button id="btnSaveSettings" type="button" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold transition">Save &amp; Connect</button>
+
+      <div class="flex justify-end pt-1">
+
+        <button id="btnSaveSettings" type="button" class="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold">Save &amp; Connect</button>
+
       </div>
+
     </div>
+
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- J.A.R.V.I.S. CLIENT SCRIPT LOGIC                                      -->
-  <!-- ===================================================================== -->
+
+
   <script>
-    const BRAIN_KEY = 'jarvis_v95_brain';
+
+    const BRAIN_KEY = 'jarvis_v11_godmode_brain';
+
     const state = {
+
       backendUrl: 'http://127.0.0.1:8000',
+
       ollamaUrl: 'http://127.0.0.1:11434',
+
       model: 'gemma4:27b',
+
       useAirllm: false,
+
       targetDir: './hackathon_app',
+
       geminiKey: '',
+
       sarvamKey: '',
+
+      voiceLang: 'en-IN',
+
       backendOnline: false,
+
+      alwaysWatch: true,
+
+      somOverlay: true,
+
+      ws: null,
+
       cameraStream: null,
+
       screenStream: null,
-      pendingGmailDraft: null,
-      orbColor: 'gold',
+
+      activeAudio: null,
+
       orbEnergy: 1.0,
-      holoMode: 'sphere', // 'sphere' | 'reactor' | 'grid'
-      sfxEnabled: true,
-      activeTasks: [],
-      brain: {
-        what_it_is: { name: 'J.A.R.V.I.S.', role: 'Autonomous Cognitive Companion & Desktop Controller', model: 'Gemma 4 (Multimodal Vision + Win32 UIA)' },
-        what_it_is_doing: { current_task: 'System Online & Observing', thought_trace: 'Awaiting verbal directive or visual input' },
+
+      orbColor: 'gold',
+
+      pendingGmailDraft: null,
+
+      brain: JSON.parse(localStorage.getItem(BRAIN_KEY) || 'null') || {
+
+        what_it_is: {
+
+          name: 'J.A.R.V.I.S. v11.0 GODMODE (JeevanM26/project-hack Unified Edition)',
+
+          nature: 'Single-Model Gemma 4 Dynamic 5-Agent Swarm, Set-of-Mark Visual OS Agent & Sarvam Voice Companion',
+
+          core_engines: 'Gemma 4 27B Vision + Set-of-Mark (SoM) UIA Grounding + AST Symbol Indexer + Shared Global Blackboard + QLoRA Trajectory Recorder'
+
+        },
+
         what_it_did: [],
-        what_it_has_to_do: []
+
+        what_it_is_doing: { status: 'GODMODE_WATCHING_SCREEN', task: 'Always-On Set-of-Mark (SoM) Screen Cortex + 5-Agent Swarm Ready', last_thought: 'Set-of-Mark visual cortex and AST symbol grounding online.' },
+
+        what_it_has_to_do: [
+
+          { id: 1, goal: 'Continuously watch desktop screen with Set-of-Mark (SoM) bounding boxes & reuse existing windows', status: 'PENDING' },
+
+          { id: 2, goal: 'Coordinate Orchestrator, AST Grounder, Coder, Auditor, and Human GUI Agent over the Shared Blackboard', status: 'PENDING' },
+
+          { id: 3, goal: 'Record GUI & Swarm trajectories into gui_trajectories.jsonl for RTX 5060 QLoRA fine-tuning', status: 'PENDING' }
+
+        ],
+
+        blackboard_feed: [
+
+          { agent_role: 'ORCHESTRATOR', action: 'BOOT_GODMODE_V11', detail: 'Initialized 5-Agent Gemma 4 Swarm, Set-of-Mark Screen Cortex, and AST Grounder.', timestamp: 'LIVE' }
+
+        ],
+
+        hardware_profile: { gpu: 'NVIDIA GeForce RTX 5060 (8GB VRAM)', qlora_trajectories_logged: 0 }
+
       }
+
     };
 
-    // -------------------------------------------------------------------------
-    // 0. PROCEDURAL SCI-FI WEB AUDIO SYNTHESIZER (ZERO EXTERNAL ASSETS)
-    // -------------------------------------------------------------------------
-    let audioCtx = null;
-    function getAudioCtx() {
-      if (!audioCtx) {
-        const AudioCtor = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtor) audioCtx = new AudioCtor();
-      }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      return audioCtx;
-    }
 
-    function playSfx(type) {
-      if (!state.sfxEnabled) return;
-      try {
-        const ctx = getAudioCtx();
-        if (!ctx) return;
-        const now = ctx.currentTime;
 
-        if (type === 'startup') {
-          // Ascending dual harmonic
-          const osc1 = ctx.createOscillator();
-          const osc2 = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc1.type = 'sine'; osc2.type = 'triangle';
-          osc1.frequency.setValueAtTime(320, now);
-          osc1.frequency.exponentialRampToValueAtTime(880, now + 0.35);
-          osc2.frequency.setValueAtTime(440, now);
-          osc2.frequency.exponentialRampToValueAtTime(1320, now + 0.35);
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
-          osc1.connect(gain); osc2.connect(gain); gain.connect(ctx.destination);
-          osc1.start(now); osc2.start(now);
-          osc1.stop(now + 0.5); osc2.stop(now + 0.5);
-
-        } else if (type === 'command') {
-          // High-frequency crisp chirp
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(980, now);
-          osc.frequency.exponentialRampToValueAtTime(1480, now + 0.12);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.start(now); osc.stop(now + 0.18);
-
-        } else if (type === 'terminate') {
-          // Deep electric dissipation pulse
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(320, now);
-          osc.frequency.exponentialRampToValueAtTime(45, now + 0.35);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.start(now); osc.stop(now + 0.4);
-
-        } else if (type === 'alarm') {
-          // Crimson emergency pulse
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'square';
-          osc.frequency.setValueAtTime(660, now);
-          osc.frequency.setValueAtTime(440, now + 0.15);
-          gain.gain.setValueAtTime(0.15, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-          osc.connect(gain); gain.connect(ctx.destination);
-          osc.start(now); osc.stop(now + 0.35);
-        }
-      } catch (_) {}
-    }
-
-    // -------------------------------------------------------------------------
-    // 1. LIVE ON-SCREEN ACTIVE TASKS & PROTOCOL ZERO
-    // -------------------------------------------------------------------------
-    function renderActiveTasks(tasks) {
-      state.activeTasks = tasks || [];
-      const cont = document.getElementById('activeTasksContainer');
-      const badge = document.getElementById('activeTasksCountBadge');
-      if (!cont) return;
-
-      const nonCoreTasks = state.activeTasks.filter(t => t.task_id !== 'task_core_observer' && t.status === 'RUNNING');
-      const totalRunning = state.activeTasks.filter(t => t.status === 'RUNNING').length;
-
-      if (badge) {
-        badge.textContent = `${totalRunning} Active`;
-        badge.className = totalRunning > 1 
-          ? 'text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/25 text-amber-200 border border-amber-400/40 font-bold'
-          : 'text-[9px] px-1.5 py-0.2 rounded-full bg-sky-500/25 text-sky-200 border border-sky-400/30';
-      }
-
-      if (state.activeTasks.length === 0) {
-        cont.innerHTML = '<div class="text-slate-500 text-[10px] italic p-1">No active operations.</div>';
-        return;
-      }
-
-      cont.innerHTML = state.activeTasks.map(t => {
-        const isCore = !t.can_terminate || t.task_id === 'task_core_observer';
-        const isMedia = t.category === 'media';
-        const isShell = t.category === 'shell';
-        const isDownload = t.category === 'download';
-        
-        let catBadge = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-sky-500/20 text-sky-300 font-semibold uppercase">${t.category || 'OP'}</span>`;
-        if (isCore) catBadge = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 font-bold">CORE</span>`;
-        else if (isMedia) catBadge = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-semibold uppercase">MEDIA</span>`;
-        else if (isShell) catBadge = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-semibold uppercase">POWERSHELL</span>`;
-        else if (isDownload) catBadge = `<span class="text-[9px] px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-300 font-semibold uppercase">DOWNLOAD</span>`;
-
-        const timerTxt = t.elapsed_sec !== undefined ? `${t.elapsed_sec}s` : t.started_at;
-
-        return `
-          <div class="bg-black/65 border ${isMedia ? 'border-rose-500/40' : 'border-sky-500/25'} rounded-xl p-2.5 flex items-center justify-between gap-2 text-[11px] hover:border-sky-400/50 transition">
-            <div class="space-y-0.5 min-w-0 flex-1">
-              <div class="flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full ${isMedia ? 'bg-rose-400 animate-pulse' : 'bg-emerald-400 animate-ping'}"></span>
-                <span class="text-white font-medium truncate">${t.name || 'Active Task'}</span>
-              </div>
-              <div class="flex items-center gap-2 text-[9px] text-slate-400">
-                ${catBadge}
-                <span>Started: ${timerTxt}</span>
-                ${t.pid ? `<span>PID: ${t.pid}</span>` : ''}
-              </div>
-            </div>
-            ${!isCore ? `
-              <button onclick="window.terminateTask('${t.task_id}')" class="px-2.5 py-1 rounded bg-rose-950/80 hover:bg-rose-700 border border-rose-500/50 text-rose-200 hover:text-white font-bold text-[10px] transition shrink-0 flex items-center gap-1" title="Terminate this task immediately">
-                <span>🛑</span> Kill
-              </button>
-            ` : ''}
-          </div>
-        `;
-      }).join('');
-    }
-
-    window.terminateTask = async function(taskId) {
-      playSfx('terminate');
-      state.orbColor = 'crimson';
-      state.orbEnergy = 2.2;
-      const sub = document.getElementById('jarvisSubtitle');
-      if (sub) sub.textContent = `TERMINATING OPERATION: ${taskId.toUpperCase()}...`;
-
-      try {
-        const r = await fetch(state.backendUrl + '/api/tasks/terminate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task_id: taskId })
-        });
-        const d = await r.json();
-        if (d.active_tasks) renderActiveTasks(d.active_tasks);
-        if (d.brain) renderBrain(d.brain);
-        await speak(d.message || 'Operation terminated, sir.');
-      } catch (err) {
-        await speak('Termination error: ' + err.message);
-      } finally {
-        setTimeout(() => { state.orbColor = 'gold'; state.orbEnergy = 1.0; }, 1500);
-      }
-    };
-
-    window.terminateAllTasks = async function() {
-      playSfx('alarm');
-      state.orbColor = 'crimson';
-      state.orbEnergy = 2.8;
-      const sub = document.getElementById('jarvisSubtitle');
-      if (sub) sub.textContent = 'PROTOCOL ZERO ENGAGED &mdash; TERMINATING ALL OPERATIONS...';
-
-      try {
-        const r = await fetch(state.backendUrl + '/api/tasks/terminate-all', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const d = await r.json();
-        if (d.active_tasks) renderActiveTasks(d.active_tasks);
-        if (d.brain) renderBrain(d.brain);
-        await speak(d.message || 'Protocol Zero executed, sir. All background operations terminated.');
-      } catch (err) {
-        await speak('Protocol Zero error: ' + err.message);
-      } finally {
-        setTimeout(() => { state.orbColor = 'gold'; state.orbEnergy = 1.0; }, 2000);
-      }
-    };
-
-    // -------------------------------------------------------------------------
-    // 2. BRAIN RENDERING & LOCAL STORAGE SYNC
-    // -------------------------------------------------------------------------
     function renderBrain(serverBrain) {
-      if (serverBrain) {
-        state.brain = serverBrain;
-        try { localStorage.setItem(BRAIN_KEY, JSON.stringify(serverBrain)); } catch (_) {}
-      } else {
-        try {
-          const cached = localStorage.getItem(BRAIN_KEY);
-          if (cached) state.brain = JSON.parse(cached);
-        } catch (_) {}
-      }
+
+      if (serverBrain) state.brain = serverBrain;
+
+      try { localStorage.setItem(BRAIN_KEY, JSON.stringify(state.brain)); } catch (_) {}
+
+
 
       const idObj = state.brain.what_it_is || {};
+
+      const hw = state.brain.hardware_profile || {};
+
+      document.getElementById('brainIdentityBox').innerHTML =
+
+        '<b>' + (idObj.name || 'J.A.R.V.I.S. v11.0 GODMODE') + '</b><br>' +
+
+        '<span class="text-amber-200/90">' + (idObj.nature || '') + '</span><br>' +
+
+        '<span class="text-emerald-300 text-[10px]">GPU: ' + (hw.gpu || 'RTX 5060') + '</span>';
+
+
+
+      document.getElementById('qloraCountBadge').textContent = (hw.qlora_trajectories_logged || 0) + ' logged';
+
+      document.getElementById('hwBadgeText').textContent = (hw.gpu || 'Gemma 4 Swarm').slice(0, 26) + ' • QLoRA: ' + (hw.qlora_trajectories_logged || 0);
+
+
+
       const doing = state.brain.what_it_is_doing || {};
+
+      document.getElementById('brainDoingTask').textContent = doing.task || 'Watching screen with SoM';
+
+      document.getElementById('brainDoingBadge').textContent = doing.status || 'GODMODE';
+
+      if (doing.last_thought) {
+
+        document.getElementById('brainThoughtTrace').textContent = 'Thought: ' + doing.last_thought;
+
+        document.getElementById('jarvisThoughtPill').textContent = '⚡ ' + doing.last_thought;
+
+      }
+
+
+
+      const bb = state.brain.blackboard_feed || [];
+
+      document.getElementById('blackboardList').innerHTML = bb.length
+
+        ? bb.slice(0, 10).map(b => '<li class="p-1.5 rounded bg-black/50 border border-amber-500/20"><div class="flex justify-between text-[9px]"><span class="text-amber-300 font-bold">[' + b.agent_role + ']</span><span class="text-slate-500">' + (b.timestamp || '') + '</span></div><div class="text-sky-300 font-semibold">' + b.action + '</div><div class="text-slate-300 text-[9px]">' + b.detail + '</div></li>').join('')
+
+        : '<li class="text-slate-500 italic">No blackboard messages yet.</li>';
+
+
+
       const did = state.brain.what_it_did || [];
+
+      document.getElementById('brainDidCount').textContent = did.length + ' completed';
+
+      document.getElementById('brainDidList').innerHTML = did.length
+
+        ? did.slice(0, 10).map(i => '<li class="p-1.5 rounded bg-black/50 border border-emerald-500/20"><div class="text-emerald-300 font-semibold">[' + i.category + '] ' + i.instruction + '</div><div class="text-slate-300 text-[9px]">' + i.outcome + '</div></li>').join('')
+
+        : '<li class="text-slate-500 italic">No tasks executed yet.</li>';
+
+
+
       const todos = state.brain.what_it_has_to_do || [];
 
-      // Tier 1: Identity
-      const idEl = document.getElementById('brainIdentityBox');
-      if (idEl) {
-        idEl.innerHTML = `<strong>${idObj.name || 'J.A.R.V.I.S.'}</strong> &bull; ${idObj.role || 'Companion'}<br><span class="text-amber-400/80 text-[10px]">${idObj.model || 'Gemma 4'}</span>`;
-      }
+      document.getElementById('brainTodoCount').textContent = todos.filter(t => t.status === 'PENDING').length + ' pending';
 
-      // Tier 2: Doing Right Now
-      const doingTaskEl = document.getElementById('brainDoingTask');
-      const traceEl = document.getElementById('brainThoughtTrace');
-      if (doingTaskEl) doingTaskEl.textContent = doing.current_task || 'Observing Environment';
-      if (traceEl) traceEl.textContent = doing.thought_trace ? `"${doing.thought_trace}"` : '';
+      document.getElementById('brainTodoList').innerHTML = todos.slice(0, 10).map(t => {
 
-      // Tier 3: Tasks I Did
-      const didList = document.getElementById('brainDidList');
-      const didCount = document.getElementById('brainDidCount');
-      if (didList) {
-        didList.innerHTML = did.slice(-8).reverse().map(item => `
-          <li class="bg-black/40 border border-emerald-500/20 rounded p-1.5">
-            <span class="text-emerald-300 font-semibold">[${item.category || 'task'}]</span> ${item.instruction || item.task || ''}
-            <div class="text-[9px] text-slate-400">${item.outcome || item.details || 'Completed'}</div>
-          </li>
-        `).join('') || '<li class="text-slate-500 italic">No tasks completed yet.</li>';
-      }
-      if (didCount) didCount.textContent = `${did.length} completed`;
+        const done = t.status === 'DONE';
 
-      // Tier 4: Goals / Todo Queue
-      const todoList = document.getElementById('brainTodoList');
-      const todoCount = document.getElementById('brainTodoCount');
-      if (todoList) {
-        todoList.innerHTML = todos.map(t => {
-          const done = t.status === 'DONE';
-          return `
-            <li class="bg-black/40 border border-purple-500/20 rounded p-1.5 flex items-center justify-between gap-1">
-              <span class="${done ? 'line-through text-slate-500' : 'text-slate-200'}">${t.goal || t.task || ''}</span>
-              ${!done ? `<button onclick="window.completeGoal('${t.id}')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-black text-[9px]">&check;</button>` : '<span class="text-[9px] text-emerald-400">&check;</span>'}
-            </li>
-          `;
-        }).join('') || '<li class="text-slate-500 italic">No pending goals.</li>';
-      }
-      if (todoCount) todoCount.textContent = `${todos.filter(t => t.status !== 'DONE').length} pending`;
+        return '<li class="p-1.5 rounded bg-black/50 border border-purple-500/20 flex items-center justify-between gap-2"><span class="' + (done ? 'line-through text-slate-500' : 'text-purple-200') + '">' + (done ? '✓ ' : '• ') + t.goal + '</span>' +
+
+          (!done ? '<button onclick="completeGoal(' + t.id + ')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px]">Done</button>' : '') + '</li>';
+
+      }).join('');
+
     }
+
+
+
+    function connectWebSocket() {
+
+      try {
+
+        const wsUrl = state.backendUrl.replace(/^http/, 'ws') + '/ws/telemetry';
+
+        if (state.ws) { try { state.ws.close(); } catch (_) {} }
+
+        const ws = new WebSocket(wsUrl);
+
+        state.ws = ws;
+
+        ws.onopen = () => { document.getElementById('wsStatusBadge').textContent = 'WS CONNECTED'; };
+
+        ws.onmessage = (ev) => {
+
+          try {
+
+            const msg = JSON.parse(ev.data);
+
+            if (msg.data && msg.data.brain) renderBrain(msg.data.brain);
+
+            if (msg.event === 'screen_cortex_tick' && msg.data) {
+
+              document.getElementById('fgWindowLabel').textContent = 'Active: ' + (msg.data.foreground_window || 'Desktop');
+
+              document.getElementById('uiaStatusPill').textContent = 'SoM UIA: ' + (msg.data.open_windows_count || 0) + ' Win | #' + (msg.data.active_controls_count || 0) + ' Tags';
+
+            }
+
+          } catch (_) {}
+
+        };
+
+        ws.onclose = () => { document.getElementById('wsStatusBadge').textContent = 'POLLING'; };
+
+      } catch (_) {}
+
+    }
+
+
 
     window.completeGoal = async function(id) {
-      playSfx('command');
-      if (state.backendOnline) {
-        try {
-          const r = await fetch(state.backendUrl + '/api/brain-todo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'complete', goal_id: id })
-          });
-          const d = await r.json();
-          if (d.brain) renderBrain(d.brain);
-          return;
-        } catch (_) {}
-      }
-      const t = (state.brain.what_it_has_to_do || []).find(x => x.id === id);
-      if (t) t.status = 'DONE';
+
+      (state.brain.what_it_has_to_do || []).forEach(g => { if (g.id === id) g.status = 'DONE'; });
+
       renderBrain();
+
+      if (state.backendOnline) {
+
+        const d = await postApi('/api/brain-todo', { action: 'complete', goal_id: id });
+
+        if (d.brain) renderBrain(d.brain);
+
+      }
+
     };
 
+
+
     async function addGoal() {
+
       const inp = document.getElementById('newGoalInput');
+
       const goal = inp.value.trim();
+
       if (!goal) return;
+
       inp.value = '';
-      playSfx('command');
-      if (state.backendOnline) {
-        try {
-          const r = await fetch(state.backendUrl + '/api/brain-todo', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'add', goal })
-          });
-          const d = await r.json();
-          if (d.brain) renderBrain(d.brain);
-          return;
-        } catch (_) {}
-      }
-      state.brain.what_it_has_to_do = state.brain.what_it_has_to_do || [];
-      state.brain.what_it_has_to_do.push({ id: 'goal_' + Date.now(), goal, status: 'PENDING' });
+
+      state.brain.what_it_has_to_do.unshift({ id: Date.now(), goal, status: 'PENDING' });
+
       renderBrain();
+
+      if (state.backendOnline) {
+
+        const d = await postApi('/api/brain-todo', { action: 'add', goal });
+
+        if (d.brain) renderBrain(d.brain);
+
+      }
+
+      await speak('Added "' + goal + '" to my prospective goal queue, sir.');
+
     }
 
-    // -------------------------------------------------------------------------
-    // 3. VOICE SYNTHESIS & RECOGNITION (SARVAM AI / WEB SPEECH)
-    // -------------------------------------------------------------------------
-    let currentAudio = null;
+
+
     function stopJarvisVoice() {
-      if (currentAudio) {
-        try { currentAudio.pause(); currentAudio.currentTime = 0; } catch (_) {}
-        currentAudio = null;
+
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      if (state.activeAudio) {
+
+        try { state.activeAudio.pause(); state.activeAudio.currentTime = 0; } catch (_) {}
+
+        state.activeAudio = null;
+
       }
-      if ('speechSynthesis' in window) {
-        try { window.speechSynthesis.cancel(); } catch (_) {}
-      }
+
+      state.orbEnergy = 1.0;
+
+      state.orbColor = 'gold';
+
     }
+
+
 
     async function speak(text) {
-      if (!text) return;
+
       stopJarvisVoice();
-      const sub = document.getElementById('jarvisSubtitle');
-      if (sub) sub.textContent = text;
-      state.orbEnergy = 2.4;
+
+      document.getElementById('jarvisSubtitle').textContent = text.toUpperCase();
+
+      state.orbEnergy = 2.7;
+
+      setTimeout(() => { state.orbEnergy = 1.0; state.orbColor = 'gold'; }, Math.min(6000, Math.max(2200, text.length * 50)));
+
+
 
       if (state.sarvamKey && state.backendOnline) {
+
         try {
+
           const r = await fetch(state.backendUrl + '/api/sarvam-tts', {
+
             method: 'POST',
+
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text, sarvam_api_key: state.sarvamKey })
+
+            body: JSON.stringify({ text, language_code: state.voiceLang, sarvam_api_key: state.sarvamKey })
+
           });
+
           const d = await r.json();
+
           if (d.audios && d.audios[0]) {
-            const a = new Audio('data:audio/wav;base64,' + d.audios[0]);
-            currentAudio = a;
-            a.onended = () => { state.orbEnergy = 1.0; currentAudio = null; };
-            await a.play();
+
+            state.activeAudio = new Audio('data:audio/wav;base64,' + d.audios[0]);
+
+            state.activeAudio.play();
+
             return;
+
           }
+
         } catch (_) {}
+
       }
 
       if ('speechSynthesis' in window) {
+
         const u = new SpeechSynthesisUtterance(text.slice(0, 480));
-        u.rate = 1.05; u.pitch = 0.95;
-        const voices = window.speechSynthesis.getVoices();
-        const preferred = voices.find(v => /daniel|george|british|uk english/i.test(v.name)) || voices[0];
-        if (preferred) u.voice = preferred;
-        u.onend = () => { state.orbEnergy = 1.0; };
-        u.onerror = () => { state.orbEnergy = 1.0; };
+
+        u.lang = state.voiceLang || 'en-IN'; u.rate = 1.05; u.pitch = 0.95;
+
         window.speechSynthesis.speak(u);
-      } else {
-        setTimeout(() => { state.orbEnergy = 1.0; }, 2500);
+
       }
+
     }
 
-    // -------------------------------------------------------------------------
-    // 4. MULTIMODAL VISION LENS & CAPTURE
-    // -------------------------------------------------------------------------
+
+
     function captureFrameB64(videoEl) {
+
+      if (!videoEl || !videoEl.srcObject || videoEl.readyState < 2) return '';
+
       const c = document.getElementById('visionCaptureCanvas');
-      if (!c || !videoEl || !videoEl.videoWidth) return null;
-      c.width = 640; c.height = 480;
-      const ctx = c.getContext('2d');
-      ctx.drawImage(videoEl, 0, 0, 640, 480);
-      try {
-        return c.toDataURL('image/jpeg', 0.65).split(',')[1];
-      } catch (_) { return null; }
+
+      c.width = videoEl.videoWidth || 640; c.height = videoEl.videoHeight || 480;
+
+      c.getContext('2d').drawImage(videoEl, 0, 0, c.width, c.height);
+
+      return c.toDataURL('image/jpeg', 0.82).split(',')[1];
+
     }
+
+
 
     async function toggleCamera() {
-      playSfx('command');
+
       const vid = document.getElementById('laptopCameraVideo');
-      const box = document.getElementById('visionHudBox');
+
       if (state.cameraStream) {
+
         state.cameraStream.getTracks().forEach(t => t.stop());
-        state.cameraStream = null;
-        vid.srcObject = null;
-        if (!state.screenStream) box.classList.add('hidden');
-        document.getElementById('btnToggleCamera').classList.remove('bg-amber-500/30', 'text-amber-300');
+
+        state.cameraStream = null; vid.srcObject = null; vid.classList.add('hidden');
+
         return;
+
       }
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-        state.cameraStream = stream;
-        vid.srcObject = stream;
-        box.classList.remove('hidden');
-        document.getElementById('btnToggleCamera').classList.add('bg-amber-500/30', 'text-amber-300');
-      } catch (err) {
-        await speak('Camera access error: ' + err.message);
-      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+
+      state.cameraStream = stream; vid.srcObject = stream; vid.classList.remove('hidden');
+
+      await speak('Laptop camera connected to my visual cortex, sir.');
+
     }
 
-    async function toggleScreenVision() {
-      playSfx('command');
-      const sVid = document.getElementById('screenShareVideo');
-      const box = document.getElementById('visionHudBox');
-      if (state.screenStream) {
-        state.screenStream.getTracks().forEach(t => t.stop());
-        state.screenStream = null;
-        sVid.srcObject = null;
-        sVid.classList.add('hidden');
-        if (!state.cameraStream) box.classList.add('hidden');
-        document.getElementById('btnToggleScreenVision').classList.remove('bg-sky-500/30', 'text-sky-300');
-        return;
-      }
-      try {
-        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-        state.screenStream = stream;
-        sVid.srcObject = stream;
-        sVid.classList.remove('hidden');
-        box.classList.remove('hidden');
-        document.getElementById('btnToggleScreenVision').classList.add('bg-sky-500/30', 'text-sky-300');
-      } catch (err) {
-        await speak('Screen sharing error: ' + err.message);
-      }
+
+
+    async function toggleAlwaysWatch() {
+
+      state.alwaysWatch = !state.alwaysWatch;
+
+      const btn = document.getElementById('btnToggleAlwaysWatch');
+
+      const dot = document.getElementById('watchPulseDot');
+
+      btn.textContent = state.alwaysWatch ? 'LIVE' : 'PAUSED';
+
+      btn.className = state.alwaysWatch
+
+        ? 'px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-bold'
+
+        : 'px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[9px] font-bold';
+
+      dot.className = state.alwaysWatch ? 'w-2 h-2 rounded-full bg-emerald-400 animate-ping' : 'w-2 h-2 rounded-full bg-slate-500';
+
+      if (state.backendOnline) await postApi('/api/toggle-always-watch', { enabled: state.alwaysWatch, som_overlay: state.somOverlay });
+
     }
 
-    // -------------------------------------------------------------------------
-    // 5. BACKEND CONNECTION, VITALS & API CALLS
-    // -------------------------------------------------------------------------
+
+
+    async function toggleSomOverlay() {
+
+      state.somOverlay = !state.somOverlay;
+
+      const btn = document.getElementById('btnToggleSom');
+
+      btn.textContent = state.somOverlay ? 'SoM: ON' : 'SoM: OFF';
+
+      btn.className = state.somOverlay
+
+        ? 'px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold'
+
+        : 'px-1.5 py-0.5 rounded bg-slate-700 text-slate-300 text-[9px] font-bold';
+
+      if (state.backendOnline) await postApi('/api/toggle-always-watch', { enabled: state.alwaysWatch, som_overlay: state.somOverlay });
+
+    }
+
+
+
     async function probeBackend() {
+
       const dot = document.getElementById('connStatusDot');
+
       try {
-        const r = await fetch(state.backendUrl + '/api/health', { cache: 'no-store' });
+
+        const r = await fetch(state.backendUrl + '/api/health');
+
         if (r.ok) {
+
           const d = await r.json();
+
+          const wasOffline = !state.backendOnline;
+
           state.backendOnline = true;
-          dot.className = 'w-3 h-3 rounded-full bg-emerald-400 shadow-[0_0_14px_#10b981]';
-          dot.title = `Backend Connected: ${d.model || 'Gemma 4'} | RTX 5060 Ti`;
+
+          if (wasOffline) connectWebSocket();
+
           if (d.brain) renderBrain(d.brain);
-          if (d.active_tasks) renderActiveTasks(d.active_tasks);
-          if (d.vitals) {
-            document.getElementById('vitalsCpuText').textContent = `${d.vitals.cpu_percent || 14}%`;
-            document.getElementById('vitalsRamText').textContent = `${d.vitals.ram_used_gb || 6.8}G`;
+
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]';
+
+          document.getElementById('uiaStatusPill').textContent = 'SoM UIA: ' + (d.open_windows_detected || 0) + ' Win | #' + (d.active_controls_detected || 0) + ' Tags';
+
+          document.getElementById('fgWindowLabel').textContent = 'Active: ' + (d.foreground_window || 'Desktop');
+
+          if (d.always_watch && d.always_watch.screen_frame_b64) {
+
+            document.getElementById('nativeScreenPreview').src = 'data:image/jpeg;base64,' + d.always_watch.screen_frame_b64;
+
           }
+
+          if (d.ast_grounding) {
+
+            document.getElementById('astSummaryText').textContent =
+
+              'Scanned ' + d.ast_grounding.files_scanned + ' files • ' + d.ast_grounding.symbol_count + ' deterministic AST symbols indexed';
+
+            document.getElementById('astSymbolsList').innerHTML = (d.ast_grounding.top_symbols || [])
+
+              .map(s => '<div>• <span class="text-amber-300">' + s.type + '</span> <b>' + s.name + '</b> (' + s.file + ':' + s.line + ')</div>')
+
+              .join('');
+
+          }
+
           return;
+
         }
-      } catch (_) {
-        state.backendOnline = false;
-      }
-      dot.className = 'w-3 h-3 rounded-full bg-amber-400 animate-pulse';
-      dot.title = 'Backend Connecting / Standalone Mode';
+
+      } catch (_) { state.backendOnline = false; }
+
+      dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+
     }
+
+
 
     async function postApi(endpoint, payload) {
+
       const r = await fetch(state.backendUrl + endpoint, {
+
         method: 'POST',
+
         headers: { 'Content-Type': 'application/json' },
+
         body: JSON.stringify({
+
           ...payload,
+
+          language_code: state.voiceLang,
+
           target_directory: state.targetDir,
+
           model: state.model,
+
           use_airllm: state.useAirllm,
+
           ollama_url: state.ollamaUrl,
+
           gemini_api_key: state.geminiKey,
+
           camera_frame_b64: captureFrameB64(document.getElementById('laptopCameraVideo')),
+
           screen_frame_b64: captureFrameB64(document.getElementById('screenShareVideo'))
+
         })
+
       });
+
       const d = await r.json();
+
+      if (d.screen_frame_b64) {
+
+        document.getElementById('nativeScreenPreview').src = 'data:image/jpeg;base64,' + d.screen_frame_b64;
+
+      }
+
       if (d.brain) renderBrain(d.brain);
-      if (d.active_tasks) renderActiveTasks(d.active_tasks);
+
       return d;
+
     }
 
-    // -------------------------------------------------------------------------
-    // 6. TERMINAL EXECUTION (POWERSHELL DISPATCH)
-    // -------------------------------------------------------------------------
-    async function runTerminalCommand(cmdToRun) {
-      const box = document.getElementById('terminalOutputBox');
-      const drawer = document.getElementById('jarvisTerminalDrawer');
-      if (drawer.classList.contains('hidden')) drawer.classList.remove('hidden');
 
-      const cmd = cmdToRun || document.getElementById('termCmdInput').value.trim();
-      if (!cmd) return;
-      document.getElementById('termCmdInput').value = '';
 
-      playSfx('command');
-      box.textContent += `\n> ${cmd}\nExecuting...`;
-      box.scrollTop = box.scrollHeight;
-      state.orbColor = 'emerald';
-      state.orbEnergy = 1.6;
-
-      if (!state.backendOnline) {
-        box.textContent += `\n[Local Terminal Warning]: Backend not reachable at ${state.backendUrl}. Command queued.`;
-        return;
-      }
-
-      try {
-        const d = await postApi('/api/jarvis/terminal', { command: cmd });
-        if (d.stdout) {
-          box.textContent += `\n${d.stdout}`;
-        }
-        if (d.stderr) {
-          box.textContent += `\n[Error]: ${d.stderr}`;
-        }
-        const code = d.exit_code !== undefined ? d.exit_code : (d.return_code !== undefined ? d.return_code : 0);
-        const dur = d.duration_ms ? ` | Duration: ${d.duration_ms}ms` : '';
-        box.textContent += `\n[Exit Code: ${code}${dur}]`;
-        box.scrollTop = box.scrollHeight;
-        if (d.brain) renderBrain(d.brain);
-        if (d.active_tasks) renderActiveTasks(d.active_tasks);
-      } catch (err) {
-        box.textContent += `\n[Execution Failure]: ${err.message}`;
-        box.scrollTop = box.scrollHeight;
-      } finally {
-        setTimeout(() => { state.orbEnergy = 1.0; }, 800);
-      }
-    }
-
-    // -------------------------------------------------------------------------
-    // 7. FAST MEDIA STOP & COMMAND DISPATCH
-    // -------------------------------------------------------------------------
     async function stopOrControlActiveMedia(rawInstruction) {
+
       stopJarvisVoice();
-      playSfx('terminate');
+
       state.orbColor = 'crimson';
-      state.orbEnergy = 2.0;
 
       if (state.backendOnline) {
-        try {
-          await fetch(state.backendUrl + '/api/jarvis/stop-media', { method: 'POST' });
-          const d = await postApi('/api/media-control', { instruction: rawInstruction || 'stop' });
-          if (d.active_tasks) renderActiveTasks(d.active_tasks);
-          await speak('Stopped active playback on your system, sir.');
-          return d;
-        } catch (_) {}
+
+        const d = await postApi('/api/media-control', { instruction: rawInstruction || 'stop' });
+
+        await speak('Stopped what was playing on your system, sir.');
+
+        return d;
+
       }
+
       document.getElementById('jarvisSubtitle').textContent = 'STOPPED ACTIVE PLAYBACK & VOICE.';
-      setTimeout(() => { state.orbEnergy = 1.0; state.orbColor = 'gold'; }, 1200);
+
     }
+
+
 
     async function executeCommand(rawInput) {
+
       const inp = document.getElementById('mainCommandInput');
+
       const cmd = (rawInput !== undefined ? rawInput : inp.value).trim();
+
       if (!cmd) return;
+
       inp.value = '';
+
       const low = cmd.toLowerCase();
 
-      // PROTOCOL ZERO / TERMINATE ALL OVERRIDE
-      if (/(protocol zero|terminate all|kill all|kill everything|emergency stop|halt all)/.test(low)) {
-        await window.terminateAllTasks();
-        return;
-      }
 
-      // STOP / PAUSE / MUTE MEDIA OR VOICE
+
       if (/^(stop|pause|mute|unmute|resume|continue|next track|skip|previous track)$/i.test(low) ||
-          /(stop playing|pause playing|stop the music|pause the music|stop the video|pause the video|stop youtube|pause youtube|close youtube|stop netflix|pause netflix|close netflix|stop song|pause song|kill audio)/.test(low)) {
+
+          /\b(stop playing|pause playing|stop the music|pause the music|stop the video|pause the video|stop youtube|pause youtube|close youtube|stop netflix|pause netflix|close netflix|stop song|pause song)\b/.test(low)) {
+
         await stopOrControlActiveMedia(cmd);
+
         return;
+
       }
 
-      // TERMINAL COMMANDS (DIRECT DISPATCH TO POWERSHELL)
-      if (cmd.startsWith(':term ') || cmd.startsWith('terminal ') || /^(dir|ls|ipconfig|git status|git log|Get-Process|get-service)/i.test(cmd)) {
-        const cleanCmd = cmd.replace(/^(:term\s+|terminal\s+)/i, '');
-        await runTerminalCommand(cleanCmd);
-        await speak('Executed ' + cleanCmd + ' in Windows terminal, sir.');
-        return;
-      }
 
-      // GMAIL CONFIRMATION
+
       if (state.pendingGmailDraft && /^(yes|send|send it|confirm)$/i.test(low)) {
+
         document.getElementById('gmailConfirmBar').classList.add('hidden');
+
         if (state.backendOnline) await postApi('/api/gmail-send-confirmed', state.pendingGmailDraft);
+
         state.pendingGmailDraft = null;
+
         await speak('Confirmed, sir. Email dispatched.');
+
         return;
+
       }
+
+
 
       if (!state.backendOnline) {
-        await speak('Local Python backend is connecting, sir. Please verify uvicorn backend.main:app is running on port 8000.');
+
+        await speak('Start the Python backend (`uvicorn main:app --port 8000`) to unlock Set-of-Mark screen vision and the 5-Agent Gemma 4 Swarm, sir.');
+
         return;
+
       }
+
+
 
       try {
-        playSfx('command');
-        // Dynamic Downloads (Universal Downloader without hardcoded browser)
-        if (/(download|install)/.test(low)) {
-          state.orbColor = 'cyan';
-          state.orbEnergy = 1.8;
-          document.getElementById('jarvisSubtitle').textContent = `REASONING DOWNLOAD FOR: ${cmd.toUpperCase()}`;
-          const d = await postApi('/api/jarvis/command', { command: cmd });
-          await speak(d.response || `Dynamic download sequence initiated for ${cmd}, sir.`);
-          return;
-        }
 
-        // Camera / Optical Analysis
-        if (/(camera|webcam|what am i holding|what do you see|look at this)/.test(low)) {
+        if (/\b(camera|webcam|what am i holding|look at me)\b/.test(low)) {
+
           state.orbColor = 'cyan';
+
           if (!state.cameraStream) await toggleCamera();
+
           const d = await postApi('/api/camera-analyze', { prompt: cmd });
+
           await speak(d.spoken_response || 'Analyzed camera frame, sir.');
+
           return;
+
         }
 
-        // Cognitive Brain Query
-        const isAction = /(whatsapp|calculator|calc|notepad|youtube|netflix|book|reserve|gmail|email|mail|pdf|blender|3d model|generate image|create image|draw|build|write code|create a web|create an app|develop|code a|open|play)/.test(low);
-        const isMemoryQuery = /(who are you|what are you|what did you do|tasks you did|what are you doing|doing right now|what do you have to do|todo|goals|your memory|your brain|remember to|add goal|add todo)/.test(low);
 
-        if (isMemoryQuery || !isAction) {
+
+        if (/\b(click|double click|right click|type|scroll|drag|on my screen|on screen|in the window|button|search bar|like a human|visually|som|#\d+)\b/.test(low)) {
+
+          state.orbColor = 'emerald';
+
+          const d = await postApi('/api/human-gui-agent', { instruction: cmd, max_steps: 4 });
+
+          await speak(d.spoken_response || 'Executed Set-of-Mark visual actions on your screen, sir.');
+
+          return;
+
+        }
+
+
+
+        if (/\b(swarm|godmode|ast|build|write code|create a web|create an app|develop|code a|refactor|audit)\b/.test(low)) {
+
           state.orbColor = 'cyan';
+
+          document.getElementById('swarmHudDrawer').classList.remove('hidden');
+
+          const d = await postApi('/api/godmode-swarm', { prompt: cmd });
+
+          await speak(d.spoken_response || '5-Agent Gemma 4 Swarm completed the task, sir.');
+
+          return;
+
+        }
+
+
+
+        const isFastAction = /\b(whatsapp|calculator|calc|notepad|youtube|netflix|book|reserve|gmail|email|mail|pdf|blender|3d model|generate image|create image|draw|open|play)\b/.test(low);
+
+        const isMemoryQuery = /\b(who are you|what are you|what did you do|tasks you did|what are you doing|doing right now|what is on my screen|what do you have to do|todo|goals|your memory|your brain|remember to|add goal|add todo)\b/.test(low);
+
+
+
+        if (isMemoryQuery || !isFastAction) {
+
+          state.orbColor = 'cyan';
+
           const d = await postApi('/api/companion-brain', { message: cmd });
+
           if (isMemoryQuery) document.getElementById('brainHudDrawer').classList.remove('hidden');
-          await speak(d.companion_reply || 'I am right here with you, sir.');
+
+          await speak(d.companion_reply || 'I am watching your screen in Godmode and right here with you, sir.');
+
           return;
+
         }
 
-        // Desktop & System Actions
-        if (/(whatsapp)/.test(low)) {
+
+
+        if (/\b(whatsapp)\b/.test(low)) {
+
           state.orbColor = 'emerald';
+
           const d = await postApi('/api/whatsapp-send', { instruction: cmd });
+
           await speak('Dispatched WhatsApp message to ' + d.contact + ', sir.');
-        } else if (/(calculator|calc|notepad)/.test(low)) {
+
+        } else if (/\b(calculator|calc|notepad)\b/.test(low)) {
+
           state.orbColor = 'emerald';
+
           const d = await postApi('/api/open-app', { instruction: cmd });
+
           await speak(d.detail + ', sir.');
-        } else if (/(youtube|netflix|play)/.test(low)) {
+
+        } else if (/\b(youtube|netflix|play)\b/.test(low)) {
+
           state.orbColor = 'crimson';
+
           const d = await postApi('/api/media-play', { instruction: cmd });
+
           await speak('Playing ' + d.query + ' on ' + d.platform + ', sir.');
-        } else if (/(book|reserve)/.test(low)) {
+
+        } else if (/\b(book|reserve)\b/.test(low)) {
+
           state.orbColor = 'emerald';
+
           const d = await postApi('/api/booking-concierge', { instruction: cmd });
+
           await speak('Opened ' + d.provider + ' for your booking, sir.');
-        } else if (/(image|picture|photo|poster|draw)/.test(low)) {
+
+        } else if (/\b(image|picture|photo|poster|draw)\b/.test(low)) {
+
           state.orbColor = 'cyan';
+
           const d = await postApi('/api/generate-image', { prompt: cmd });
+
           await speak('Generated image for ' + d.prompt + ', sir.');
-        } else if (/pdf/.test(low)) {
+
+        } else if (/\bpdf\b/.test(low)) {
+
           state.orbColor = 'cyan';
+
           const d = await postApi('/api/create-pdf', { instruction: cmd });
+
           await speak('Compiled and opened your PDF report, sir.');
-        } else if (/(gmail|email|mail)/.test(low)) {
+
+        } else if (/\b(gmail|email|mail)\b/.test(low)) {
+
           state.orbColor = 'crimson';
+
           const d = await postApi('/api/gmail-draft', { instruction: cmd });
+
           state.pendingGmailDraft = { recipient: d.recipient, subject: d.subject, body: d.body };
+
           document.getElementById('gmailConfirmText').textContent = 'Send "' + d.subject + '" to ' + (d.recipient || 'recipient') + '?';
+
           document.getElementById('gmailConfirmBar').classList.remove('hidden');
+
           await speak(d.confirmation_prompt);
-        } else if (/(blender|3d model|3d mesh)/.test(low)) {
+
+        } else if (/\b(blender|3d model|3d mesh)\b/.test(low)) {
+
           state.orbColor = 'cyan';
+
           await postApi('/api/blender-3d', { instruction: cmd });
+
           await speak('Generated Blender 3D Python script and launched your 3D workspace, sir.');
+
         } else {
-          // Antigravity Code Bridge
-          state.orbColor = 'cyan';
-          await postApi('/api/antigravity-bridge', { prompt: cmd });
-          await speak('Dispatched coding task to Antigravity IDE and launched application, sir.');
+
+          state.orbColor = 'emerald';
+
+          const d = await postApi('/api/human-gui-agent', { instruction: cmd, max_steps: 4 });
+
+          await speak(d.spoken_response || 'Completed the task visually on your screen, sir.');
+
         }
+
       } catch (err) {
+
         await speak('Encountered an execution error: ' + err.message);
-      } finally {
-        setTimeout(() => { state.orbEnergy = 1.0; }, 1500);
+
       }
+
     }
 
-    // -------------------------------------------------------------------------
-    // 8. SPEECH RECOGNITION (WEB SPEECH API)
-    // -------------------------------------------------------------------------
+
+
     function startVoiceInput() {
-      playSfx('command');
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) {
-        speak('Sir, speech recognition is not supported in this browser. Please type your directive.');
-        return;
-      }
-      const r = new SR();
-      r.lang = 'en-US';
-      r.interimResults = false;
-      const lbl = document.getElementById('micLabel');
-      lbl.textContent = 'Listening...';
-      state.orbColor = 'cyan';
-      state.orbEnergy = 2.0;
 
-      r.onresult = e => {
-        const txt = e.results[0][0].transcript;
-        lbl.textContent = 'Speak';
-        document.getElementById('mainCommandInput').value = txt;
-        executeCommand(txt);
-      };
-      r.onerror = () => {
-        lbl.textContent = 'Speak';
-        state.orbEnergy = 1.0;
-      };
-      r.onend = () => {
-        lbl.textContent = 'Speak';
-      };
-      r.start();
+      const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!Rec) return;
+
+      stopJarvisVoice();
+
+      const rec = new Rec();
+
+      rec.lang = state.voiceLang || 'en-IN';
+
+      rec.onstart = () => { document.getElementById('micLabel').textContent = 'Listening...'; state.orbColor = 'cyan'; state.orbEnergy = 2.4; };
+
+      rec.onresult = (e) => { const t = e.results[0][0].transcript; document.getElementById('mainCommandInput').value = t; executeCommand(t); };
+
+      rec.onend = () => { document.getElementById('micLabel').textContent = 'Speak'; state.orbEnergy = 1.0; };
+
+      rec.start();
+
     }
 
-    // -------------------------------------------------------------------------
-    // 9. THREE.JS 3D AVENGERS SPHERE & STARK HOLOGRAPHIC MODES
-    // -------------------------------------------------------------------------
-    let rootGroup = null;
-    let spherePoints = null, wireMesh = null, coreMesh = null, ring1 = null, ring2 = null;
-    let reactorGroup = null, gridGroup = null;
+
 
     function initSphere() {
+
       const canvas = document.getElementById('jarvisSphereCanvas');
+
       const scene = new THREE.Scene();
+
       const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 1000);
+
       camera.position.z = 7.0;
 
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+
       renderer.setSize(innerWidth, innerHeight);
+
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 
-      rootGroup = new THREE.Group();
-      scene.add(rootGroup);
 
-      // --- MODE 1: MARK VII SPHERE (3200 FIBONACCI POINTS) ---
-      const sphereSubgroup = new THREE.Group();
-      rootGroup.add(sphereSubgroup);
 
-      const count = 3200;
+      const root = new THREE.Group();
+
+      scene.add(root);
+
+
+
+      const count = 3600;
+
       const pos = new Float32Array(count * 3);
+
       const base = new Float32Array(count * 3);
+
       const phiRatio = (1 + Math.sqrt(5)) / 2;
 
       for (let i = 0; i < count; i++) {
+
         const theta = 2 * Math.PI * i / phiRatio;
+
         const phi = Math.acos(1 - 2 * (i + 0.5) / count);
-        const r = 2.15 + (i % 6 === 0 ? 0.16 : 0);
+
+        const r = 2.15 + (i % 6 === 0 ? 0.17 : 0);
+
         base[i * 3] = pos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+
         base[i * 3 + 1] = pos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+
         base[i * 3 + 2] = pos[i * 3 + 2] = r * Math.cos(phi);
+
       }
+
+
 
       const geo = new THREE.BufferGeometry();
+
       geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
 
-      const pMat = new THREE.PointsMaterial({ color: 0xf59e0b, size: 0.036, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
-      spherePoints = new THREE.Points(geo, pMat);
+      const pMat = new THREE.PointsMaterial({ color: 0xf59e0b, size: 0.036, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending });
 
-      const wMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending });
-      wireMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(1.5, 3), wMat);
+      const points = new THREE.Points(geo, pMat);
 
-      const cMat = new THREE.MeshBasicMaterial({ color: 0xfde68a, wireframe: true, transparent: true, opacity: 0.44, blending: THREE.AdditiveBlending });
-      coreMesh = new THREE.Mesh(new THREE.IcosahedronGeometry(0.76, 2), cMat);
+      const wMat = new THREE.MeshBasicMaterial({ color: 0xfbbf24, wireframe: true, transparent: true, opacity: 0.27, blending: THREE.AdditiveBlending });
 
-      const rMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending });
-      ring1 = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.012, 16, 140), rMat);
-      ring2 = new THREE.Mesh(new THREE.TorusGeometry(2.82, 0.009, 16, 140), rMat);
-      ring1.rotation.x = Math.PI / 2.6; ring2.rotation.y = Math.PI / 3.1;
+      const wire = new THREE.Mesh(new THREE.IcosahedronGeometry(1.52, 3), wMat);
 
-      sphereSubgroup.add(spherePoints, wireMesh, coreMesh, ring1, ring2);
+      const cMat = new THREE.MeshBasicMaterial({ color: 0xfde68a, wireframe: true, transparent: true, opacity: 0.46, blending: THREE.AdditiveBlending });
 
-      // --- MODE 2: ARC REACTOR PLASMA CORE ---
-      reactorGroup = new THREE.Group();
-      reactorGroup.visible = false;
-      rootGroup.add(reactorGroup);
+      const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.78, 2), cMat);
 
-      const arcRing1 = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.06, 16, 80), new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true }));
-      const arcRing2 = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.04, 16, 60), new THREE.MeshBasicMaterial({ color: 0x0ea5e9, wireframe: true }));
-      const arcCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.8, 2), new THREE.MeshBasicMaterial({ color: 0xe0f2fe, wireframe: true, blending: THREE.AdditiveBlending }));
-      
-      // Energy Conduits / Spokes
-      for (let s = 0; s < 10; s++) {
-        const ang = (s * Math.PI * 2) / 10;
-        const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.9, 0.04), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-        spoke.position.set(Math.cos(ang) * 1.5, Math.sin(ang) * 1.5, 0);
-        spoke.rotation.z = ang + Math.PI / 2;
-        reactorGroup.add(spoke);
-      }
-      reactorGroup.add(arcRing1, arcRing2, arcCore);
+      const rMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.44, blending: THREE.AdditiveBlending });
 
-      // --- MODE 3: QUANTUM SATELLITE DEFENSE GRID ---
-      gridGroup = new THREE.Group();
-      gridGroup.visible = false;
-      rootGroup.add(gridGroup);
+      const r1 = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.012, 16, 140), rMat);
 
-      const earthSphere = new THREE.Mesh(new THREE.SphereGeometry(2.1, 24, 24), new THREE.MeshBasicMaterial({ color: 0x10b981, wireframe: true, transparent: true, opacity: 0.3 }));
-      const satRingA = new THREE.Mesh(new THREE.TorusGeometry(3.1, 0.015, 16, 100), new THREE.MeshBasicMaterial({ color: 0x34d399 }));
-      const satRingB = new THREE.Mesh(new THREE.TorusGeometry(3.3, 0.012, 16, 100), new THREE.MeshBasicMaterial({ color: 0x6ee7b7 }));
-      satRingA.rotation.x = Math.PI / 3; satRingB.rotation.y = Math.PI / 3;
-      gridGroup.add(earthSphere, satRingA, satRingB);
+      const r2 = new THREE.Mesh(new THREE.TorusGeometry(2.84, 0.009, 16, 140), rMat);
+
+      const r3 = new THREE.Mesh(new THREE.TorusGeometry(3.08, 0.006, 16, 140), rMat);
+
+      r1.rotation.x = Math.PI / 2.6; r2.rotation.y = Math.PI / 3.1; r3.rotation.z = Math.PI / 4.2;
+
+      root.add(points, wire, core, r1, r2, r3);
+      window.jarvisSphere = { pMat, wMat, cMat, rMat };
+
+
 
       const COLORS = {
+
         gold: [0xf59e0b, 0xfbbf24, 0xfde68a],
+
         cyan: [0x38bdf8, 0x0ea5e9, 0xe0f2fe],
+
         emerald: [0x10b981, 0x34d399, 0xa7f3d0],
+
         crimson: [0xf43f5e, 0xfb7185, 0xfecdd3]
+
       };
 
+
+
       let drag = false, moved = false, px = 0, py = 0;
+
       canvas.addEventListener('pointerdown', e => { drag = true; moved = false; px = e.clientX; py = e.clientY; });
+
       window.addEventListener('pointermove', e => {
+
         if (!drag) return;
+
         const dx = e.clientX - px, dy = e.clientY - py;
+
         if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
-        rootGroup.rotation.y += dx * 0.005; rootGroup.rotation.x += dy * 0.005;
+
+        root.rotation.y += dx * 0.005; root.rotation.x += dy * 0.005;
+
         px = e.clientX; py = e.clientY;
+
       });
+
       window.addEventListener('pointerup', () => { drag = false; });
+
       canvas.addEventListener('click', () => { if (!moved) startVoiceInput(); });
+
       window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
 
+
+
       let t = 0;
+
       (function animate() {
+
         requestAnimationFrame(animate);
+
         const e = state.orbEnergy || 1.0;
+
         t += 0.018 * e;
 
-        const pal = COLORS[state.orbColor] || COLORS.gold;
+        let pal = COLORS[state.orbColor] || COLORS.gold;
+        if (sphereMode === 'arc_reactor') {
+          pal = [0x38bdf8, 0x0284c7, 0xe0f2fe, 0x38bdf8];
+        } else if (sphereMode === 'quantum_grid') {
+          pal = [0x10b981, 0x059669, 0xa7f3d0, 0x10b981];
+        }
         pMat.color.setHex(pal[0]); wMat.color.setHex(pal[1]); cMat.color.setHex(pal[2]); rMat.color.setHex(pal[0]);
 
-        if (state.holoMode === 'sphere') {
-          sphereSubgroup.visible = true;
-          reactorGroup.visible = false;
-          gridGroup.visible = false;
 
-          const arr = geo.attributes.position.array;
-          for (let i = 0; i < count; i++) {
-            const bx = base[i * 3], by = base[i * 3 + 1], bz = base[i * 3 + 2];
-            const w = 1 + Math.sin(t * 2.4 + bx * 1.8 + by * 1.8) * 0.045 * e;
-            arr[i * 3] = bx * w; arr[i * 3 + 1] = by * w; arr[i * 3 + 2] = bz * w;
-          }
-          geo.attributes.position.needsUpdate = true;
 
-          spherePoints.rotation.y += 0.0035 * e; wireMesh.rotation.y -= 0.005 * e; coreMesh.rotation.x += 0.008 * e;
-          ring1.rotation.z += 0.007 * e; ring2.rotation.x -= 0.006 * e;
+        const arr = geo.attributes.position.array;
 
-        } else if (state.holoMode === 'reactor') {
-          sphereSubgroup.visible = false;
-          reactorGroup.visible = true;
-          gridGroup.visible = false;
+        for (let i = 0; i < count; i++) {
 
-          arcRing1.rotation.z += 0.015 * e;
-          arcRing2.rotation.z -= 0.02 * e;
-          arcCore.rotation.x += 0.025 * e; arcCore.rotation.y += 0.02 * e;
+          const bx = base[i * 3], by = base[i * 3 + 1], bz = base[i * 3 + 2];
 
-        } else if (state.holoMode === 'grid') {
-          sphereSubgroup.visible = false;
-          reactorGroup.visible = false;
-          gridGroup.visible = true;
+          const w = 1 + Math.sin(t * 2.4 + bx * 1.8 + by * 1.8) * 0.045 * e;
 
-          earthSphere.rotation.y += 0.005 * e;
-          satRingA.rotation.z += 0.012 * e;
-          satRingB.rotation.x += 0.01 * e;
+          arr[i * 3] = bx * w; arr[i * 3 + 1] = by * w; arr[i * 3 + 2] = bz * w;
+
+        }
+
+        geo.attributes.position.needsUpdate = true;
+
+        points.rotation.y += 0.0035 * e; wire.rotation.y -= 0.005 * e; core.rotation.x += 0.008 * e;
+
+        if (sphereMode === 'arc_reactor') {
+          r1.rotation.z += 0.024 * e; r2.rotation.x -= 0.020 * e; r3.rotation.y += 0.016 * e;
+          core.scale.setScalar(1.0 + Math.sin(t * 6) * 0.12);
+        } else if (sphereMode === 'quantum_grid') {
+          r1.rotation.z += 0.005 * e; r2.rotation.x -= 0.004 * e; r3.rotation.y += 0.003 * e;
+          wire.scale.setScalar(1.0 + Math.sin(t * 3.5) * 0.08);
+        } else {
+          r1.rotation.z += 0.007 * e; r2.rotation.x -= 0.006 * e; r3.rotation.y += 0.004 * e;
+          core.scale.setScalar(1.0); wire.scale.setScalar(1.0);
         }
 
         renderer.render(scene, camera);
+
       })();
+
     }
 
-    function setHoloMode(mode) {
-      state.holoMode = mode;
-      playSfx('command');
-      const bSph = document.getElementById('btnModeSphere');
-      const bRea = document.getElementById('btnModeReactor');
-      const bGrd = document.getElementById('btnModeGrid');
 
-      [bSph, bRea, bGrd].forEach(b => {
-        b.className = 'px-3 py-1 rounded-full bg-transparent hover:bg-amber-500/20 text-amber-200 transition';
-      });
 
-      if (mode === 'sphere') {
-        bSph.className = 'px-3 py-1 rounded-full bg-amber-500 text-black font-bold transition shadow-md';
-        state.orbColor = 'gold';
-      } else if (mode === 'reactor') {
-        bRea.className = 'px-3 py-1 rounded-full bg-sky-500 text-black font-bold transition shadow-md';
-        state.orbColor = 'cyan';
-      } else if (mode === 'grid') {
-        bGrd.className = 'px-3 py-1 rounded-full bg-emerald-500 text-black font-bold transition shadow-md';
-        state.orbColor = 'emerald';
+    window.addEventListener('DOMContentLoaded', () => {
+
+      initSphere();
+
+      renderBrain();
+
+      probeBackend();
+
+      setInterval(probeBackend, 2500);
+
+
+
+      document.getElementById('btnExecuteCommand').onclick = () => executeCommand();
+
+      document.getElementById('mainCommandInput').onkeydown = e => { if (e.key === 'Enter') executeCommand(); };
+
+      document.getElementById('btnVoiceMic').onclick = startVoiceInput;
+
+      document.getElementById('voiceLangSelect').onchange = e => { state.voiceLang = e.target.value; };
+
+      document.getElementById('btnStopMedia').onclick = () => stopOrControlActiveMedia('stop playing');
+
+      document.getElementById('btnToggleCamera').onclick = toggleCamera;
+
+      document.getElementById('btnToggleAlwaysWatch').onclick = toggleAlwaysWatch;
+
+      document.getElementById('btnToggleSom').onclick = toggleSomOverlay;
+
+      document.getElementById('btnHumanActNow').onclick = () => executeCommand('Inspect my Set-of-Mark screen right now and tell me what active controls you can click');
+
+      document.getElementById('btnToggleSwarm').onclick = () => document.getElementById('swarmHudDrawer').classList.toggle('hidden');
+
+      document.getElementById('btnCloseSwarmHud').onclick = () => document.getElementById('swarmHudDrawer').classList.add('hidden');
+
+      document.getElementById('btnRefreshAst').onclick = async () => {
+
+        if (state.backendOnline) {
+
+          await postApi('/api/ast-grounding', { target_directory: '.' });
+
+          await probeBackend();
+
+          await speak('Refreshed deterministic AST symbol table across the workspace, sir.');
+
+        }
+
+      };
+
+      document.getElementById('btnExportModelfile').onclick = async () => {
+
+        if (state.backendOnline) {
+
+          await postApi('/api/export-modelfile', { target_directory: state.targetDir });
+
+          await speak('Exported Modelfile.rtx5060 and the Unsloth QLoRA fine-tuning trainer, sir.');
+
+        }
+
+      };
+
+      document.getElementById('btnToggleBrain').onclick = () => document.getElementById('brainHudDrawer').classList.toggle('hidden');
+
+      document.getElementById('btnCloseBrainHud').onclick = () => document.getElementById('brainHudDrawer').classList.add('hidden');
+
+      document.getElementById('btnAddGoal').onclick = addGoal;
+
+      document.getElementById('newGoalInput').onkeydown = e => { if (e.key === 'Enter') addGoal(); };
+
+      document.getElementById('btnConfirmSendGmail').onclick = () => executeCommand('yes');
+
+      document.getElementById('btnCancelSendGmail').onclick = () => { document.getElementById('gmailConfirmBar').classList.add('hidden'); state.pendingGmailDraft = null; };
+
+      document.getElementById('btnOpenSettings').onclick = () => document.getElementById('settingsModal').classList.remove('hidden');
+
+      document.getElementById('btnCloseSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
+
+      document.getElementById('btnSaveSettings').onclick = () => {
+
+        state.backendUrl = document.getElementById('cfgBackendUrl').value.trim() || 'http://127.0.0.1:8000';
+
+        state.ollamaUrl = document.getElementById('cfgOllamaUrl').value.trim() || 'http://127.0.0.1:11434';
+
+        state.model = document.getElementById('cfgOllamaModel').value.trim() || 'gemma4:27b';
+
+        state.useAirllm = document.getElementById('cfgUseAirllm').checked;
+
+        state.targetDir = document.getElementById('cfgTargetDir').value.trim() || './hackathon_app';
+
+        state.geminiKey = document.getElementById('cfgGeminiKey').value.trim();
+
+        state.sarvamKey = document.getElementById('cfgSarvamKey').value.trim();
+
+        document.getElementById('settingsModal').classList.add('hidden');
+
+        probeBackend();
+
+      };
+
+    });
+
+  
+    // =========================================================================
+    // J.A.R.V.I.S. EXTENSIONS: ON-SCREEN ACTIVE TASKS, TERMINAL & SPHERE MODES
+    // =========================================================================
+    const API_BASE = window.location.origin;
+    let sphereMode = 'classic'; // 'classic' | 'arc_reactor' | 'quantum_grid'
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    async function refreshActiveTasks() {
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks/active`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const tasks = data.tasks || [];
+        const countEl = document.getElementById('activeTasksCount');
+        if (countEl) countEl.textContent = tasks.length;
+        
+        const listEl = document.getElementById('activeTasksList');
+        if (!listEl) return;
+        
+        if (tasks.length === 0) {
+          listEl.innerHTML = '<div class="text-slate-400 text-[11px] italic">No active background tasks</div>';
+          return;
+        }
+        
+        listEl.innerHTML = tasks.map(t => `
+          <div class="flex items-center justify-between p-1.5 rounded-lg bg-black/60 border border-amber-500/20 text-[11px]">
+            <div class="flex-1 min-w-0 pr-2">
+              <div class="text-amber-200 font-bold truncate">${escapeHtml(t.name || t.task_id)}</div>
+              <div class="text-[9px] text-slate-400 flex items-center gap-1.5">
+                <span class="text-emerald-400 uppercase font-semibold">${t.category || 'task'}</span>
+                <span>• Started ${t.started_at || ''} (${t.elapsed_sec || 0}s ago)</span>
+              </div>
+            </div>
+            ${t.can_terminate !== false ? `
+              <button onclick="terminateSpecificTask('${t.task_id}')" class="px-2 py-0.5 rounded bg-rose-500/25 hover:bg-rose-500 text-rose-200 hover:text-black font-bold text-[9px] transition shrink-0">
+                🛑 Kill
+              </button>
+            ` : '<span class="text-[9px] text-slate-500">core</span>'}
+          </div>
+        `).join('');
+      } catch (e) {
+        console.warn('Failed to refresh tasks:', e);
       }
     }
 
-    // -------------------------------------------------------------------------
-    // 10. EVENT LISTENERS INITIALIZATION
-    // -------------------------------------------------------------------------
-    window.addEventListener('DOMContentLoaded', () => {
-      initSphere();
-      renderBrain();
-      probeBackend();
-      setInterval(probeBackend, 3500);
+    window.terminateSpecificTask = async function(taskId) {
+      try {
+        updateThought(`Terminating task: ${taskId}...`);
+        const res = await fetch(`${API_BASE}/api/tasks/terminate`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ task_id: taskId })
+        });
+        const d = await res.json();
+        updateThought(d.message || `Task ${taskId} terminated.`);
+        await refreshActiveTasks();
+      } catch (e) {
+        updateThought(`Error terminating task: ${e.message}`);
+      }
+    };
 
-      // Play Startup Sci-Fi Chime on first click anywhere
-      window.addEventListener('click', () => {
-        getAudioCtx();
-      }, { once: true });
+    async function executeProtocolZero() {
+      try {
+        updateThought('ENGAGING PROTOCOL ZERO: Terminating all tasks, killing ghost apps & muting media...');
+        const res = await fetch(`${API_BASE}/api/tasks/terminate-all`, { method: 'POST' });
+        const d = await res.json();
+        updateThought(d.message || 'Protocol Zero executed. All operations wiped.');
+        await refreshActiveTasks();
+      } catch (e) {
+        updateThought(`Protocol Zero error: ${e.message}`);
+      }
+    }
 
-      // Hologram Geometry Mode Selectors
-      document.getElementById('btnModeSphere').onclick = () => setHoloMode('sphere');
-      document.getElementById('btnModeReactor').onclick = () => setHoloMode('reactor');
-      document.getElementById('btnModeGrid').onclick = () => setHoloMode('grid');
-
-      // Arc Reactor Emblem Click
-      document.getElementById('arcReactorEmblem').onclick = () => {
-        playSfx('startup');
-        state.orbEnergy = 3.0;
-        setTimeout(() => { state.orbEnergy = 1.0; }, 1200);
-      };
-
-      // Protocol Zero Killswitch
-      document.getElementById('btnProtocolZero').onclick = window.terminateAllTasks;
-
-      // SFX Toggle
-      document.getElementById('btnToggleSfx').onclick = () => {
-        state.sfxEnabled = !state.sfxEnabled;
-        const b = document.getElementById('btnToggleSfx');
-        b.textContent = state.sfxEnabled ? '🔊 SFX ON' : '🔇 SFX OFF';
-        b.className = state.sfxEnabled 
-          ? 'px-2.5 py-1 rounded-full bg-amber-950/60 hover:bg-amber-800 border border-amber-500/40 text-amber-300 text-[10px] transition'
-          : 'px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-500 text-[10px] transition';
-        if (state.sfxEnabled) playSfx('command');
-      };
-
-      // Primary Command Bar
-      document.getElementById('btnExecuteCommand').onclick = () => executeCommand();
-      document.getElementById('mainCommandInput').onkeydown = e => { if (e.key === 'Enter') executeCommand(); };
-      document.getElementById('btnVoiceMic').onclick = startVoiceInput;
-      document.getElementById('btnStopMedia').onclick = () => stopOrControlActiveMedia('stop playing');
-
-      // Camera & Vision Toggles
-      document.getElementById('btnToggleCamera').onclick = toggleCamera;
-      document.getElementById('btnToggleScreenVision').onclick = toggleScreenVision;
-      document.getElementById('btnSnapAndAnalyze').onclick = () => executeCommand('What do you see in my camera?');
-      document.getElementById('btnCloseVisionHud').onclick = () => {
-        if (state.cameraStream) toggleCamera();
-        if (state.screenStream) toggleScreenVision();
-        document.getElementById('visionHudBox').classList.add('hidden');
-      };
-
-      // Cognitive Brain Drawer
-      document.getElementById('btnToggleBrain').onclick = () => document.getElementById('brainHudDrawer').classList.toggle('hidden');
-      document.getElementById('btnCloseBrainHud').onclick = () => document.getElementById('brainHudDrawer').classList.add('hidden');
-      document.getElementById('btnAddGoal').onclick = addGoal;
-      document.getElementById('newGoalInput').onkeydown = e => { if (e.key === 'Enter') addGoal(); };
-
-      // Terminal Drawer Controls
-      document.getElementById('btnToggleTerminal').onclick = () => document.getElementById('jarvisTerminalDrawer').classList.toggle('hidden');
-      document.getElementById('btnCloseTerminal').onclick = () => document.getElementById('jarvisTerminalDrawer').classList.add('hidden');
-      document.getElementById('btnRunTermCmd').onclick = () => runTerminalCommand();
-      document.getElementById('termCmdInput').onkeydown = e => { if (e.key === 'Enter') runTerminalCommand(); };
-      document.getElementById('btnClearTermOut').onclick = () => { document.getElementById('terminalOutputBox').textContent = 'Terminal Cleared.\nReady for input.\n'; };
-      document.querySelectorAll('.termPresetBtn').forEach(btn => {
-        btn.onclick = () => {
-          const cmd = btn.getAttribute('data-cmd');
-          runTerminalCommand(cmd);
-        };
-      });
-
-      // Gmail Confirmation
-      document.getElementById('btnConfirmSendGmail').onclick = () => executeCommand('yes');
-      document.getElementById('btnCancelSendGmail').onclick = () => {
-        document.getElementById('gmailConfirmBar').classList.add('hidden');
-        state.pendingGmailDraft = null;
-      };
-
-      // Settings Modal
-      document.getElementById('btnOpenSettings').onclick = () => document.getElementById('settingsModal').classList.remove('hidden');
-      document.getElementById('btnCloseSettings').onclick = () => document.getElementById('settingsModal').classList.add('hidden');
-      document.getElementById('btnSaveSettings').onclick = () => {
-        state.backendUrl = document.getElementById('cfgBackendUrl').value.trim() || 'http://127.0.0.1:8000';
-        state.ollamaUrl = document.getElementById('cfgOllamaUrl').value.trim() || 'http://127.0.0.1:11434';
-        state.model = document.getElementById('cfgOllamaModel').value.trim() || 'gemma4:27b';
-        state.useAirllm = document.getElementById('cfgUseAirllm').checked;
-        state.targetDir = document.getElementById('cfgTargetDir').value.trim() || './hackathon_app';
-        state.geminiKey = document.getElementById('cfgGeminiKey').value.trim();
-        state.sarvamKey = document.getElementById('cfgSarvamKey').value.trim();
-        document.getElementById('settingsModal').classList.add('hidden');
-        probeBackend();
-      };
+    // Task HUD listeners
+    document.getElementById('btnRefreshTasks')?.addEventListener('click', refreshActiveTasks);
+    document.getElementById('btnKillAllTasks')?.addEventListener('click', executeProtocolZero);
+    document.getElementById('btnProtocolZero')?.addEventListener('click', executeProtocolZero);
+    document.getElementById('btnToggleTasks')?.addEventListener('click', () => {
+      const box = document.getElementById('liveTasksHudBox');
+      if (box) box.classList.toggle('hidden');
     });
+
+    // Terminal listeners
+    document.getElementById('btnToggleTerminal')?.addEventListener('click', () => {
+      const drawer = document.getElementById('jarvisTerminalDrawer');
+      if (drawer) {
+        drawer.classList.toggle('hidden');
+        if (!drawer.classList.contains('hidden')) {
+          document.getElementById('terminalInput')?.focus();
+        }
+      }
+    });
+    document.getElementById('btnCloseTerminal')?.addEventListener('click', () => {
+      document.getElementById('jarvisTerminalDrawer')?.classList.add('hidden');
+    });
+    document.getElementById('btnClearTerminal')?.addEventListener('click', () => {
+      const log = document.getElementById('terminalLog');
+      if (log) log.innerHTML = '<span class="text-emerald-400">Terminal buffer cleared.</span>';
+    });
+
+    document.getElementById('terminalForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = document.getElementById('terminalInput');
+      const log = document.getElementById('terminalLog');
+      const cmd = input?.value?.trim();
+      if (!cmd || !log) return;
+      
+      input.value = '';
+      log.innerHTML += `\n<span class="text-amber-300 font-bold">$ ${escapeHtml(cmd)}</span>\n<span class="text-slate-500 italic">Running...</span>`;
+      log.scrollTop = log.scrollHeight;
+      
+      try {
+        const res = await fetch(`${API_BASE}/api/jarvis/terminal`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ command: cmd })
+        });
+        const d = await res.json();
+        const lastPending = log.querySelector('span.text-slate-500:last-child');
+        if (lastPending) lastPending.remove();
+        
+        if (d.stdout) log.innerHTML += `\n<span class="text-slate-200">${escapeHtml(d.stdout)}</span>`;
+        if (d.stderr) log.innerHTML += `\n<span class="text-rose-400">${escapeHtml(d.stderr)}</span>`;
+        if (!d.stdout && !d.stderr) log.innerHTML += `\n<span class="text-slate-400 italic">(Command executed with return code ${d.exit_code})</span>`;
+      } catch (err) {
+        log.innerHTML += `\n<span class="text-rose-400 font-bold">Execution Error: ${escapeHtml(err.message)}</span>`;
+      }
+      log.scrollTop = log.scrollHeight;
+      refreshActiveTasks();
+    });
+
+    // Sphere Mode Switchers
+    document.getElementById('btnToggleArcReactor')?.addEventListener('click', () => {
+      sphereMode = (sphereMode === 'arc_reactor') ? 'classic' : 'arc_reactor';
+      applySphereAesthetics();
+    });
+    document.getElementById('btnToggleQuantumGrid')?.addEventListener('click', () => {
+      sphereMode = (sphereMode === 'quantum_grid') ? 'classic' : 'quantum_grid';
+      applySphereAesthetics();
+    });
+
+    function applySphereAesthetics() {
+      if (!window.jarvisSphere) return;
+      const { pMat, wMat, cMat, rMat } = window.jarvisSphere;
+      if (sphereMode === 'arc_reactor') {
+        if (pMat) pMat.color.setHex(0x38bdf8); // Sky blue
+        if (wMat) wMat.color.setHex(0x0284c7);
+        if (cMat) cMat.color.setHex(0xe0f2fe);
+        if (rMat) rMat.color.setHex(0x38bdf8);
+        updateThought('Hologram switched to ARC REACTOR MODE.');
+      } else if (sphereMode === 'quantum_grid') {
+        if (pMat) pMat.color.setHex(0x10b981); // Emerald matrix
+        if (wMat) wMat.color.setHex(0x059669);
+        if (cMat) cMat.color.setHex(0xa7f3d0);
+        if (rMat) rMat.color.setHex(0x10b981);
+        updateThought('Hologram switched to QUANTUM GRID MATRIX MODE.');
+      } else {
+        if (pMat) pMat.color.setHex(0xf59e0b); // Classic gold
+        if (wMat) wMat.color.setHex(0xfbbf24);
+        if (cMat) cMat.color.setHex(0xfde68a);
+        if (rMat) rMat.color.setHex(0xf59e0b);
+        updateThought('Hologram switched to CLASSIC AVENGERS J.A.R.V.I.S. MODE.');
+      }
+    }
+
+    // Auto-poll tasks every 2.5s
+    setInterval(refreshActiveTasks, 2500);
+    setTimeout(refreshActiveTasks, 800);
+
   </script>
+
 </body>
+
 </html>

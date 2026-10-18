@@ -579,6 +579,19 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
                     pass
             try:
                 calc_ctrl.SetFocus()
+                calc_handle = getattr(calc_ctrl, "NativeWindowHandle", None)
+                if calc_handle:
+                    import win32gui
+                    import win32con
+                    import ctypes
+                    u32 = ctypes.windll.user32
+                    sw = u32.GetSystemMetrics(0)
+                    sh = u32.GetSystemMetrics(1)
+                    calc_w = 360
+                    calc_h = min(560, sh - 80)
+                    calc_x = max(0, sw - calc_w - 20)
+                    calc_y = 40
+                    win32gui.SetWindowPos(calc_handle, win32con.HWND_TOP, calc_x, calc_y, calc_w, calc_h, win32con.SWP_SHOWWINDOW)
             except Exception:
                 pass
 

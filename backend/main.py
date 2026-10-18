@@ -3622,6 +3622,13 @@ def perform_close_application(win_keys: List[str], proc_keys: List[str]) -> Tupl
             except Exception as exc:
                 logger.debug(f"perform_close_application process error: {exc}")
 
+        if any(k in ["calculatorapp", "calc"] for k in proc_keys):
+            try:
+                import subprocess
+                subprocess.run(["taskkill", "/F", "/IM", "CalculatorApp.exe", "/IM", "calc.exe"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            except Exception:
+                pass
+
         # Post-kill sweep: hide any lingering ghost frames that matched win_keys
         try:
             import win32gui
@@ -3766,6 +3773,11 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
             "detail": outcome,
             "spoken_response": outcome,
             "automation_log": f"Windows UIA Click Sequence on '{expr}' -> {disp_text}",
+            "preview_url": "http://127.0.0.1:8000/hackathon_app/index.html",
+            "actions": [
+                {"label": "🧮 Open Modern Web Calc", "url": "http://127.0.0.1:8000/hackathon_app/index.html", "icon": "✨"},
+                {"label": "❌ Dismiss Windows Calc", "command": "close calculator", "icon": "❌"}
+            ],
             "brain": BRAIN.snapshot(),
         }
 
@@ -3859,6 +3871,12 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
     BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "OS_WINDOW_DISPATCH", outcome)
     BRAIN.record_completed_task("os_app_dispatch", raw, outcome)
 
+    calc_preview = "http://127.0.0.1:8000/hackathon_app/index.html" if target_name == "Calculator" else None
+    actions = [
+        {"label": "🧮 Open Modern Web Calc", "url": "http://127.0.0.1:8000/hackathon_app/index.html", "icon": "✨"},
+        {"label": "❌ Dismiss Windows Calc", "command": "close calculator", "icon": "❌"}
+    ] if target_name == "Calculator" else None
+
     return {
         "ok": True,
         "already_open": already_open,
@@ -3866,6 +3884,8 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
         "detail": outcome,
         "spoken_response": outcome,
         "typed_text": type_text,
+        "preview_url": calc_preview,
+        "actions": actions,
         "brain": BRAIN.snapshot(),
     }
 

@@ -293,7 +293,8 @@
       <button onclick="quickRun('open notepad and fix mistakes')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-emerald-500/25 border border-emerald-500/40 text-[10px] mono text-emerald-300 font-medium transition-colors shadow-sm">✍️ Fix Notepad Mistakes</button>
       <button onclick="quickRun('create a fresh new calculator with modern ui from scratch')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">✨ Build Fresh Calc</button>
       <button onclick="quickRun('run autonomous anti-hallucination sentinel to observe project output and self-correct errors')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-emerald-500/25 border border-emerald-500/40 text-[10px] mono text-emerald-300 font-medium transition-colors shadow-sm">🛡️ Anti-Hallucination</button>
-      <button onclick="quickRun('open calculator and calculate 125 * 8')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">🧮 Calculator</button>
+      <button onclick="quickRun('open modern web calculator')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">🧮 Live Web Calc</button>
+      <button onclick="quickRun('close calculator')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-rose-500/25 border border-rose-500/40 text-[10px] mono text-rose-300 font-medium transition-colors shadow-sm">❌ Close Calc</button>
       <button onclick="quickRun('open notepad and type Hello from J.A.R.V.I.S.')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">📝 Notepad</button>
       <button onclick="quickRun('play kalyani song on youtube')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">🎬 YouTube</button>
       <button onclick="quickRun('send hi to one of my contact')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">💬 WhatsApp</button>
@@ -481,15 +482,32 @@
       } else {
         div.className = 'flex items-start gap-2.5 animate-fadeIn';
         let actionBtn = '';
-        if (meta && meta.url) {
-          actionBtn = `
-            <div class="pt-1.5">
-              <a href="${escapeHtml(meta.url)}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-200 font-bold text-[10px] transition-colors">
+        if (meta && (meta.url || meta.actions)) {
+          let buttons = '';
+          if (meta.actions && Array.isArray(meta.actions)) {
+            buttons = meta.actions.map(act => {
+              if (act.url) {
+                return `<a href="${escapeHtml(act.url)}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-200 font-bold text-[10px] transition-colors shadow-sm">
+                  <span>${act.icon || '🚀'}</span>
+                  <span>${escapeHtml(act.label || 'Open')}</span>
+                </a>`;
+              } else if (act.command) {
+                return `<button onclick="quickRun('${escapeHtml(act.command)}')" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/35 border border-rose-400/40 text-rose-200 font-bold text-[10px] transition-colors shadow-sm">
+                  <span>${act.icon || '⚡'}</span>
+                  <span>${escapeHtml(act.label || 'Action')}</span>
+                </button>`;
+              }
+              return '';
+            }).join('');
+          } else if (meta.url) {
+            buttons = `
+              <a href="${escapeHtml(meta.url)}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/35 border border-amber-400/40 text-amber-200 font-bold text-[10px] transition-colors shadow-sm">
                 <span>🚀</span>
                 <span>${escapeHtml(meta.label || 'Open Live Application')}</span>
               </a>
-            </div>
-          `;
+            `;
+          }
+          actionBtn = `<div class="pt-2 flex flex-wrap gap-2 items-center">${buttons}</div>`;
         }
         div.innerHTML = `
           <div class="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-sm shadow-[0_0_10px_rgba(245,158,11,0.4)] shrink-0">🤖</div>
@@ -1029,16 +1047,36 @@
           return;
         }
 
-        // 4. Calculator & Notepad Apps
+        // 4a. Dedicated: Modern Web Calculator synthesized from scratch
+        if (/\b(web\s*calc|modern\s*calc|custom\s*calc|live\s*calc|scratch\s*calc|web\s*calculator|modern\s*calculator|custom\s*calculator)\b/i.test(low)) {
+          state.orbColor = 'cyan';
+          const webCalcUrl = state.backendUrl + '/hackathon_app/index.html';
+          window.open(webCalcUrl, '_blank');
+          const reply = 'Opened your custom synthesized modern web calculator with cybernetic UI and audio, sir.';
+          addChatMessage('jarvis', reply, {
+            actions: [
+              { label: '🧮 Launch Fullscreen Web Calc', url: webCalcUrl, icon: '🧮' },
+              { label: '✨ Regenerate Fresh Calc', command: 'create a fresh new calculator with modern ui from scratch', icon: '✨' },
+              { label: '❌ Close Windows Calc', command: 'close calculator', icon: '❌' }
+            ]
+          });
+          await speak(reply);
+          return;
+        }
+
+        // 4b. Native OS Calculator & Notepad Apps
         if (/\b(calculator|calc|notepad)\b/.test(low)) {
           state.orbColor = 'emerald';
           showChatTyping('Launching and automating application...');
           const d = await postApi('/api/open-app', { instruction: cmd });
-          const targetUrl = d.preview_url || d.url;
-          if (targetUrl) { window.open(targetUrl, '_blank'); }
           hideChatTyping();
           const reply = (d.spoken_response || d.detail || 'Executed application command') + ', sir.';
-          addChatMessage('jarvis', reply, targetUrl ? { url: targetUrl, label: '🧮 Open Live Calculator' } : null);
+          const isCalc = /\b(calculator|calc)\b/.test(low);
+          const metaActions = d.actions || (isCalc ? [
+            { label: '🧮 Open Modern Web Calc', url: d.preview_url || (state.backendUrl + '/hackathon_app/index.html'), icon: '✨' },
+            { label: '❌ Dismiss Windows Calc', command: 'close calculator', icon: '❌' }
+          ] : (d.preview_url ? [{ label: '🚀 Open Application', url: d.preview_url, icon: '🚀' }] : null));
+          addChatMessage('jarvis', reply, metaActions ? { actions: metaActions } : null);
           await speak(reply);
           return;
         }

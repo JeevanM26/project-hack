@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>J.A.R.V.I.S. Fresh Custom Calculator | JARVIS-CALC-5AD79D</title>
+  <title>J.A.R.V.I.S. Fresh Custom Calculator | JARVIS-CALC-C52898</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --glow-rgb: 16, 185, 129;
-      --glow-color: #10b981;
+      --glow-rgb: 245, 158, 11;
+      --glow-color: #f59e0b;
     }
     body {
-      background: radial-gradient(circle at 50% 25%, #042f2e 0%, #021a17 55%, #000000 100%);
+      background: radial-gradient(circle at 50% 25%, #1e1302 0%, #0a0701 55%, #000000 100%);
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
       user-select: none;
@@ -42,14 +42,14 @@
   <!-- DYNAMIC GENERATION BANNER -->
   <header class="w-full max-w-md flex flex-col gap-1 mb-3 px-2">
     <div class="flex items-center justify-between text-[10px] mono text-slate-400">
-      <span class="flex items-center gap-1.5 font-bold text-emerald-400">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        <span>FRESH BUILD: JARVIS-CALC-5AD79D</span>
+      <span class="flex items-center gap-1.5 font-bold text-amber-400">
+        <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
+        <span>FRESH BUILD: JARVIS-CALC-C52898</span>
       </span>
-      <span class="bg-black/60 px-2 py-0.5 rounded border border-white/10">2026-10-18 16:58:32</span>
+      <span class="bg-black/60 px-2 py-0.5 rounded border border-white/10">2026-10-18 17:15:31</span>
     </div>
     <div class="flex items-center justify-between">
-      <h1 class="orbitron text-xs tracking-wider text-emerald-300 font-bold glow-text">J.A.R.V.I.S. CYBERPUNK MATRIX</h1>
+      <h1 class="orbitron text-xs tracking-wider text-amber-300 font-bold glow-text">J.A.R.V.I.S. AVENGERS GODMODE GOLD</h1>
       <div class="flex items-center gap-1.5">
         <button onclick="setTheme('gold')" class="w-3.5 h-3.5 rounded-full bg-amber-500 hover:scale-110" title="Gold"></button>
         <button onclick="setTheme('cyan')" class="w-3.5 h-3.5 rounded-full bg-sky-500 hover:scale-110" title="Cyan"></button>
@@ -63,22 +63,22 @@
   <div class="w-full max-w-md rounded-3xl glass-card p-5 space-y-3.5 shadow-2xl relative">
     
     <!-- DISPLAY SCREEN -->
-    <div class="bg-black/75 border border-emerald-500/30 rounded-2xl p-4 flex flex-col justify-end min-h-[110px] space-y-1 relative overflow-hidden shadow-inner">
-      <div class="flex items-center justify-between text-[10px] mono text-emerald-300/60">
+    <div class="bg-black/75 border border-amber-500/30 rounded-2xl p-4 flex flex-col justify-end min-h-[110px] space-y-1 relative overflow-hidden shadow-inner">
+      <div class="flex items-center justify-between text-[10px] mono text-amber-300/60">
         <span id="memIndicator">M: 0</span>
         <span id="angleIndicator">DEG</span>
       </div>
       <div id="subDisplay" class="mono text-xs text-slate-400 text-right truncate min-h-[18px]"></div>
-      <div id="mainDisplay" class="orbitron text-3xl md:text-4xl text-right text-emerald-300 font-bold tracking-tight glow-text truncate">0</div>
+      <div id="mainDisplay" class="orbitron text-3xl md:text-4xl text-right text-amber-300 font-bold tracking-tight glow-text truncate">0</div>
     </div>
 
     <!-- TABS & ACTIONS -->
     <div class="flex items-center justify-between gap-1 text-[11px] mono">
       <div class="flex gap-1 bg-black/50 p-1 rounded-xl border border-white/10">
-        <button id="btnTabStd" onclick="toggleSci(false)" class="px-3 py-1 rounded-lg bg-emerald-500/25 text-emerald-300 font-bold">Standard</button>
+        <button id="btnTabStd" onclick="toggleSci(false)" class="px-3 py-1 rounded-lg bg-amber-500/25 text-amber-300 font-bold">Standard</button>
         <button id="btnTabSci" onclick="toggleSci(true)" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white font-medium">Scientific</button>
       </div>
-      <button onclick="toggleTapeDrawer()" class="px-2.5 py-1.5 rounded-xl bg-black/50 border border-white/10 text-slate-300 hover:text-emerald-300 text-xs flex items-center gap-1">
+      <button onclick="toggleTapeDrawer()" class="px-2.5 py-1.5 rounded-xl bg-black/50 border border-white/10 text-slate-300 hover:text-amber-300 text-xs flex items-center gap-1">
         <span>📜</span>
         <span>Tape</span>
       </button>
@@ -104,27 +104,27 @@
       <button onclick="calcClearAll()" class="calc-btn p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold orbitron text-sm hover:bg-rose-500/35">AC</button>
       <button onclick="calcBackspace()" class="calc-btn p-3.5 rounded-2xl bg-black/50 border border-slate-700 text-slate-300 font-bold mono text-sm hover:bg-slate-800">⌫</button>
       <button onclick="calcPercent()" class="calc-btn p-3.5 rounded-2xl bg-black/50 border border-slate-700 text-slate-300 font-bold mono text-sm hover:bg-slate-800">%</button>
-      <button onclick="calcOp('/')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">÷</button>
+      <button onclick="calcOp('/')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold mono text-base hover:bg-amber-500/35">÷</button>
       <!-- Row 2 -->
       <button onclick="calcNum('7')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">7</button>
       <button onclick="calcNum('8')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">8</button>
       <button onclick="calcNum('9')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">9</button>
-      <button onclick="calcOp('*')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">×</button>
+      <button onclick="calcOp('*')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold mono text-base hover:bg-amber-500/35">×</button>
       <!-- Row 3 -->
       <button onclick="calcNum('4')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">4</button>
       <button onclick="calcNum('5')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">5</button>
       <button onclick="calcNum('6')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">6</button>
-      <button onclick="calcOp('-')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">−</button>
+      <button onclick="calcOp('-')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold mono text-base hover:bg-amber-500/35">−</button>
       <!-- Row 4 -->
       <button onclick="calcNum('1')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">1</button>
       <button onclick="calcNum('2')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">2</button>
       <button onclick="calcNum('3')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">3</button>
-      <button onclick="calcOp('+')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">+</button>
+      <button onclick="calcOp('+')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold mono text-base hover:bg-amber-500/35">+</button>
       <!-- Row 5 -->
       <button onclick="calcToggleSign()" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-sm hover:bg-white/10">±</button>
       <button onclick="calcNum('0')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">0</button>
       <button onclick="calcDecimal()" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">.</button>
-      <button onclick="calcEquals()" class="calc-btn p-3.5 rounded-2xl bg-emerald-500 border border-emerald-400 text-black font-extrabold orbitron text-lg shadow-lg hover:bg-emerald-400">=</button>
+      <button onclick="calcEquals()" class="calc-btn p-3.5 rounded-2xl bg-amber-500 border border-amber-400 text-black font-extrabold orbitron text-lg shadow-lg hover:bg-amber-400">=</button>
     </div>
 
     <!-- TAPE HISTORY DRAWER (Collapsible) -->
@@ -140,7 +140,7 @@
   </div>
 
   <footer class="mt-4 text-[10px] mono text-slate-500 text-center">
-    Prompt: "create a fresh new calculator with cyberpunk theme from scratch" • Built by J.A.R.V.I.S. 5-Agent Swarm
+    Prompt: "Create Google calculator." • Built by J.A.R.V.I.S. 5-Agent Swarm
   </footer>
 
   <script>

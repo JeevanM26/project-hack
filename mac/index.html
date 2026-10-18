@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="web_standard" name="shell-type"/>
+  <title>J.A.R.V.I.S. // Stark Industries Neural HUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com" rel="preconnect"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    @layer base {
+      html, body { margin: 0; padding: 0; }
+      body { overscroll-behavior: none; }
+      main > :first-child { margin-top: 0 !important; }
+      main > :last-child { margin-bottom: 0 !important; }
+    }
+    ::-webkit-scrollbar { display: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-low": "#191c22",
+            "surface-dim": "#10131a",
+            "on-tertiary": "#68001a",
+            "error": "#ffb4ab",
+            "on-secondary-container": "#6b4b00",
+            "primary": "#a8e8ff",
+            "on-primary": "#003642",
+            "on-primary-fixed": "#001f27",
+            "surface-container-lowest": "#0b0e14",
+            "primary-fixed-dim": "#3cd7ff",
+            "on-error-container": "#ffdad6",
+            "on-tertiary-fixed": "#40000d",
+            "surface-container": "#1d2026",
+            "inverse-on-surface": "#2d3037",
+            "surface-bright": "#363940",
+            "on-surface": "#e0e2eb",
+            "on-background": "#e0e2eb",
+            "tertiary-fixed-dim": "#ffb2b6",
+            "secondary-fixed-dim": "#ffba26",
+            "outline-variant": "#3c494e",
+            "on-secondary-fixed": "#271900",
+            "inverse-primary": "#00677e",
+            "on-secondary": "#422d00",
+            "surface-variant": "#32353c",
+            "on-error": "#690005",
+            "on-primary-fixed-variant": "#004e5f",
+            "tertiary": "#ffd4d6",
+            "primary-fixed": "#b4ebff",
+            "surface-container-highest": "#32353c",
+            "on-secondary-fixed-variant": "#5e4100",
+            "secondary-fixed": "#ffdea9",
+            "surface": "#10131a",
+            "tertiary-container": "#ffadb1",
+            "outline": "#859398",
+            "background": "#10131a",
+            "on-surface-variant": "#bbc9cf",
+            "primary-container": "#00d4ff",
+            "inverse-surface": "#e0e2eb",
+            "tertiary-fixed": "#ffdada",
+            "secondary-container": "#ffb700",
+            "error-container": "#93000a",
+            "on-primary-container": "#00586b",
+            "surface-container-high": "#272a31",
+            "on-tertiary-container": "#a3002f",
+            "surface-tint": "#3cd7ff",
+            "on-tertiary-fixed-variant": "#920029",
+            "secondary": "#ffdb9f"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-xl": "2.5rem",
+            "margin-compact": "1rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "gutter": "1.25rem",
+            "space-lg": "1.5rem",
+            "space-md": "1rem",
+            "margin": "2rem",
+            "gutter-dense": "0.75rem"
+          },
+          "fontFamily": {
+            "code-stream": [ "Space Mono", "monospace" ],
+            "body-sm": [ "Inter", "sans-serif" ],
+            "label-telemetry": [ "Space Mono", "monospace" ],
+            "body-lg": [ "Inter", "sans-serif" ],
+            "headline-md": [ "Space Grotesk", "sans-serif" ],
+            "headline-sm": [ "Space Grotesk", "sans-serif" ],
+            "body-md": [ "Inter", "sans-serif" ],
+            "label-status": [ "Space Mono", "monospace" ],
+            "headline-lg": [ "Space Grotesk", "sans-serif" ],
+            "display": [ "Space Grotesk", "sans-serif" ]
+          },
+          "fontSize": {
+            "code-stream": [ "12px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "400" } ],
+            "body-sm": [ "12px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" } ],
+            "label-telemetry": [ "11px", { "lineHeight": "16px", "letterSpacing": "0.12em", "fontWeight": "700" } ],
+            "body-lg": [ "16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" } ],
+            "headline-md": [ "24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" } ],
+            "headline-sm": [ "18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "500" } ],
+            "body-md": [ "14px", { "lineHeight": "20px", "letterSpacing": "-0.005em", "fontWeight": "400" } ],
+            "label-status": [ "10px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "400" } ],
+            "headline-lg": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" } ],
+            "display": [ "48px", { "lineHeight": "56px", "letterSpacing": "-0.03em", "fontWeight": "700" } ]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased min-h-screen relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+  <!-- FILE PROTOCOL SECURITY WARNING (Shown only if user opens via file:// in browser) -->
+  <div id="file-protocol-warning" class="hidden w-full bg-error-container text-on-error-container px-4 py-2.5 text-center font-code-stream text-xs font-bold border-b-2 border-error flex items-center justify-center gap-2 z-50 relative shadow-lg">
+    <span class="material-symbols-outlined text-sm text-error">warning</span>
+    <span>SECURITY ALERT: You opened this file via Finder (file://). Browsers strictly disable microphone on file://.</span>
+    <a href="http://localhost:8000" class="underline bg-error text-white px-2.5 py-0.5 rounded font-bold hover:opacity-90 ml-1">OPEN IN HTTP://LOCALHOST:8000</a>
+  </div>
+
+  <!-- Subtle Ambient Top Radial Glow -->
+  <div class="fixed inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,rgba(0,212,255,0.08),transparent_65%)]"></div>
+
+  <!-- Three.js 3D Holographic Fibonacci Particle Canvas -->
+  <canvas id="threeHoloCanvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+
+  <div class="min-h-screen p-2 sm:p-margin flex flex-col items-center justify-start relative z-10">
+    <div class="w-full max-w-7xl rounded-2xl bg-surface/65 backdrop-blur-3xl shadow-[0_16px_48px_-8px_rgba(0,0,0,0.9),0_0_24px_2px_rgba(0,212,255,0.12)] flex flex-col min-h-[calc(100vh-4rem)] relative overflow-hidden border border-outline-variant/30">
+
+      <!-- HEADER BAR -->
+      <header class="w-full z-50 bg-surface-container-lowest/80 backdrop-blur-xl rounded-t-2xl border-b border-outline-variant/30 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
+        <div class="h-14 px-space-md flex items-center justify-between gap-space-md">
+          <!-- Window Controls & Title -->
+          <div class="flex items-center gap-space-md">
+            <div class="flex items-center gap-1.5 px-space-xs">
+              <div class="w-3 h-3 rounded-full bg-error/80 cursor-pointer" title="Stand Down" onclick="triggerQuickAction('Stand down defense protocols')"></div>
+              <div class="w-3 h-3 rounded-full bg-secondary-container/80 cursor-pointer" title="Diagnostics" onclick="triggerQuickAction('Run diagnostics')"></div>
+              <div class="w-3 h-3 rounded-full bg-primary/80 cursor-pointer" title="Audio Core" onclick="triggerQuickAction('Open Spotify')"></div>
+            </div>
+            <div class="flex items-center gap-space-sm pl-space-xs">
+              <span class="font-headline-sm text-headline-sm text-on-surface tracking-wider uppercase font-semibold">
+                J.A.R.V.I.S. <span class="text-primary font-code-stream text-code-stream">// STARK OS v2.1</span>
+              </span>
+              <div class="flex items-center gap-space-xs px-2 py-0.5 rounded-full bg-surface-container-low border border-primary/20" id="model-status-badge">
+                <div class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" id="model-status-dot"></div>
+                <span class="font-label-status text-label-status text-primary uppercase" id="model-status-text">LOCAL GEMMA 2 ONLINE (APPLE M2)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Navigation Pills & Controls -->
+          <nav class="hidden lg:flex items-center gap-space-xs">
+            <button class="px-2.5 py-1 transition-colors bg-surface-container-high text-primary font-headline-sm rounded-lg text-xs" type="button">Tactical HUD</button>
+            <button class="font-body-md text-xs px-2.5 py-1 rounded text-primary hover:text-white bg-primary/10 hover:bg-primary/20 border border-primary/30 transition-colors flex items-center gap-1 font-semibold" onclick="toggleBrainDrawer()" type="button" title="Toggle 4-Tier Cognitive Brain"><span class="material-symbols-outlined text-sm">psychology</span><span>Brain</span></button>
+            <button class="font-body-md text-xs px-2.5 py-1 rounded text-rose-300 hover:text-rose-100 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.3)] transition-colors flex items-center gap-1 font-bold" onclick="executeProtocolZero()" type="button" title="Emergency Protocol Zero: Abort all operations and mute audio"><span class="material-symbols-outlined text-sm text-rose-400">gpp_maybe</span><span>Protocol Zero</span></button>
+            <button id="btn-sfx-toggle" class="font-body-md text-xs px-2 py-1 rounded text-on-surface-variant hover:text-on-surface bg-surface-container-high transition-colors flex items-center gap-1 text-[11px]" onclick="toggleSfx()" type="button" title="Toggle Procedural Audio SFX"><span class="material-symbols-outlined text-[13px]" id="sfx-icon">volume_up</span><span id="sfx-label">SFX ON</span></button>
+            <button id="btn-holo-mode" class="font-body-md text-xs px-2 py-1 rounded text-on-surface-variant hover:text-on-surface bg-surface-container-high transition-colors flex items-center gap-1 text-[11px]" onclick="toggleHoloMode()" type="button" title="Toggle 3D Holographic Geometry"><span class="material-symbols-outlined text-[13px]">view_in_ar</span><span id="holo-mode-label">3D Sphere</span></button>
+          </nav>
+
+          <!-- Status & Controls -->
+          <div class="flex items-center gap-space-sm">
+            <!-- Live Vitals Pill -->
+            <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low border border-outline-variant/30 text-[10px] font-code-stream text-on-surface-variant" id="vitals-pill" title="Live macOS Hardware Vitals">
+              <span class="flex items-center gap-0.5 text-emerald-400 font-bold" id="vitals-battery" title="MacBook Battery Status">
+                <span class="material-symbols-outlined text-[13px]" id="battery-icon">battery_charging_full</span>
+                <span id="vitals-battery-val">91%</span>
+              </span>
+              <span class="text-outline">|</span>
+              <span class="flex items-center gap-0.5 text-amber-400 font-bold" id="vitals-storage" title="Macintosh HD Free Storage">
+                <span class="material-symbols-outlined text-[13px]">hard_drive</span>
+                <span id="vitals-storage-val">83GB FREE</span>
+              </span>
+              <span class="text-outline">|</span>
+              <span>CPU:</span> <strong class="text-primary font-bold" id="vitals-cpu">14%</strong>
+              <span class="text-outline">|</span>
+              <span>RAM:</span> <strong class="text-on-surface font-semibold" id="vitals-ram">16GB</strong>
+              <span class="text-outline">|</span>
+              <strong class="text-emerald-400 font-bold" id="vitals-platform">METAL M2</strong>
+            </div>
+
+            <div class="flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-surface-container-low shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)] border border-outline-variant/30">
+              <span class="font-label-telemetry text-label-telemetry text-on-surface-variant">LATENCY</span>
+              <span class="font-code-stream text-code-stream text-primary font-bold" id="top-latency">0.8ms</span>
+            </div>
+            <div class="flex items-center gap-space-xs px-space-sm py-1 rounded bg-surface-container-low border border-outline-variant/30">
+              <span class="font-label-status text-label-status text-on-surface-variant uppercase">DEFENSE</span>
+              <button aria-label="Toggle Defense Protocol" class="w-9 h-5 rounded-full bg-surface-container-high p-0.5 flex items-center cursor-pointer transition-all focus:outline-none" id="top-defense-toggle" onclick="toggleDefenseSwitch()" type="button">
+                <div class="w-4 h-4 rounded-full bg-primary shadow-[0_0_8px_rgba(0,212,255,0.8)] transition-transform duration-300" id="top-defense-thumb"></div>
+              </button>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary shadow-[0_0_10px_rgba(0,212,255,0.3)]">
+              <span class="material-symbols-outlined text-primary text-[18px]">person</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- MAIN CONTENT -->
+      <main class="w-full flex-1 flex flex-col bg-surface/40">
+        <div class="flex flex-col w-full relative select-none">
+
+          <!-- Ambient Overlays -->
+          <div class="pointer-events-none absolute inset-0 overflow-hidden z-0">
+            <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] h-[480px] bg-primary/10 rounded-full blur-[140px] transition-all duration-700" id="ambient-glow"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,transparent_20%,rgba(11,14,20,0.85)_85%)]"></div>
+          </div>
+
+          <!-- Secondary Telemetry Ribbon -->
+          <div class="relative z-10 w-full px-space-md py-space-sm bg-surface-container-lowest/80 backdrop-blur-xl flex flex-wrap items-center justify-between gap-space-sm border-b border-outline-variant/20">
+            <div class="flex items-center gap-space-md">
+              <div class="flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container-high/60 shadow-inner">
+                <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                <span class="font-label-telemetry text-label-telemetry text-primary tracking-widest uppercase">HUD_TACTICAL // NODE 01</span>
+              </div>
+              <div class="hidden sm:flex items-center gap-space-xs font-code-stream text-code-stream text-on-surface-variant">
+                <span class="text-primary font-bold">ARC FLUX</span>
+                <span id="arc-flux-val">99.84% STABLE</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-space-sm">
+              <div class="flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container-low shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]">
+                <span class="font-label-status text-label-status text-on-surface-variant uppercase">NEURAL LATENCY</span>
+                <span class="font-code-stream text-code-stream text-primary font-bold" id="telemetry-latency">1.1ms</span>
+              </div>
+              <div class="hidden md:flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container-low shadow-[inset_0_1px_3px_rgba(0,0,0,0.8)]">
+                <span class="font-label-status text-label-status text-on-surface-variant uppercase">M2 MEMORY</span>
+                <span class="font-code-stream text-code-stream text-on-surface font-semibold">4.8 GB / 16 GB</span>
+              </div>
+              <button onclick="toggleCameraViewfinder()" class="flex items-center gap-1.5 px-2.5 py-1 rounded bg-surface-container-low hover:bg-surface-container-high transition-colors border border-primary/20 text-primary shadow-sm" title="Toggle Optical Camera HUD" type="button">
+                <span class="material-symbols-outlined text-sm">videocam</span>
+                <span class="font-label-telemetry text-label-telemetry tracking-wider uppercase">OPTICAL HUD</span>
+              </button>
+              <div class="flex items-center gap-space-xs px-space-sm py-1 rounded bg-surface-container-low shadow-sm">
+                <span class="font-label-status text-label-status text-on-surface-variant uppercase transition-colors" id="defense-label">DEFENSE: STANDBY</span>
+                <button aria-label="Toggle Defense Protocol" class="w-10 h-5 rounded-full bg-surface-container-high p-0.5 flex items-center transition-all duration-300 focus:outline-none" id="defense-switch" onclick="toggleDefenseSwitch()" type="button">
+                  <div class="w-4 h-4 rounded-full bg-primary shadow-[0_0_8px_rgba(0,212,255,0.8)] transition-transform duration-300" id="defense-thumb"></div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PRIMARY STAGE VIEWPORT -->
+          <div class="relative z-10 w-full flex-1 flex flex-col items-center px-space-sm sm:px-space-md py-space-md max-w-5xl mx-auto gap-space-md">
+
+            <!-- Central Arc Reactor Voice Hub -->
+            <div class="flex flex-col items-center justify-center text-center mt-1 relative">
+              <!-- Glow Disperser & Interactive Arc Reactor Button -->
+              <div class="relative flex items-center justify-center cursor-pointer group active:scale-95 transition-transform" id="arc-reactor-button" onclick="toggleVoiceInput()" title="Tap to Speak (Siri Voice)">
+                <div class="absolute w-44 h-44 rounded-full bg-primary/20 blur-xl opacity-60 group-hover:opacity-100 transition-all duration-500" id="reactor-aura"></div>
+                <!-- Concentric HUD Rings (Layered SVG Visualizer) -->
+                <svg class="w-36 h-36 relative z-10 drop-shadow-[0_0_18px_rgba(0,212,255,0.7)]" viewBox="0 0 160 160">
+                  <circle class="text-primary/20" cx="80" cy="80" fill="none" r="74" stroke="currentColor" stroke-dasharray="6 8" stroke-width="1.5"></circle>
+                  <circle class="text-primary origin-center animate-[spin_22s_linear_infinite]" cx="80" cy="80" fill="none" id="ring-outer" r="74" stroke="currentColor" stroke-dasharray="32 16 8 16" stroke-width="2"></circle>
+                  <circle class="text-primary/30" cx="80" cy="80" fill="none" r="60" stroke="currentColor" stroke-width="1.5"></circle>
+                  <circle class="text-primary-fixed-dim origin-center animate-[spin_12s_linear_infinite_reverse]" cx="80" cy="80" fill="none" id="ring-mid" r="56" stroke="currentColor" stroke-dasharray="14 10 40 8" stroke-width="2.5"></circle>
+                  <circle class="opacity-95" cx="80" cy="80" fill="#0b0e14" r="44" stroke="currentColor" stroke-width="2"></circle>
+                  <circle class="text-primary/40" cx="80" cy="80" fill="#10131a" r="38" stroke="currentColor" stroke-dasharray="3 4" stroke-width="1.5"></circle>
+                  <!-- Stark Energy Core & Glyph -->
+                  <g class="origin-center transition-transform duration-300" id="reactor-core">
+                    <polygon class="text-primary" fill="rgba(0,212,255,0.18)" points="80,50 106,94 54,94" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></polygon>
+                    <polygon class="text-primary opacity-60" fill="currentColor" points="80,58 98,90 62,90"></polygon>
+                    <circle class="drop-shadow-[0_0_12px_#ffffff]" cx="80" cy="78" fill="#ffffff" r="8"></circle>
+                  </g>
+                  <line class="text-primary" stroke="currentColor" stroke-width="2" x1="80" x2="80" y1="6" y2="12"></line>
+                  <line class="text-primary" stroke="currentColor" stroke-width="2" x1="80" x2="80" y1="148" y2="154"></line>
+                  <line class="text-primary" stroke="currentColor" stroke-width="2" x1="6" x2="12" y1="80" y2="80"></line>
+                  <line class="text-primary" stroke="currentColor" stroke-width="2" x1="148" x2="154" y1="80" y2="80"></line>
+                </svg>
+                <!-- Centered Voice Pulsing Waveform Ring -->
+                <div class="absolute w-28 h-28 rounded-full border-2 border-primary/40 animate-ping opacity-0 pointer-events-none transition-opacity" id="core-pulse-wave"></div>
+              </div>
+
+              <!-- Realtime Equalizer Frequency Bars -->
+              <div class="flex items-end justify-center gap-1.5 h-8 mt-2.5 py-1" id="equalizer-strip">
+                <span class="w-1 bg-primary/60 rounded-full transition-all duration-150 h-2"></span>
+                <span class="w-1 bg-primary/75 rounded-full transition-all duration-150 h-3"></span>
+                <span class="w-1 bg-primary rounded-full transition-all duration-150 h-4"></span>
+                <span class="w-1 bg-primary-fixed-dim rounded-full transition-all duration-150 h-6 shadow-[0_0_8px_rgba(0,212,255,0.8)]"></span>
+                <span class="w-1 bg-primary rounded-full transition-all duration-150 h-8 shadow-[0_0_10px_rgba(0,212,255,1)]"></span>
+                <span class="w-1 bg-primary-fixed-dim rounded-full transition-all duration-150 h-5 shadow-[0_0_8px_rgba(0,212,255,0.8)]"></span>
+                <span class="w-1 bg-primary rounded-full transition-all duration-150 h-3"></span>
+                <span class="w-1 bg-primary/75 rounded-full transition-all duration-150 h-2"></span>
+                <span class="w-1 bg-primary/60 rounded-full transition-all duration-150 h-1.5"></span>
+              </div>
+
+              <!-- Voice Transcribe Status Display -->
+              <div class="mt-2 flex flex-col items-center">
+                <div class="flex items-center gap-2">
+                  <span class="w-2 h-2 rounded-full bg-primary animate-pulse" id="transcribe-beacon"></span>
+                  <span class="font-code-stream text-code-stream text-primary tracking-wide uppercase font-semibold" id="hud-status-caption">TAP TO SPEAK // STANDBY V2.1</span>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant italic mt-1 max-w-md h-5 truncate transition-opacity" id="live-transcription-preview"></p>
+              </div>
+            </div>
+
+            <!-- Conversational Feedback Stream View -->
+            <div class="w-full max-w-3xl flex-1 max-h-[360px] overflow-y-auto space-y-space-md pr-1.5 scroll-smooth no-scrollbar" id="dialog-stream-container">
+              <!-- Initial Welcome Node -->
+              <div class="flex flex-col items-start">
+                <div class="flex items-center gap-space-xs mb-1">
+                  <div class="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-[11px]">smart_toy</span>
+                  </div>
+                  <span class="font-label-telemetry text-label-telemetry text-primary font-bold">J.A.R.V.I.S. // COGNITION STREAM</span>
+                  <span class="font-code-stream text-code-stream text-on-surface-variant/70">ONLINE</span>
+                </div>
+                <div class="bg-surface-container-low/90 text-on-surface px-space-md py-space-md rounded-2xl rounded-tl-none max-w-2xl shadow-[0_8px_32px_rgba(0,0,0,0.7)] backdrop-blur-2xl space-y-space-md border border-outline-variant/30">
+                  <p class="font-body-md text-body-md leading-relaxed text-on-surface">
+                    At your service, Commander Yaseen. Neural Core augmented with <span class="text-primary font-bold">OpenJarvis</span> and <span class="text-cyan-400 font-bold">Gemini 3.8 Flash</span> is operational on your Apple Silicon M2 with full macOS task integration. Tap the Arc Reactor, speak, or select a directive below.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Directive Chips Strip -->
+            <div class="w-full max-w-3xl flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 select-none mb-1 text-xs">
+              <span class="text-[10px] font-label-telemetry text-primary/80 uppercase tracking-widest pl-1 shrink-0 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>DIRECTIVES:
+              </span>
+              <button type="button" onclick="sendToJarvis('give me my morning digest')" class="shrink-0 px-2.5 py-1 rounded-full bg-surface-container-high/70 hover:bg-primary/20 text-on-surface-variant hover:text-primary border border-outline-variant/30 hover:border-primary/50 transition-all duration-200 flex items-center gap-1 font-mono text-[11px]">
+                <span class="material-symbols-outlined text-[13px] text-cyan-400">query_stats</span> Morning Digest
+              </button>
+              <button type="button" onclick="sendToJarvis('whatsapp 8197646867 mission ready')" class="shrink-0 px-2.5 py-1 rounded-full bg-surface-container-high/70 hover:bg-green-500/20 text-on-surface-variant hover:text-green-300 border border-outline-variant/30 hover:border-green-500/50 transition-all duration-200 flex items-center gap-1 font-mono text-[11px]">
+                <span class="material-symbols-outlined text-[13px] text-green-400">chat</span> WhatsApp Yaseen
+              </button>
+              <button type="button" onclick="sendToJarvis('what is my battery percentage')" class="shrink-0 px-2.5 py-1 rounded-full bg-surface-container-high/70 hover:bg-emerald-500/20 text-on-surface-variant hover:text-emerald-300 border border-outline-variant/30 hover:border-emerald-500/50 transition-all duration-200 flex items-center gap-1 font-mono text-[11px]">
+                <span class="material-symbols-outlined text-[13px] text-emerald-400">battery_charging_full</span> Vitals
+              </button>
+              <button type="button" onclick="sendToJarvis('write a code to compute fibonacci series in python')" class="shrink-0 px-2.5 py-1 rounded-full bg-surface-container-high/70 hover:bg-yellow-500/20 text-on-surface-variant hover:text-yellow-300 border border-outline-variant/30 hover:border-yellow-500/50 transition-all duration-200 flex items-center gap-1 font-mono text-[11px]">
+                <span class="material-symbols-outlined text-[13px] text-yellow-400">terminal</span> Python Code
+              </button>
+              <button type="button" onclick="sendToJarvis('write a letter to principal requesting leave for illness')" class="shrink-0 px-2.5 py-1 rounded-full bg-surface-container-high/70 hover:bg-purple-500/20 text-on-surface-variant hover:text-purple-300 border border-outline-variant/30 hover:border-purple-500/50 transition-all duration-200 flex items-center gap-1 font-mono text-[11px]">
+                <span class="material-symbols-outlined text-[13px] text-purple-400">description</span> Compose Letter
+              </button>
+              <button type="button" onclick="sendToJarvis('play Apna college Java tutorial on YouTube')" class="shrink-0 px-2.5 py-1 rounded-full bg-surface-container-high/70 hover:bg-red-500/20 text-on-surface-variant hover:text-red-300 border border-outline-variant/30 hover:border-red-500/50 transition-all duration-200 flex items-center gap-1 font-mono text-[11px]">
+                <span class="material-symbols-outlined text-[13px] text-red-400">smart_display</span> YouTube Java
+              </button>
+            </div>
+
+            <!-- Bottom Command Dock Interface -->
+            <div class="w-full max-w-3xl relative mb-2">
+              <form class="relative flex items-center bg-surface-container-lowest/90 backdrop-blur-2xl rounded-2xl p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(0,212,255,0.12)] border border-outline-variant/40" id="jarvis-command-form" onsubmit="event.preventDefault(); submitCommand();">
+                <!-- Stark Protocol Prefix -->
+                <div class="pl-space-md pr-space-xs flex items-center gap-1 select-none pointer-events-none">
+                  <span class="font-code-stream text-code-stream font-bold text-primary" id="prompt-protocol-prefix">JARVIS://</span>
+                  <span class="w-1.5 h-4 bg-primary inline-block animate-pulse" id="prompt-cursor"></span>
+                </div>
+                <!-- Dynamic User Query Input -->
+                <input autocomplete="off" class="flex-1 bg-transparent border-0 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:ring-0 px-2 py-2.5 min-w-0" id="command-input" placeholder="Ask J.A.R.V.I.S. anything or issue suit protocol..." type="text"/>
+                <!-- Mic Trigger with Wave Pulse Aura -->
+                <button aria-label="Voice Activation" class="relative w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-high text-primary hover:bg-surface-container-highest transition-all duration-200 focus:outline-none mr-1" id="dock-mic-btn" onclick="toggleVoiceInput()" title="Voice Microphone" type="button">
+                  <span class="absolute inset-0 rounded-full bg-primary/30 scale-100 opacity-0 transition-all duration-300 pointer-events-none" id="dock-mic-ring"></span>
+                  <span class="material-symbols-outlined text-xl" id="dock-mic-icon">mic</span>
+                </button>
+                <!-- Camera HUD Dock Button -->
+                <button aria-label="Toggle Camera HUD" class="w-10 h-10 rounded-full flex items-center justify-center bg-surface-container-high text-primary hover:bg-surface-container-highest transition-all duration-200 focus:outline-none mr-1.5" onclick="toggleCameraViewfinder()" title="Optical Camera HUD" type="button">
+                  <span class="material-symbols-outlined text-xl">videocam</span>
+                </button>
+                <!-- Command Dispatch Trigger -->
+                <button aria-label="Transmit Command" class="w-10 h-10 rounded-xl flex items-center justify-center bg-primary text-on-primary hover:bg-primary-container transition-all duration-200 shadow-[0_0_12px_rgba(0,212,255,0.4)] focus:outline-none active:scale-95" id="submit-btn" type="submit">
+                  <span class="material-symbols-outlined text-xl">arrow_forward</span>
+                </button>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </main>
+
+      <!-- ── HOLOGRAPHIC CAMERA HUD OVERLAY ─────────────────────── -->
+      <div id="camera-hud-overlay" style="display:none;" class="fixed inset-0 z-[200] bg-black/70 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="relative w-full max-w-2xl rounded-2xl overflow-hidden border border-primary/50 shadow-[0_0_60px_rgba(0,212,255,0.4)] bg-surface/90">
+          <!-- Optical Reticle scanline overlay -->
+          <div class="absolute inset-0 pointer-events-none z-10">
+            <div class="absolute top-1/2 left-0 right-0 h-px bg-primary/40"></div>
+            <div class="absolute left-1/2 top-0 bottom-0 w-px bg-primary/40"></div>
+            <div class="absolute top-3 left-3 w-8 h-8 border-l-2 border-t-2 border-primary"></div>
+            <div class="absolute top-3 right-3 w-8 h-8 border-r-2 border-t-2 border-primary"></div>
+            <div class="absolute bottom-3 left-3 w-8 h-8 border-l-2 border-b-2 border-primary"></div>
+            <div class="absolute bottom-3 right-3 w-8 h-8 border-r-2 border-b-2 border-primary"></div>
+            <div class="absolute top-2 left-1/2 -translate-x-1/2 font-label-telemetry text-label-telemetry text-primary tracking-widest">OPTICAL SENSOR FEED // STARK HUD v2.1</div>
+            <div class="absolute bottom-16 left-1/2 -translate-x-1/2 font-label-telemetry text-label-telemetry text-primary/70" id="cam-status-label">LIVE BIOMETRIC FEED ACTIVE</div>
+          </div>
+          <!-- Video stream -->
+          <video id="hud-camera-video" autoplay playsinline muted class="w-full aspect-video object-cover" style="transform:scaleX(-1);"></video>
+          <!-- Snapshot canvas (hidden) -->
+          <canvas id="hud-camera-canvas" class="hidden"></canvas>
+          <!-- Control Bar -->
+          <div class="absolute bottom-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-surface-container-lowest/80 backdrop-blur-md border-t border-primary/20">
+            <span class="font-label-telemetry text-label-telemetry text-primary tracking-widest">RES: 1920×1080 // IR: ENABLED</span>
+            <div class="flex items-center gap-3">
+              <button onclick="takeCameraSnapshot()" class="px-4 py-1.5 rounded-xl bg-primary text-on-primary font-label-telemetry text-label-telemetry tracking-wider uppercase shadow-[0_0_12px_rgba(0,212,255,0.5)] hover:bg-primary-container active:scale-95 transition-all" title="Capture Snapshot">
+                <span class="material-symbols-outlined text-base align-middle">photo_camera</span> CAPTURE
+              </button>
+              <button onclick="closeCameraViewfinder()" class="px-4 py-1.5 rounded-xl bg-error/20 border border-error/40 text-error font-label-telemetry text-label-telemetry tracking-wider uppercase hover:bg-error/30 active:scale-95 transition-all">
+                <span class="material-symbols-outlined text-base align-middle">videocam_off</span> CLOSE
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 4-TIER COGNITIVE MEMORY BRAIN DRAWER ─────────────────── -->
+      <div id="brain-drawer" class="fixed top-16 right-4 z-[210] w-96 max-h-[85vh] rounded-2xl bg-surface-container-lowest/95 backdrop-blur-2xl border border-primary/40 shadow-[0_20px_60px_rgba(0,0,0,0.9),0_0_30px_rgba(0,212,255,0.2)] p-4 flex flex-col gap-3 transition-all duration-300 transform translate-x-[120%] opacity-0 pointer-events-none">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-primary/30 pb-2.5">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-xl">psychology</span>
+            <span class="font-headline-sm text-sm text-primary uppercase font-bold tracking-wider">J.A.R.V.I.S. Cognitive Brain</span>
+          </div>
+          <button onclick="toggleBrainDrawer()" class="text-on-surface-variant hover:text-on-surface p-1 rounded hover:bg-surface-container-high transition">
+            <span class="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto space-y-3 pr-1 text-xs font-code-stream no-scrollbar">
+          <!-- Tier 1: Identity & Persona -->
+          <div class="rounded-xl bg-surface-container-low/80 border border-primary/20 p-3 space-y-1">
+            <div class="text-[10px] text-primary uppercase tracking-wider font-bold flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+              1. IDENTITY &amp; PERSONA
+            </div>
+            <div class="text-on-surface text-[11px] leading-relaxed" id="brain-identity-text">
+              J.A.R.V.I.S. Mark VII // Paul Bettany Persona // On-Device Apple Silicon M2 (Metal GPU)
+            </div>
+          </div>
+
+          <!-- Tier 2: Working Memory (Live Thought Trace) -->
+          <div class="rounded-xl bg-surface-container-low/80 border border-secondary-container/30 p-3 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] text-secondary-container uppercase tracking-wider font-bold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary-container animate-pulse"></span>
+                2. WORKING MEMORY
+              </div>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-secondary-container/20 text-secondary font-bold uppercase" id="brain-working-status">STANDBY</span>
+            </div>
+            <div class="text-on-surface font-semibold text-[11px]" id="brain-working-directive">Awaiting voice or keyboard input</div>
+            <div class="text-[10px] text-primary/80 italic font-mono bg-black/50 p-2 rounded border border-outline-variant/20" id="brain-working-thought">
+              &lt;think&gt; Audio pre-flight nominal; Apple Silicon M2 Metal inference pipeline armed. &lt;/think&gt;
+            </div>
+          </div>
+
+          <!-- Tier 3: Episodic Memory Audit Trail -->
+          <div class="rounded-xl bg-surface-container-low/80 border border-emerald-500/30 p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] text-emerald-400 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                3. EPISODIC AUDIT LOG
+              </div>
+              <span class="text-[9px] text-emerald-300 font-bold" id="brain-episodic-count">0 tasks</span>
+            </div>
+            <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1" id="brain-episodic-list">
+              <div class="text-[10px] text-on-surface-variant italic">No episodic tasks logged yet this session.</div>
+            </div>
+          </div>
+
+          <!-- Tier 4: Autonomous Goal Queue -->
+          <div class="rounded-xl bg-surface-container-low/80 border border-purple-500/30 p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="text-[10px] text-purple-300 uppercase tracking-wider font-bold flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                4. GOAL QUEUE
+              </div>
+              <span class="text-[9px] text-purple-300 font-bold" id="brain-goal-count">2 active</span>
+            </div>
+            <div class="space-y-1 max-h-28 overflow-y-auto pr-1" id="brain-goal-list">
+              <!-- Rendered dynamically -->
+            </div>
+            <!-- Add Goal Input -->
+            <div class="flex items-center gap-1 pt-1 border-t border-outline-variant/20">
+              <input type="text" id="input-new-goal" placeholder="Enqueue new objective..." class="flex-1 bg-surface-container-high/80 border border-outline-variant/40 rounded px-2 py-1 text-[10px] text-on-surface focus:outline-none focus:border-primary">
+              <button onclick="submitNewGoal()" class="px-2.5 py-1 rounded bg-primary hover:bg-primary-container text-on-primary font-bold text-[10px] uppercase transition">
+                + GOAL
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <footer class="w-full bg-surface-container-lowest/80 backdrop-blur-md px-space-md py-space-sm mt-auto border-t border-outline-variant/30">
+        <div class="flex items-center justify-between text-on-surface-variant font-code-stream text-code-stream text-[11px]">
+          <span>SYS_ID: STARK-CORE-77A</span>
+          <span class="hidden sm:inline">SECURE CONNECTION ENCRYPTED // ARCH-64</span>
+          <span>© 2026 STARK INDUSTRIES</span>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- STARK J.A.R.V.I.S. CORE ENGINE -->
+  <script>
+    // ── CONFIG & API BASE ───────────────────────────────────────────────────
+    const API_BASE = window.location.protocol === 'file:' || !window.location.origin || window.location.origin === 'null'
+      ? 'http://127.0.0.1:8000'
+      : window.location.origin;
+
+    // Tactical State Engine
+    let isListening = false;
+    let isDefenseActive = false;
+    let recognition = null;
+    let pauseTimer = null;
+    let finalTranscript = '';
+    let interimTranscript = '';
+    let voiceSent = false;
+    let isProcessing = false;
+    let cachedVoice = null;
+    let simulatedWaveInterval = null;
+
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+    // DOM Elements
+    const statusCaption = document.getElementById('hud-status-caption');
+    const transcribePreview = document.getElementById('live-transcription-preview');
+    const commandInput = document.getElementById('command-input');
+    const arcReactorBtn = document.getElementById('arc-reactor-button');
+    const dockMicBtn = document.getElementById('dock-mic-btn');
+    const dockMicRing = document.getElementById('dock-mic-ring');
+    const dockMicIcon = document.getElementById('dock-mic-icon');
+    const corePulseWave = document.getElementById('core-pulse-wave');
+    const dialogContainer = document.getElementById('dialog-stream-container');
+    const defenseSwitch = document.getElementById('defense-switch');
+    const defenseThumb = document.getElementById('defense-thumb');
+    const topDefenseToggle = document.getElementById('top-defense-toggle');
+    const topDefenseThumb = document.getElementById('top-defense-thumb');
+    const defenseLabel = document.getElementById('defense-label');
+    const ambientGlow = document.getElementById('ambient-glow');
+    const protocolPrefix = document.getElementById('prompt-protocol-prefix');
+    const latencyIndicator = document.getElementById('telemetry-latency');
+    const topLatency = document.getElementById('top-latency');
+    const modelBadgeText = document.getElementById('model-status-text');
+    const eqBars = document.querySelectorAll('#equalizer-strip span');
+
+    // ── BROWSER TTS (Daniel / British Male Voice) ───────────────────────────
+    function loadPreferredVoice() {
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices.length) return;
+      cachedVoice =
+        voices.find(v => v.name === 'Daniel' || v.name.includes('Daniel (Enhanced)') || v.name.includes('Daniel')) ||
+        voices.find(v => v.name.includes('Oliver') || v.name.includes('Arthur')) ||
+        voices.find(v => v.lang === 'en-GB' && /male/i.test(v.name)) ||
+        voices.find(v => v.lang === 'en-GB') ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        voices[0];
+    }
+    if ('speechSynthesis' in window) {
+      speechSynthesis.onvoiceschanged = loadPreferredVoice;
+      loadPreferredVoice();
+    }
+
+    let isSpeaking = false;
+
+    function speakReply(text) {
+      if (!('speechSynthesis' in window) || !text) return;
+      try {
+        window.speechSynthesis.cancel();
+        // Mute mic recognition while Jarvis speaks to prevent self-hearing acoustic loop
+        stopVoiceRecognition();
+        isSpeaking = true;
+
+        const utt = new SpeechSynthesisUtterance(text);
+        utt.lang = 'en-GB';
+        utt.pitch = 0.88;
+        utt.rate = 1.02;
+        utt.volume = 1.0;
+        if (!cachedVoice) loadPreferredVoice();
+        if (cachedVoice) utt.voice = cachedVoice;
+
+        utt.onstart = () => startWaveformAnimation();
+        const finishSpeech = () => {
+          stopWaveformAnimation();
+          setTimeout(() => { isSpeaking = false; }, 400);
+        };
+        utt.onend = finishSpeech;
+        utt.onerror = finishSpeech;
+
+        window.speechSynthesis.resume();
+        window.speechSynthesis.speak(utt);
+      } catch (e) {
+        console.warn("TTS Notice:", e);
+        isSpeaking = false;
+      }
+    }
+
+    // ── EQUALIZER AUDIO VISUALIZER & DUAL-PATH HYBRID SPEECH ENGINE ─────────
+    let micStream = null;
+    let audioCtx = null;
+    let analyserNode = null;
+    let animFrameId = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let maxDurationTimer = null;
+    let hasDetectedSpeech = false;
+    let lastSpokeTime = 0;
+
+    async function initAudioAnalyser() {
+      if (analyserNode && micStream && micStream.active) return true;
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          return false;
+        }
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+        });
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+        const source = audioCtx.createMediaStreamSource(micStream);
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 64;
+        source.connect(analyserNode);
+        return true;
+      } catch (err) {
+        console.warn("getUserMedia failed or denied:", err);
+        return false;
+      }
+    }
+
+    function startLiveMicVisualizer() {
+      if (!analyserNode) {
+        startWaveformAnimation();
+        return;
+      }
+      cancelAnimationFrame(animFrameId);
+      const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
+
+      function renderFrame() {
+        if (!isListening) return;
+        analyserNode.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < eqBars.length; i++) {
+          const val = dataArray[i * 2] || 0;
+          sum += val;
+          const h = Math.max(4, Math.min(32, Math.round(val / 7) + 4));
+          eqBars[i].style.height = `${h}px`;
+        }
+
+        const avg = sum / eqBars.length;
+        window.liveAudioVolume = avg;
+        if (avg > 8) {
+          hasDetectedSpeech = true;
+          lastSpokeTime = Date.now();
+          if (statusCaption && isListening && !statusCaption.textContent.includes('TRANSCRIBING')) {
+            statusCaption.textContent = "HEARING AUDIO // RECORDING...";
+          }
+        } else if (hasDetectedSpeech && lastSpokeTime > 0 && (Date.now() - lastSpokeTime > 2500)) {
+          // Generous 2.5s silence buffer so speech is never cut off mid-sentence
+          finishRecordingAndDispatch();
+          return;
+        }
+
+        animFrameId = requestAnimationFrame(renderFrame);
+      }
+      animFrameId = requestAnimationFrame(renderFrame);
+    }
+
+    function startWaveformAnimation() {
+      clearInterval(simulatedWaveInterval);
+      simulatedWaveInterval = setInterval(() => {
+        eqBars.forEach((bar) => {
+          const h = Math.floor(Math.random() * 26) + 6;
+          bar.style.height = `${h}px`;
+        });
+      }, 80);
+    }
+
+    function stopWaveformAnimation() {
+      clearInterval(simulatedWaveInterval);
+      cancelAnimationFrame(animFrameId);
+      const defaults = [8, 12, 16, 24, 32, 20, 12, 8, 6];
+      eqBars.forEach((bar, idx) => {
+        bar.style.height = `${defaults[idx] || 10}px`;
+      });
+    }
+
+    // Check file:// protocol on startup
+    if (window.location.protocol === 'file:') {
+      const banner = document.getElementById('file-protocol-warning');
+      if (banner) banner.classList.remove('hidden');
+    }
+
+    // Pre-warm microphone stream on load so MediaRecorder starts at 0ms latency in Brave/Arc/Chrome
+    window.addEventListener('DOMContentLoaded', () => {
+      initAudioAnalyser().catch(() => {});
+    });
+    window.addEventListener('click', () => {
+      if (!micStream) initAudioAnalyser().catch(() => {});
+    }, { once: true });
+
+    function startMediaRecorderSync() {
+      if (!micStream || !micStream.active) return;
+      try {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          try { mediaRecorder.stop(); } catch (_) {}
+        }
+        audioChunks = [];
+        let mimeType = '';
+        if (typeof MediaRecorder !== 'undefined') {
+          if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) mimeType = 'audio/webm;codecs=opus';
+          else if (MediaRecorder.isTypeSupported('audio/webm')) mimeType = 'audio/webm';
+          else if (MediaRecorder.isTypeSupported('audio/mp4')) mimeType = 'audio/mp4';
+
+          const options = mimeType ? { mimeType, audioBitsPerSecond: 128000 } : undefined;
+          mediaRecorder = new MediaRecorder(micStream, options);
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) audioChunks.push(e.data);
+          };
+          mediaRecorder.start(100);
+        }
+      } catch (err) {
+        console.warn("MediaRecorder start error:", err);
+      }
+    }
+
+    // ── HYBRID VOICE RECOGNITION (WEB SPEECH + LOCAL FASTER-WHISPER) ─────────
+    function stopVoiceListening() {
+      cancelAnimationFrame(animFrameId);
+      clearTimeout(pauseTimer);
+      clearTimeout(maxDurationTimer);
+      isListening = false;
+
+      if (recognition) {
+        try { recognition.abort(); } catch (_) {}
+        recognition = null;
+      }
+
+      setVoiceListeningState(false);
+    }
+
+    function stopVoiceRecognition() {
+      stopVoiceListening();
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        try { mediaRecorder.stop(); } catch (_) {}
+      }
+    }
+
+    async function finishRecordingAndDispatch() {
+      if (voiceSent) return;
+      voiceSent = true;
+      clearTimeout(pauseTimer);
+      clearTimeout(maxDurationTimer);
+
+      const directText = commandInput.value.trim();
+      stopVoiceListening();
+
+      // Path 1: Fast direct text from Web Speech API (Chrome / Edge / Safari)
+      if (directText) {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          try { mediaRecorder.stop(); } catch (_) {}
+        }
+        sendVoiceResult(directText);
+        return;
+      }
+
+      // Path 2: Offline / Brave fallback via Local Faster-Whisper
+      statusCaption.textContent = "LOCAL WHISPER // TRANSCRIBING...";
+      transcribePreview.textContent = "Processing speech via Apple Silicon neural core...";
+
+      let audioBlob = null;
+      if (mediaRecorder) {
+        if (mediaRecorder.state === 'recording') {
+          audioBlob = await new Promise((resolve) => {
+            mediaRecorder.addEventListener('stop', () => {
+              const mime = mediaRecorder.mimeType || 'audio/webm';
+              resolve(audioChunks.length > 0 ? new Blob(audioChunks, { type: mime }) : null);
+            }, { once: true });
+            try {
+              mediaRecorder.requestData();
+              mediaRecorder.stop();
+            } catch (_) {
+              resolve(null);
+            }
+          });
+        } else if (audioChunks.length > 0) {
+          const mime = mediaRecorder.mimeType || 'audio/webm';
+          audioBlob = new Blob(audioChunks, { type: mime });
+        }
+      }
+
+      if (audioBlob && audioBlob.size > 200) {
+        try {
+          const formData = new FormData();
+          formData.append('audio', audioBlob, 'command.webm');
+
+          const res = await fetch(`${API_BASE}/api/transcribe`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const whisperText = (data.text || '').trim();
+            if (whisperText) {
+              commandInput.value = whisperText;
+              transcribePreview.textContent = `"${whisperText}"`;
+              sendVoiceResult(whisperText);
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("Local Faster-Whisper transcription error:", err);
+        }
+      }
+
+      // Nothing captured
+      statusCaption.textContent = isDefenseActive ? "DEFENSE ALERT // AUDIO RECEPTORS ACTIVE" : "TAP TO SPEAK // STANDBY V2.1";
+      transcribePreview.textContent = "No voice detected. Tap to speak again.";
+      setTimeout(() => {
+        if (!isListening && transcribePreview.textContent === "No voice detected. Tap to speak again.") {
+          transcribePreview.textContent = "";
+        }
+      }, 3000);
+    }
+
+    function startVoiceRecognition() {
+      stopVoiceListening();
+
+      if (isSpeaking) {
+        window.speechSynthesis.cancel();
+        isSpeaking = false;
+      }
+
+      if (window.location.protocol === 'file:') {
+        const banner = document.getElementById('file-protocol-warning');
+        if (banner) banner.classList.remove('hidden');
+        appendJarvisMessage(`
+          <div class="p-space-sm rounded-xl bg-error/20 border border-error/50 space-y-1">
+            <div class="flex items-center gap-2 text-error font-headline-sm text-sm font-bold">
+              <span class="material-symbols-outlined text-base">warning</span> FILE:// SECURITY RESTRICTION
+            </div>
+            <p class="font-body-sm text-body-sm text-on-surface">You opened this file directly from Finder (<code>file://</code>). Browsers block microphone access on <code>file://</code> origins for security.</p>
+            <div class="pt-1">
+              <a href="http://localhost:8000" class="inline-block px-3 py-1 bg-error text-white rounded font-code-stream text-xs font-bold hover:opacity-90">OPEN HTTP://LOCALHOST:8000</a>
+            </div>
+          </div>
+        `, "Please open http://localhost:8000 in your browser to enable microphone access, Sir.");
+        return;
+      }
+
+      voiceSent = false;
+      hasDetectedSpeech = false;
+      lastSpokeTime = 0;
+      audioChunks = [];
+      commandInput.value = '';
+      transcribePreview.textContent = 'Listening... Speak now.';
+      setVoiceListeningState(true);
+
+      // Start MediaRecorder immediately if micStream is pre-warmed, else initialize in parallel
+      if (micStream && micStream.active) {
+        startMediaRecorderSync();
+        startLiveMicVisualizer();
+      } else {
+        initAudioAnalyser().then((micOk) => {
+          if (micOk && isListening) {
+            startMediaRecorderSync();
+            startLiveMicVisualizer();
+          } else if (!micOk && !recognition) {
+            statusCaption.textContent = "MIC BLOCKED // ALLOW PERMISSION";
+            transcribePreview.textContent = "Click 🔒 in URL bar -> set Microphone to 'Allow'";
+          }
+        });
+      }
+
+      // Step 1: Web Speech API (CALLED SYNCHRONOUSLY to preserve User Gesture activation)
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          recognition = new SpeechRec();
+          recognition.lang = navigator.language || 'en-US';
+          recognition.continuous = !isSafari;
+          recognition.interimResults = true;
+          recognition.maxAlternatives = 1;
+
+          recognition.onresult = (e) => {
+            if (voiceSent || isSpeaking) return;
+            clearTimeout(pauseTimer);
+
+            let fullText = '';
+            let interimText = '';
+            for (let i = 0; i < e.results.length; i++) {
+              const txt = e.results[i][0].transcript;
+              if (e.results[i].isFinal) {
+                fullText += txt + ' ';
+              } else {
+                interimText += txt;
+              }
+            }
+
+            const currentSpoken = (fullText + interimText).trim();
+            if (currentSpoken) {
+              hasDetectedSpeech = true;
+              lastSpokeTime = Date.now();
+              commandInput.value = currentSpoken;
+              transcribePreview.textContent = `"${currentSpoken}"`;
+
+              // Auto-send after 1800ms natural pause
+              pauseTimer = setTimeout(() => {
+                if (!voiceSent && currentSpoken) {
+                  finishRecordingAndDispatch();
+                }
+              }, 1800);
+            }
+          };
+
+          recognition.onerror = (e) => {
+            if (e.error === 'network') {
+              console.info("[JARVIS VOICE] Web Speech cloud network unavailable (Brave/Arc privacy mode). Local Faster-Whisper active.");
+              if (isListening) {
+                statusCaption.textContent = "BRAVE VOICE CORE // RECORDING...";
+                transcribePreview.textContent = "🎙️ Listening... Speak your command, then tap to send.";
+              }
+            } else if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+              statusCaption.textContent = "MIC BLOCKED // ALLOW PERMISSION";
+              transcribePreview.textContent = "Click 🔒 in URL bar -> set Microphone to 'Allow'";
+              appendJarvisMessage(`
+                <div class="p-space-sm rounded-xl bg-error/20 border border-error/50 space-y-1">
+                  <div class="flex items-center gap-2 text-error font-headline-sm text-sm font-bold">
+                    <span class="material-symbols-outlined text-base">mic_off</span> MICROPHONE ACCESS DENIED
+                  </div>
+                  <p class="font-body-sm text-body-sm text-on-surface">Microphone access was denied. Please click the tune/lock icon in your browser URL bar and change <strong>Microphone</strong> to <strong>Allow</strong>. On macOS, verify <em>System Settings &gt; Privacy &amp; Security &gt; Microphone</em>.</p>
+                </div>
+              `, "Microphone access was denied, Sir.");
+            } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+              console.warn("[JARVIS VOICE] Web Speech notice:", e.error);
+            }
+          };
+
+          recognition.onend = () => {
+            if (isListening && hasDetectedSpeech && !voiceSent) {
+              finishRecordingAndDispatch();
+            }
+          };
+
+          recognition.start();
+        } catch (err) {
+          console.warn("Web Speech start failed, Local Faster-Whisper active:", err);
+        }
+      }
+
+      // Step 3: Hard limit safety timeout (12s)
+      maxDurationTimer = setTimeout(() => {
+        if (isListening) finishRecordingAndDispatch();
+      }, 12000);
+    }
+
+    function sendVoiceResult(text) {
+      const clean = (text || '').trim();
+      if (!clean) return;
+      stopVoiceRecognition();
+      commandInput.value = '';
+      transcribePreview.textContent = '';
+      sendToJarvis(clean);
+    }
+
+    function toggleVoiceInput() {
+      if (isListening) {
+        finishRecordingAndDispatch();
+      } else {
+        startVoiceRecognition();
+      }
+    }
+
+    // Spacebar shortcut to activate/toggle voice listening
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' && document.activeElement !== commandInput && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        toggleVoiceInput();
+      }
+    });
+
+    function setVoiceListeningState(active) {
+      isListening = active;
+      const dockMicBtn = document.getElementById('dock-mic-btn');
+      if (active) {
+        statusCaption.textContent = "SIRI // LISTENING (TAP TO SEND)...";
+        corePulseWave.classList.remove('opacity-0');
+        dockMicRing.classList.remove('opacity-0', 'scale-100');
+        dockMicRing.classList.add('opacity-100', 'scale-150', 'animate-ping');
+        dockMicIcon.style.color = '#00d4ff';
+        if (dockMicBtn) {
+          dockMicBtn.classList.add('ring-2', 'ring-primary', 'shadow-[0_0_16px_rgba(0,212,255,0.7)]', 'bg-primary/20');
+        }
+      } else {
+        cancelAnimationFrame(animFrameId);
+        statusCaption.textContent = isDefenseActive ? "DEFENSE ALERT // AUDIO RECEPTORS ACTIVE" : "TAP TO SPEAK // STANDBY V2.1";
+        corePulseWave.classList.add('opacity-0');
+        dockMicRing.classList.remove('opacity-100', 'scale-150', 'animate-ping');
+        dockMicRing.classList.add('opacity-0', 'scale-100');
+        dockMicIcon.style.color = '';
+        if (dockMicBtn) {
+          dockMicBtn.classList.remove('ring-2', 'ring-primary', 'shadow-[0_0_16px_rgba(0,212,255,0.7)]', 'bg-primary/20');
+        }
+        stopWaveformAnimation();
+      }
+    }
+
+    // ── SEND COMMAND TO BACKEND ─────────────────────────────────────────────
+    function submitCommand() {
+      stopVoiceRecognition();
+      const val = commandInput.value.trim();
+      if (!val) return;
+      commandInput.value = '';
+      transcribePreview.textContent = '';
+      sendToJarvis(val);
+    }
+
+    async function sendToJarvis(text, { silent = false } = {}) {
+      if (!text || !text.trim() || isProcessing) return;
+      isProcessing = true;
+      const submitBtn = document.getElementById('submit-btn');
+      if (submitBtn) submitBtn.classList.add('opacity-50');
+
+      if (!silent) {
+        appendUserMessage(text);
+        showThinkingIndicator();
+      }
+
+      const t0 = performance.now();
+      try {
+        const res = await fetch(`${API_BASE}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+
+        const latency = Math.max(0.6, (performance.now() - t0) / 1000).toFixed(1);
+        latencyIndicator.textContent = `${latency}s`;
+        topLatency.textContent = `${latency}s`;
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        removeThinkingIndicator();
+
+        // Update active engine badge if reported
+        if (data.engine && modelBadgeText) {
+          modelBadgeText.textContent = data.engine.toUpperCase();
+        }
+
+        // Render response & action card in Stitch format
+        const actionHtml = generateActionCardHtml(data.action);
+        const cardContent = `
+          <p class="font-body-md text-body-md leading-relaxed text-on-surface">${escapeHtml(data.reply)}</p>
+          ${actionHtml}
+        `;
+        appendJarvisMessage(cardContent, data.reply);
+
+        // Auto-open/close camera HUD if ACTIVATE_CAMERA command is returned
+        if (data.action && data.action.command === 'ACTIVATE_CAMERA') {
+          if (data.action.open_hud_camera === true) {
+            openCameraViewfinder();
+          } else if (data.action.open_hud_camera === false) {
+            closeCameraViewfinder();
+          }
+        }
+
+        // Auto-open web targets if returned and permitted by browser popup policy
+        if (data.action && (data.action.command === 'OPEN_URL' || data.action.command === 'PLAY_MEDIA')) {
+          const targetUrl = data.action.url || (data.action.service === 'youtube' ? data.action.web_url : null);
+          if (targetUrl && targetUrl !== '#') {
+            try {
+              window.open(targetUrl, '_blank');
+            } catch(e) {}
+          }
+        }
+
+      } catch (err) {
+        removeThinkingIndicator();
+        appendJarvisMessage(`
+          <div class="p-space-sm rounded-xl bg-error/10 border border-error/30 space-y-1">
+            <div class="flex items-center gap-2 text-error font-headline-sm text-sm font-bold">
+              <span class="material-symbols-outlined text-base">error</span> CONNECTION EXCEPTION
+            </div>
+            <p class="font-body-sm text-body-sm text-on-surface">Unable to connect to neural core: ${escapeHtml(err.message)}</p>
+          </div>
+        `, "Unable to connect to the neural core, Sir.");
+      } finally {
+        isProcessing = false;
+        if (submitBtn) submitBtn.classList.remove('opacity-50');
+      }
+    }
+
+    // ── DYNAMIC STITCH ACTION CARDS ─────────────────────────────────────────
+    function generateActionCardHtml(action) {
+      if (!action || !action.command || action.command === 'NONE') return '';
+      const cmd = action.command;
+
+      if (cmd === 'CALCULATE') {
+        const expr = action.expression || '26 * 25';
+        const ans = action.answer || action.result?.detail || '';
+        const rawSeq = action.keystroke_sequence || (expr.replace(/x/gi, '*').split('').filter(c => '0123456789+-*/.'.includes(c)).concat(['=']));
+        const keysHtml = rawSeq.map(k => `<span class="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 text-xs font-mono font-bold rounded ${k === '=' ? 'bg-primary text-on-primary shadow-[0_0_8px_rgba(0,212,255,0.5)]' : 'bg-surface-container-high text-primary border border-primary/30'} shadow-sm">${escapeHtml(k)}</span>`).join('<span class="text-on-surface-variant/40 text-[10px]">➔</span>');
+
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/90 border border-primary/40 shadow-[0_4px_20px_rgba(0,212,255,0.1)] space-y-2.5 mt-2">
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">calculate</span>
+                <div>
+                  <div class="font-headline-sm text-sm text-on-surface font-bold tracking-wide">HUMAN DESKTOP EXECUTION // CALCULATOR.APP</div>
+                  <div class="font-label-telemetry text-[10px] text-primary">REAL-TIME MACOS KEYSTROKE SIMULATION DISPATCHED</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-primary/20 text-primary border border-primary/40">SIMULATION ACTIVE</span>
+            </div>
+
+            <div class="p-2 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/20 flex flex-col gap-1">
+              <div class="text-[10px] font-label-telemetry text-on-surface-variant uppercase tracking-wider">Human Keystroke Stream:</div>
+              <div class="flex flex-wrap items-center gap-1.5 py-0.5">
+                ${keysHtml}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+              <div>
+                <span class="text-[10px] font-label-telemetry text-on-surface-variant uppercase">Computed Answer:</span>
+                <div class="font-code-stream text-primary font-extrabold text-xl tracking-wider">${escapeHtml(expr)} = <span class="text-white bg-primary/30 px-2 py-0.5 rounded border border-primary/50">${escapeHtml(ans)}</span></div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="copyToClipboard('${escapeHtml(ans)}')" class="px-3 py-1 font-label-telemetry text-label-telemetry text-primary bg-primary/10 hover:bg-primary/20 rounded flex items-center gap-1 transition-colors">
+                  <span class="material-symbols-outlined text-xs">content_copy</span> COPY
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'SHOW_TELEMETRY') {
+        const batt = action.battery || { percent: 91, charging: true, power_source: 'AC Power', time_remaining: 'Charging' };
+        const st = action.storage || { total_gb: 228.3, free_gb: 83.5, percent: 63.4 };
+        const cpu = action.cpu_percent || 18.0;
+        const ram = action.total_ram_gb || 16.0;
+        const chip = action.chip || 'Apple Silicon M2 (8 Cores)';
+        const osVer = action.macos_version || 'macOS (Darwin)';
+        const uptime = action.uptime || '6h active';
+
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/95 border border-primary/40 shadow-[0_4px_24px_rgba(0,212,255,0.15)] space-y-3 mt-2">
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-xl">speed</span>
+                <div>
+                  <div class="font-headline-sm text-sm text-on-surface font-bold tracking-wide">MACOS FULL SYSTEM TELEMETRY & DIAGNOSTICS</div>
+                  <div class="font-label-telemetry text-[10px] text-primary">REAL-TIME SENSORS // ${escapeHtml(chip)} // ${escapeHtml(osVer)}</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-primary/20 text-primary border border-primary/40">ONLINE // UP: ${escapeHtml(uptime)}</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <!-- Battery -->
+              <div class="p-2.5 rounded-lg bg-surface-container-lowest/90 border border-emerald-500/30 flex flex-col gap-1">
+                <div class="flex items-center justify-between text-emerald-400">
+                  <span class="material-symbols-outlined text-base">${batt.charging ? 'battery_charging_full' : 'battery_full'}</span>
+                  <span class="text-[9px] font-mono font-bold">${batt.charging ? 'CHARGING' : 'BATTERY'}</span>
+                </div>
+                <div class="font-mono text-lg font-bold text-on-surface">${batt.percent}%</div>
+                <div class="text-[9px] font-mono text-on-surface-variant truncate">${escapeHtml(batt.time_remaining || batt.power_source)}</div>
+                <div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden mt-1">
+                  <div class="bg-emerald-400 h-full rounded-full" style="width:${batt.percent}%"></div>
+                </div>
+              </div>
+
+              <!-- Storage -->
+              <div class="p-2.5 rounded-lg bg-surface-container-lowest/90 border border-amber-500/30 flex flex-col gap-1">
+                <div class="flex items-center justify-between text-amber-400">
+                  <span class="material-symbols-outlined text-base">hard_drive</span>
+                  <span class="text-[9px] font-mono font-bold">SSD STORAGE</span>
+                </div>
+                <div class="font-mono text-lg font-bold text-on-surface">${st.free_gb} GB</div>
+                <div class="text-[9px] font-mono text-on-surface-variant truncate">Free of ${st.total_gb} GB (${st.percent}% used)</div>
+                <div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden mt-1">
+                  <div class="bg-amber-400 h-full rounded-full" style="width:${st.percent}%"></div>
+                </div>
+              </div>
+
+              <!-- CPU Load -->
+              <div class="p-2.5 rounded-lg bg-surface-container-lowest/90 border border-primary/30 flex flex-col gap-1">
+                <div class="flex items-center justify-between text-primary">
+                  <span class="material-symbols-outlined text-base">memory</span>
+                  <span class="text-[9px] font-mono font-bold">CPU LOAD</span>
+                </div>
+                <div class="font-mono text-lg font-bold text-on-surface">${cpu}%</div>
+                <div class="text-[9px] font-mono text-on-surface-variant truncate">${escapeHtml(chip)}</div>
+                <div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden mt-1">
+                  <div class="bg-primary h-full rounded-full" style="width:${Math.min(Number(cpu) || 0, 100)}%"></div>
+                </div>
+              </div>
+
+              <!-- RAM -->
+              <div class="p-2.5 rounded-lg bg-surface-container-lowest/90 border border-purple-500/30 flex flex-col gap-1">
+                <div class="flex items-center justify-between text-purple-400">
+                  <span class="material-symbols-outlined text-base">memory_alt</span>
+                  <span class="text-[9px] font-mono font-bold">UNIFIED RAM</span>
+                </div>
+                <div class="font-mono text-lg font-bold text-on-surface">${ram} GB</div>
+                <div class="text-[9px] font-mono text-on-surface-variant truncate">Metal GPU Shared</div>
+                <div class="w-full bg-surface-container-high h-1.5 rounded-full overflow-hidden mt-1">
+                  <div class="bg-purple-400 h-full rounded-full" style="width:75%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Direct Autonomous DM Gateway Bar -->
+            <div class="p-2 rounded-lg bg-surface-container-lowest/70 border border-outline-variant/30 flex items-center justify-between text-xs font-mono">
+              <div class="flex items-center gap-2 text-on-surface-variant">
+                <span class="material-symbols-outlined text-primary text-sm">chat</span>
+                <span>AUTONOMOUS DM GATEWAY:</span>
+                <span class="text-emerald-400 font-bold">iMessage & WhatsApp ONLINE</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button onclick="window.open('sms:', '_blank')" class="px-2 py-1 rounded bg-surface-container border border-primary/30 hover:bg-primary/20 text-primary text-[10px] font-bold transition-all">iMESSAGE</button>
+                <button onclick="window.open('https://web.whatsapp.com', '_blank')" class="px-2 py-1 rounded bg-surface-container border border-emerald-500/30 hover:bg-emerald-500/20 text-emerald-400 text-[10px] font-bold transition-all">WHATSAPP</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'WRITE_CODE') {
+        const title = action.title || 'Python Script';
+        const lang = (action.language || 'python').toUpperCase();
+        const code = action.code || '';
+        const output = action.output || (action.execution ? action.execution.output : '') || '(Code synthesized and ready to run)';
+        const codeId = 'code_' + Math.random().toString(36).substring(2, 9);
+        const outId = 'out_' + Math.random().toString(36).substring(2, 9);
+        const btnId = 'btn_' + Math.random().toString(36).substring(2, 9);
+        const duration = action.execution ? action.execution.duration : 0.02;
+
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-highest/95 border border-cyan-400/40 shadow-[0_8px_32px_rgba(0,212,255,0.22)] space-y-3 mt-2">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-cyan-400">
+                  <span class="material-symbols-outlined text-lg">terminal</span>
+                </div>
+                <div>
+                  <div class="font-headline-sm text-sm text-on-surface font-bold tracking-wide">HOLOGRAPHIC CODE INTERPRETER // OPENJARVIS</div>
+                  <div class="font-label-telemetry text-[10px] text-cyan-400">${escapeHtml(title)} // ${escapeHtml(lang)} // SANDBOX ISOLATION</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">VERIFIED & RUNNABLE</span>
+            </div>
+
+            <!-- Code Editor Area -->
+            <div class="relative group">
+              <div class="flex items-center justify-between px-3 py-1 bg-surface-container-lowest/90 border-t border-x border-outline-variant/40 rounded-t-lg font-mono text-[11px] text-on-surface-variant">
+                <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>SOURCE CODE (${escapeHtml(lang)})</span>
+                <span class="text-cyan-400/80">READ/WRITE</span>
+              </div>
+              <textarea id="${codeId}" class="w-full h-44 sm:h-52 p-3 rounded-b-lg bg-[#070d18] border border-outline-variant/40 font-mono text-xs sm:text-sm text-cyan-200 leading-relaxed resize-none focus:outline-none focus:border-cyan-400 selection:bg-cyan-900 selection:text-cyan-100 shadow-inner">${escapeHtml(code)}</textarea>
+            </div>
+
+            <!-- Output Console Deck -->
+            <div class="p-3 rounded-lg bg-[#040810] border border-cyan-500/30 font-mono text-xs space-y-1.5 shadow-inner">
+              <div class="flex items-center justify-between border-b border-white/10 pb-1 text-[10px] text-on-surface-variant">
+                <span class="flex items-center gap-1 text-emerald-400"><span class="material-symbols-outlined text-xs">play_arrow</span> OPENJARVIS EXECUTION OUTPUT</span>
+                <span class="text-on-surface-variant/70">DURATION: ${duration}s</span>
+              </div>
+              <pre id="${outId}" class="text-emerald-300 whitespace-pre-wrap break-all leading-normal max-h-36 overflow-y-auto">${escapeHtml(output)}</pre>
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-outline-variant/20">
+              <div class="flex items-center gap-2">
+                <button id="${btnId}" onclick="
+                  const codeEl = document.getElementById('${codeId}');
+                  const outEl = document.getElementById('${outId}');
+                  const btn = this;
+                  btn.disabled = true;
+                  btn.innerHTML = '<span class=\\'material-symbols-outlined text-xs animate-spin\\'>refresh</span> RUNNING...';
+                  fetch('/api/code/run', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({code: codeEl.value})
+                  })
+                  .then(r => r.json())
+                  .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>play_arrow</span> RUN CODE';
+                    if (data.ok) {
+                      outEl.textContent = data.output;
+                      outEl.className = 'text-emerald-300 whitespace-pre-wrap break-all leading-normal max-h-36 overflow-y-auto';
+                    } else {
+                      outEl.textContent = data.output || 'Execution failed';
+                      outEl.className = 'text-red-400 whitespace-pre-wrap break-all leading-normal max-h-36 overflow-y-auto';
+                    }
+                  })
+                  .catch(err => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>play_arrow</span> RUN CODE';
+                    outEl.textContent = 'Runner error: ' + err;
+                    outEl.className = 'text-red-400 whitespace-pre-wrap break-all leading-normal max-h-36 overflow-y-auto';
+                  });
+                " class="px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,212,255,0.4)] cursor-pointer">
+                  <span class="material-symbols-outlined text-xs">play_arrow</span>
+                  <span>RUN CODE</span>
+                </button>
+
+                <button onclick="
+                  const codeEl = document.getElementById('${codeId}');
+                  navigator.clipboard.writeText(codeEl.value).then(() => {
+                    this.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>check</span> COPIED!';
+                    this.classList.add('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+                    setTimeout(() => {
+                      this.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>content_copy</span> COPY CODE';
+                      this.classList.remove('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+                    }, 2000);
+                  });
+                " class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-cyan-300 border border-cyan-500/40 font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                  <span class="material-symbols-outlined text-xs">content_copy</span>
+                  <span>COPY CODE</span>
+                </button>
+              </div>
+
+              <button onclick="
+                const blob = new Blob([document.getElementById('${codeId}').value], {type: 'text/plain;charset=utf-8'});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'jarvis_script.py';
+                link.click();
+              " class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-mono flex items-center gap-1 border border-outline-variant/30">
+                <span class="material-symbols-outlined text-xs">download</span>
+                <span>DOWNLOAD .PY</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'COMPOSE_DOCUMENT') {
+        const recipient = action.recipient || 'The Principal / Authority';
+        const subject = action.subject || 'Formal Application';
+        const content = action.content || '';
+        const wordCount = action.word_count || (content ? content.split(/\s+/).length : 0);
+        const gmailUrl = action.gmail_url || `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(content)}`;
+        const docId = 'doc_' + Math.random().toString(36).substring(2, 9);
+
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-highest/95 border border-primary/40 shadow-[0_8px_32px_rgba(0,212,255,0.18)] space-y-3 mt-2">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg bg-primary/20 border border-primary/40 flex items-center justify-center text-primary">
+                  <span class="material-symbols-outlined text-lg">description</span>
+                </div>
+                <div>
+                  <div class="font-headline-sm text-sm text-on-surface font-bold tracking-wide">HOLOGRAPHIC DOCUMENT COMPOSER</div>
+                  <div class="font-label-telemetry text-[10px] text-primary">FORMAL CORRESPONDENCE // ${escapeHtml(recipient)} // ${wordCount} WORDS</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">DRAFTED & READY</span>
+            </div>
+
+            <!-- Subject Banner -->
+            <div class="p-2 rounded-lg bg-surface-container-lowest/80 border border-outline-variant/20 flex items-center gap-2 text-xs">
+              <span class="material-symbols-outlined text-primary text-sm">label</span>
+              <span class="font-mono text-on-surface-variant font-bold">SUBJECT:</span>
+              <span class="text-on-surface font-medium truncate">${escapeHtml(subject)}</span>
+            </div>
+
+            <!-- Document Sheet Body -->
+            <div class="relative group">
+              <textarea id="${docId}" readonly class="w-full h-48 sm:h-56 p-3.5 rounded-lg bg-surface-container-lowest/95 border border-outline-variant/40 font-mono text-xs sm:text-sm text-on-surface leading-relaxed resize-none focus:outline-none focus:border-primary/60 selection:bg-primary-container selection:text-on-primary-container shadow-inner">${escapeHtml(content)}</textarea>
+            </div>
+
+            <!-- Quick Action Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-outline-variant/20">
+              <div class="flex items-center gap-2">
+                <button onclick="
+                  const el = document.getElementById('${docId}');
+                  navigator.clipboard.writeText(el.value).then(() => {
+                    this.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>check</span> COPIED!';
+                    this.classList.add('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+                    setTimeout(() => {
+                      this.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>content_copy</span> COPY LETTER';
+                      this.classList.remove('bg-emerald-500/30', 'text-emerald-300', 'border-emerald-500/50');
+                    }, 2000);
+                  });
+                " class="px-3 py-1.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm">
+                  <span class="material-symbols-outlined text-xs">content_copy</span>
+                  <span>COPY LETTER</span>
+                </button>
+
+                <button onclick="window.open('${gmailUrl}', '_blank')" class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/40 font-mono text-xs font-bold transition-all flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-xs text-amber-400">mail</span>
+                  <span>DISPATCH VIA GMAIL</span>
+                </button>
+              </div>
+
+              <button onclick="
+                const blob = new Blob([document.getElementById('${docId}').value], {type: 'text/plain;charset=utf-8'});
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'formal_letter_application.txt';
+                link.click();
+              " class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-mono flex items-center gap-1 border border-outline-variant/30">
+                <span class="material-symbols-outlined text-xs">download</span>
+                <span>DOWNLOAD .TXT</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'SEND_WHATSAPP' || cmd === 'AUTOMATE_DM') {
+        const phone = action.phone || action.recipient || 'Contact';
+        const resolvedPhone = action.resolved_phone || '';
+        const msg = action.message || '';
+        const platform = (action.platform || 'whatsapp').toLowerCase();
+        const isImessage = platform === 'imessage' || platform === 'sms';
+        const brandColor = isImessage ? '#007AFF' : '#25D366';
+        const brandName = isImessage ? 'Apple iMessage' : 'WhatsApp Desktop';
+        const brandIcon = isImessage ? 'chat' : 'mark_chat_read';
+        const desktopUrl = action.desktop_url || (isImessage ? (action.sms_url || '#') : '#');
+        const webUrl = action.web_url || '#';
+
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-highest/95 flex flex-col gap-3 border mt-2 shadow-[0_8px_32px_rgba(37,211,102,0.18)]" style="border-color:${brandColor}55">
+            <!-- Header -->
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center shadow-inner" style="background:${brandColor}22;border:1px solid ${brandColor}55">
+                  <span class="material-symbols-outlined text-lg" style="color:${brandColor}">${brandIcon}</span>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-headline-sm text-sm text-on-surface font-bold tracking-wide">${escapeHtml(phone)}</span>
+                    ${resolvedPhone && resolvedPhone !== phone ? `<span class="font-mono text-[11px] text-on-surface-variant">(${escapeHtml(resolvedPhone)})</span>` : ''}
+                  </div>
+                  <div class="font-label-telemetry text-[10px] uppercase font-bold" style="color:${brandColor}">${brandName} // AUTONOMOUS DISPATCH ACTIVE</div>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded text-[10px] font-label-telemetry font-bold uppercase flex items-center gap-1.5 shadow-sm" style="background:${brandColor}20;color:${brandColor};border:1px solid ${brandColor}40">
+                <span class="w-1.5 h-1.5 rounded-full animate-ping" style="background:${brandColor}"></span> DISPATCHED
+              </span>
+            </div>
+
+            <!-- Message Preview Bubble -->
+            <div class="p-3 rounded-lg bg-surface-container-lowest/90 border border-outline-variant/30 font-mono text-xs text-on-surface leading-relaxed shadow-inner">
+              <div class="text-[10px] font-bold text-on-surface-variant/70 uppercase mb-1">TRANSMITTED PAYLOAD:</div>
+              <div class="italic">"${escapeHtml(msg)}"</div>
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-outline-variant/20">
+              <div class="flex items-center gap-2">
+                ${desktopUrl !== '#' ? `
+                  <button onclick="window.open('${escapeHtml(desktopUrl)}')" class="px-3 py-1.5 rounded-lg text-white font-mono text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer" style="background:${brandColor}">
+                    <span class="material-symbols-outlined text-xs">open_in_new</span>
+                    <span>OPEN APP</span>
+                  </button>
+                ` : ''}
+                ${webUrl !== '#' ? `
+                  <button onclick="window.open('${escapeHtml(webUrl)}', '_blank')" class="px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface border border-outline-variant/40 font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+                    <span class="material-symbols-outlined text-xs" style="color:${brandColor}">public</span>
+                    <span>OPEN WEB</span>
+                  </button>
+                ` : ''}
+              </div>
+              <button onclick="
+                navigator.clipboard.writeText('${escapeHtml(msg).replace(/'/g, "\\'")}').then(() => {
+                  this.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>check</span> COPIED';
+                  setTimeout(() => {
+                    this.innerHTML = '<span class=\\'material-symbols-outlined text-xs\\'>content_copy</span> COPY';
+                  }, 1500);
+                });
+              " class="px-2.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-mono flex items-center gap-1 border border-outline-variant/30">
+                <span class="material-symbols-outlined text-xs">content_copy</span>
+                <span>COPY</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'LOCK_SCREEN') {
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-highest/95 border border-amber-500/40 shadow-[0_8px_32px_rgba(255,183,77,0.15)] flex items-center justify-between mt-2">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <span class="material-symbols-outlined text-xl">lock</span>
+              </div>
+              <div>
+                <div class="font-headline-sm text-sm text-on-surface font-bold">WORKSPACE SECURED // DISPLAY TERMINAL ASLEEP</div>
+                <div class="font-label-telemetry text-[10px] text-amber-400">MACOS PMSET STANDBY DISPATCHED // THEVICKYPEDIA CONTROLS</div>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">LOCKED</span>
+          </div>
+        `;
+      }
+
+      if (cmd === 'MANAGE_TODOS') {
+        const todos = action.todos || [];
+        return `
+          <div class="p-4 rounded-xl bg-surface-container-highest/95 border border-purple-500/40 shadow-[0_8px_32px_rgba(168,85,247,0.18)] space-y-2.5 mt-2">
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-purple-400 text-lg">checklist</span>
+                <span class="font-headline-sm text-sm text-on-surface font-bold">STARK TODO & TASK REGISTRY</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">${todos.length} TASKS</span>
+            </div>
+            <div class="space-y-1.5 max-h-40 overflow-y-auto">
+              ${todos.map(t => `
+                <div class="p-2 rounded bg-surface-container-lowest/80 border border-outline-variant/30 flex items-center justify-between text-xs font-mono">
+                  <span class="text-on-surface">${escapeHtml(t.task)}</span>
+                  <span class="text-[10px] font-bold ${t.done ? 'text-emerald-400' : 'text-amber-400'}">${t.done ? 'COMPLETED' : 'PENDING'}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'DIGEST_BRIEFING') {
+        const batt = action.battery || {};
+        const storage = action.storage || {};
+        const todos = action.todos || [];
+        const wa = action.whatsapp_gateway || '+918197646867';
+        const time = action.time || '';
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/90 space-y-3 border border-cyan-500/40 mt-2 shadow-[0_4px_20px_rgba(0,212,255,0.15)]">
+            <div class="flex items-center justify-between border-b border-outline-variant/30 pb-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-cyan-400 text-xl">query_stats</span>
+                <span class="font-headline-sm text-sm text-on-surface font-bold">OPENJARVIS EXECUTIVE BRIEFING</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-label-telemetry font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">${time || 'ACTIVE'}</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
+              <div class="p-2 rounded bg-surface-container-lowest/80 border border-outline-variant/20">
+                <div class="text-[10px] text-on-surface-variant uppercase">Power Core</div>
+                <div class="font-bold text-emerald-400 text-sm">${batt.percent || 100}%</div>
+                <div class="text-[9px] text-on-surface-variant/70">${batt.source || 'Battery'}</div>
+              </div>
+              <div class="p-2 rounded bg-surface-container-lowest/80 border border-outline-variant/20">
+                <div class="text-[10px] text-on-surface-variant uppercase">SSD Storage</div>
+                <div class="font-bold text-cyan-400 text-sm">${storage.free_gb || 80} GB</div>
+                <div class="text-[9px] text-on-surface-variant/70">Available Free</div>
+              </div>
+              <div class="p-2 rounded bg-surface-container-lowest/80 border border-outline-variant/20">
+                <div class="text-[10px] text-on-surface-variant uppercase">WhatsApp Comms</div>
+                <div class="font-bold text-green-400 text-xs truncate">${wa}</div>
+                <div class="text-[9px] text-green-300/70">Terminal Armed</div>
+              </div>
+              <div class="p-2 rounded bg-surface-container-lowest/80 border border-outline-variant/20">
+                <div class="text-[10px] text-on-surface-variant uppercase">Mission Tasks</div>
+                <div class="font-bold text-purple-400 text-sm">${todos.length} Active</div>
+                <div class="text-[9px] text-purple-300/70">Directives</div>
+              </div>
+            </div>
+            ${todos.length ? `
+              <div class="text-[11px] font-mono text-on-surface-variant bg-surface-container-high/40 p-2 rounded border border-outline-variant/20">
+                <span class="text-primary font-bold">Priority Directive:</span> ${escapeHtml(todos[0])}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }
+
+      if (cmd === 'SEND_EMAIL') {
+        const to = action.to || 'recipient';
+        const subj = action.subject || 'Status';
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-secondary-container/40 mt-2 shadow-[0_4px_16px_rgba(255,183,77,0.1)]">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-secondary-container text-lg">forward_to_inbox</span>
+                <span class="font-headline-sm text-sm text-on-surface font-bold tracking-wide">${escapeHtml(to)}</span>
+              </div>
+              <div class="font-code-stream text-xs text-on-surface-variant truncate max-w-md">Subject: ${escapeHtml(subj)}</div>
+              <div class="text-[10px] font-label-telemetry text-on-surface-variant/70 uppercase">DISPATCHED TO MAIL CLIENT // ZERO MANUAL CLICKS REQUIRED</div>
+            </div>
+            <div class="flex items-center self-end sm:self-auto">
+              <span class="px-2.5 py-1 rounded text-[11px] font-label-telemetry font-bold bg-secondary-container/15 text-secondary-container border border-secondary-container/30 uppercase flex items-center gap-1.5 shadow-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-secondary-container animate-ping"></span> TRANSMITTED
+              </span>
+            </div>
+          </div>
+        `;
+      }
+
+      if (cmd === 'OPEN_APP') {
+        const app = action.app_name || 'Application';
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/80 flex items-center justify-between border border-primary/30 mt-2">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary text-2xl">terminal</span>
+              <div>
+                <div class="font-headline-sm text-sm text-on-surface font-semibold">${escapeHtml(app)}</div>
+                <div class="font-code-stream text-xs text-on-surface-variant">macOS Application Launched</div>
+              </div>
+            </div>
+            <span class="px-3 py-1 font-label-telemetry text-label-telemetry text-primary bg-primary/10 rounded uppercase">ACTIVE</span>
+          </div>
+        `;
+      }
+
+      if (cmd === 'OPEN_URL') {
+        const url = action.url || '#';
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/90 flex items-center justify-between border border-primary/40 mt-2 shadow-[0_4px_16px_rgba(0,212,255,0.12)]">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <span class="material-symbols-outlined text-primary text-2xl shrink-0">open_in_browser</span>
+              <div class="truncate">
+                <div class="font-headline-sm text-sm text-on-surface font-semibold truncate">${escapeHtml(url)}</div>
+                <div class="font-code-stream text-xs text-primary">WEB TARGET // LAUNCH PROTOCOL DISPATCHED</div>
+              </div>
+            </div>
+            <button onclick="window.open('${escapeHtml(url)}', '_blank')" class="shrink-0 ml-2 px-3.5 py-1.5 font-mono text-xs font-bold text-white bg-primary hover:bg-primary/80 rounded-lg flex items-center gap-1.5 shadow-[0_0_12px_rgba(0,212,255,0.4)] transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-sm">launch</span> OPEN
+            </button>
+          </div>
+        `;
+      }
+
+      if (cmd === 'SEARCH_WEB') {
+        const query = action.query || '';
+        const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/90 flex items-center justify-between border border-primary/40 mt-2 shadow-[0_4px_16px_rgba(0,212,255,0.12)]">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <span class="material-symbols-outlined text-primary text-2xl shrink-0">travel_explore</span>
+              <div class="truncate">
+                <div class="font-headline-sm text-sm text-on-surface font-semibold truncate">${escapeHtml(query)}</div>
+                <div class="font-code-stream text-xs text-primary">GOOGLE SEARCH QUERY ARMED</div>
+              </div>
+            </div>
+            <button onclick="window.open('${escapeHtml(searchUrl)}', '_blank')" class="shrink-0 ml-2 px-3.5 py-1.5 font-mono text-xs font-bold text-white bg-primary hover:bg-primary/80 rounded-lg flex items-center gap-1.5 shadow-[0_0_12px_rgba(0,212,255,0.4)] transition-all cursor-pointer">
+              <span class="material-symbols-outlined text-sm">search</span> SEARCH
+            </button>
+          </div>
+        `;
+      }
+
+      if (cmd === 'PLAY_MEDIA') {
+        const query = action.media_query || '';
+        const service = (action.service || 'youtube').toLowerCase();
+        const webUrl = action.web_url || '#';
+        const desktopUrl = action.desktop_url || '#';
+        const icons = { spotify: 'library_music', youtube: 'play_circle', netflix: 'movie', apple_music: 'music_note' };
+        const colors = { spotify: '#1DB954', youtube: '#FF0000', netflix: '#E50914', apple_music: '#FA2B59' };
+        const icon = icons[service] || 'headphones';
+        const color = colors[service] || '#00d4ff';
+        const serviceName = service === 'apple_music' ? 'Apple Music' : service.charAt(0).toUpperCase() + service.slice(1);
+
+        const mediaDeck = service === 'youtube' ? `
+          <div class="mt-2 p-3 rounded-xl bg-black/60 border border-red-500/30 flex flex-col gap-3 shadow-lg">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 text-xs font-mono text-red-400">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span>YOUTUBE NEURAL DISPATCH // QUERY LOCKED</span>
+              </div>
+              <span class="text-[10px] font-mono text-on-surface-variant/70">AUTOPLAY ARMED</span>
+            </div>
+            <div class="flex items-center justify-between bg-surface-container-high/60 p-2.5 rounded-lg border border-outline-variant/20">
+              <div class="flex items-center gap-2.5 overflow-hidden">
+                <span class="material-symbols-outlined text-red-500 text-2xl shrink-0">smart_display</span>
+                <div class="truncate">
+                  <div class="font-bold text-sm text-on-surface truncate">${escapeHtml(query)}</div>
+                  <div class="text-[10px] font-mono text-on-surface-variant">Click to play top stream directly in browser</div>
+                </div>
+              </div>
+              <button onclick="window.open('${escapeHtml(webUrl)}', '_blank')" class="shrink-0 ml-2 px-3.5 py-2 font-mono text-xs font-bold text-white bg-red-600 hover:bg-red-500 rounded-lg flex items-center gap-1.5 shadow-[0_0_12px_rgba(239,68,68,0.5)] transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-sm">play_arrow</span>
+                <span>PLAY NOW</span>
+              </button>
+            </div>
+          </div>
+        ` : '';
+
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/80 flex flex-col gap-2 border mt-2" style="border-color:${color}44">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-2xl" style="color:${color}">${icon}</span>
+                <div>
+                  <div class="font-headline-sm text-sm text-on-surface font-semibold">${escapeHtml(query)}</div>
+                  <div class="font-code-stream text-xs font-bold" style="color:${color}">STREAMING NOW // ${serviceName.toUpperCase()} ACTIVE PLAYBACK</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 self-end sm:self-auto">
+                ${desktopUrl !== '#' ? `<a href="${escapeHtml(desktopUrl)}" class="px-3 py-1.5 font-label-telemetry text-label-telemetry text-on-primary rounded uppercase shadow-sm" style="background:${color}">OPEN APP</a>` : ''}
+                <a href="${escapeHtml(webUrl)}" target="_blank" rel="noopener" class="px-3 py-1.5 font-label-telemetry text-label-telemetry text-on-surface-variant bg-surface-container-high hover:bg-surface-container rounded uppercase transition-colors">OPEN WEB</a>
+              </div>
+            </div>
+            ${mediaDeck}
+          </div>
+        `;
+      }
+
+      if (cmd === 'ACTIVATE_CAMERA') {
+        const isOpen = action.open_hud_camera === true;
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/80 flex items-center justify-between border border-primary/30 mt-2">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-primary text-2xl">${isOpen ? 'videocam' : 'videocam_off'}</span>
+              <div>
+                <div class="font-headline-sm text-sm text-on-surface font-semibold">${isOpen ? 'OPTICAL CAMERA ACTIVE' : 'OPTICAL CAMERA OFFLINE'}</div>
+                <div class="font-code-stream text-xs text-on-surface-variant">${isOpen ? 'Live biometric feed streaming on HUD' : 'Camera viewfinder deactivated'}</div>
+              </div>
+            </div>
+            <button onclick="${isOpen ? 'openCameraViewfinder()' : 'closeCameraViewfinder()'}" class="px-3 py-1 font-label-telemetry text-label-telemetry text-primary bg-primary/10 hover:bg-primary/20 rounded uppercase transition-colors">${isOpen ? 'VIEW FEED' : 'CLOSED'}</button>
+          </div>
+        `;
+      }
+
+      if (cmd === 'FIND_FILE') {
+        const fname = action.filename || '';
+        const paths = action.found_paths || [];
+        const topPath = action.top_path || (paths.length ? paths[0] : null);
+        const pathsHtml = paths.slice(0, 5).map((p, i) => `
+          <div class="flex items-center gap-2 py-0.5">
+            <span class="font-code-stream text-[10px] text-primary/60 w-5 shrink-0">${String(i + 1).padStart(2, '0')}</span>
+            <span class="font-code-stream text-[10px] text-on-surface-variant break-all flex-1">${escapeHtml(p)}</span>
+          </div>`).join('');
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/80 space-y-2 border border-primary/30 mt-2">
+            <div class="font-code-stream text-xs text-primary font-semibold flex items-center gap-1.5">
+              <span class="material-symbols-outlined text-sm">folder_open</span>
+              SPOTLIGHT SCAN: "${escapeHtml(fname)}" &mdash; ${paths.length} RESULT(S)
+            </div>
+            ${paths.length ? `<div class="space-y-0.5">${pathsHtml}</div>` : '<p class="font-code-stream text-[11px] text-error">NO MATCHING FILES FOUND ON THIS MAC, SIR.</p>'}
+            ${topPath ? `<div class="flex gap-2 pt-1"><button onclick="revealInFinder('${escapeHtml(topPath).replace(/'/g, '\\&apos;')}')" class="px-3 py-1 font-label-telemetry text-label-telemetry text-primary bg-primary/10 hover:bg-primary/20 rounded uppercase transition-colors flex items-center gap-1"><span class=\"material-symbols-outlined text-xs\">folder_open</span> REVEAL IN FINDER</button></div>` : ''}
+          </div>
+        `;
+      }
+
+      if (cmd === 'SET_VOLUME') {
+        const vol = action.volume || 50;
+        return `
+          <div class="p-space-sm rounded-xl bg-surface-container-highest/80 flex items-center justify-between border border-primary/30 mt-2">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-primary text-xl">volume_up</span>
+              <span class="font-headline-sm text-sm text-on-surface">System Audio Output: ${vol}%</span>
+            </div>
+            <span class="px-2.5 py-1 font-label-telemetry text-label-telemetry text-primary bg-primary/10 rounded">ADJUSTED</span>
+          </div>
+        `;
+      }
+
+      return '';
+    }
+
+    // ── CHAT MESSAGE APPENDERS ──────────────────────────────────────────────
+    function appendUserMessage(text) {
+      const timeStr = getCurrentTimeString();
+      const div = document.createElement('div');
+      div.className = "flex flex-col items-end";
+      div.innerHTML = `
+        <div class="flex items-center gap-space-xs mb-1">
+          <span class="font-label-telemetry text-label-telemetry text-on-surface-variant font-bold">YASEEN</span>
+          <span class="font-code-stream text-code-stream text-on-surface-variant/70">${timeStr}</span>
+        </div>
+        <div class="bg-surface-container-high/90 text-on-surface px-space-md py-space-sm rounded-2xl rounded-tr-none max-w-xl shadow-[0_4px_20px_rgba(0,0,0,0.6)] backdrop-blur-md border border-outline-variant/30">
+          <p class="font-body-md text-body-md">${escapeHtml(text)}</p>
+        </div>
+      `;
+      dialogContainer.appendChild(div);
+      scrollToBottom();
+    }
+
+    function appendJarvisMessage(htmlContent, spokenText) {
+      const timeStr = getCurrentTimeString();
+      const div = document.createElement('div');
+      div.className = "flex flex-col items-start";
+      div.innerHTML = `
+        <div class="flex items-center gap-space-xs mb-1">
+          <div class="w-4 h-4 rounded-full ${isDefenseActive ? 'bg-secondary-container/20' : 'bg-primary/20'} flex items-center justify-center">
+            <span class="material-symbols-outlined ${isDefenseActive ? 'text-secondary-container' : 'text-primary'} text-[11px]">smart_toy</span>
+          </div>
+          <span class="font-label-telemetry text-label-telemetry ${isDefenseActive ? 'text-secondary-container' : 'text-primary'} font-bold">J.A.R.V.I.S. // COGNITION STREAM</span>
+          <span class="font-code-stream text-code-stream text-on-surface-variant/70">${timeStr}</span>
+        </div>
+        <div class="bg-surface-container-low/90 text-on-surface px-space-md py-space-md rounded-2xl rounded-tl-none max-w-2xl shadow-[0_8px_32px_rgba(0,0,0,0.7)] backdrop-blur-2xl space-y-space-md border border-outline-variant/30">
+          ${htmlContent}
+        </div>
+      `;
+      dialogContainer.appendChild(div);
+      scrollToBottom();
+
+      if (spokenText) {
+        speakReply(spokenText);
+      }
+    }
+
+    function showThinkingIndicator() {
+      removeThinkingIndicator();
+      const div = document.createElement('div');
+      div.id = 'thinking-bubble';
+      div.className = "flex items-center gap-2 px-space-md py-2 rounded-xl bg-surface-container-low/80 text-primary font-code-stream text-xs border border-primary/20";
+      div.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+        <span>NEURAL CORES PROCESSING DIRECTIVE...</span>
+      `;
+      dialogContainer.appendChild(div);
+      scrollToBottom();
+    }
+
+    function removeThinkingIndicator() {
+      const el = document.getElementById('thinking-bubble');
+      if (el) el.remove();
+    }
+
+    // ── DEFENSE MODE TOGGLE ─────────────────────────────────────────────────
+    function toggleDefenseSwitch() {
+      isDefenseActive = !isDefenseActive;
+      if (isDefenseActive) {
+        defenseThumb.classList.add('translate-x-5', 'bg-secondary-container', 'shadow-[0_0_12px_rgba(255,183,0,0.9)]');
+        defenseThumb.classList.remove('bg-primary', 'shadow-[0_0_8px_rgba(0,212,255,0.8)]');
+        topDefenseThumb.classList.add('translate-x-4', 'bg-secondary-container', 'shadow-[0_0_8px_rgba(255,183,0,0.8)]');
+        topDefenseThumb.classList.remove('bg-primary', 'shadow-[0_0_8px_rgba(0,212,255,0.8)]');
+        defenseLabel.textContent = "DEFENSE: ACTIVE // TACTICAL ALERT";
+        defenseLabel.classList.add('text-secondary-container');
+        ambientGlow.classList.remove('bg-primary/10');
+        ambientGlow.classList.add('bg-secondary-container/15');
+        protocolPrefix.classList.remove('text-primary');
+        protocolPrefix.classList.add('text-secondary-container');
+
+        sendToJarvis("Activate defense protocols and switch to tactical alert mode.", { silent: true });
+      } else {
+        defenseThumb.classList.remove('translate-x-5', 'bg-secondary-container', 'shadow-[0_0_12px_rgba(255,183,0,0.9)]');
+        defenseThumb.classList.add('bg-primary', 'shadow-[0_0_8px_rgba(0,212,255,0.8)]');
+        topDefenseThumb.classList.remove('translate-x-4', 'bg-secondary-container', 'shadow-[0_0_8px_rgba(255,183,0,0.8)]');
+        topDefenseThumb.classList.add('bg-primary', 'shadow-[0_0_8px_rgba(0,212,255,0.8)]');
+        defenseLabel.textContent = "DEFENSE: STANDBY";
+        defenseLabel.classList.remove('text-secondary-container');
+        ambientGlow.classList.add('bg-primary/10');
+        ambientGlow.classList.remove('bg-secondary-container/15');
+        protocolPrefix.classList.add('text-primary');
+        protocolPrefix.classList.remove('text-secondary-container');
+
+        sendToJarvis("Stand down defense protocols and return to standby.", { silent: true });
+      }
+    }
+
+    // ── QUICK CHIPS & UTILITIES ─────────────────────────────────────────────
+    function triggerQuickAction(text) {
+      commandInput.value = text;
+      submitCommand();
+    }
+
+    function copyToClipboard(val) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(val);
+      }
+      appendJarvisMessage(`
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-base">check_circle</span>
+          <span class="font-code-stream text-code-stream text-primary uppercase font-bold">COPIED VALUE: "${escapeHtml(val)}" TO CLIPBOARD</span>
+        </div>
+      `, null);
+    }
+
+    function getCurrentTimeString() {
+      const d = new Date();
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function scrollToBottom() {
+      setTimeout(() => {
+        dialogContainer.scrollTop = dialogContainer.scrollHeight;
+      }, 50);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // ── OPTICAL CAMERA HUD ─────────────────────────────────────────────────
+    let cameraStream = null;
+
+    async function openCameraViewfinder() {
+      const overlay = document.getElementById('camera-hud-overlay');
+      const video = document.getElementById('hud-camera-video');
+      const camLabel = document.getElementById('cam-status-label');
+      if (!overlay || !video) return;
+
+      overlay.style.display = 'flex';
+      if (!cameraStream) {
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1920 }, height: { ideal: 1080 }, facingMode: 'user' },
+            audio: false
+          });
+          video.srcObject = cameraStream;
+          if (camLabel) camLabel.textContent = 'LIVE BIOMETRIC FEED ACTIVE';
+        } catch (err) {
+          if (camLabel) camLabel.textContent = 'CAMERA ACCESS DENIED — CHECK PERMISSIONS';
+          console.warn('[JARVIS] Camera access denied:', err.message);
+        }
+      } else {
+        video.srcObject = cameraStream;
+      }
+    }
+
+    function closeCameraViewfinder() {
+      const overlay = document.getElementById('camera-hud-overlay');
+      const video = document.getElementById('hud-camera-video');
+      if (overlay) overlay.style.display = 'none';
+      if (video) video.srcObject = null;
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+    }
+
+    function toggleCameraViewfinder() {
+      const overlay = document.getElementById('camera-hud-overlay');
+      if (!overlay) return;
+      if (overlay.style.display === 'none' || !overlay.style.display) {
+        openCameraViewfinder();
+      } else {
+        closeCameraViewfinder();
+      }
+    }
+
+    function takeCameraSnapshot() {
+      const video = document.getElementById('hud-camera-video');
+      const canvas = document.getElementById('hud-camera-canvas');
+      if (!video || !canvas || !cameraStream) return;
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      // mirror to match the CSS scaleX(-1)
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = `jarvis_snapshot_${Date.now()}.png`;
+      link.click();
+      appendJarvisMessage(`
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-base">photo_camera</span>
+          <span class="font-code-stream text-code-stream text-primary uppercase font-bold">OPTICAL SNAPSHOT CAPTURED — SAVING TO DOWNLOADS</span>
+        </div>
+      `, null);
+    }
+
+    // ── FINDER REVEAL HELPER ─────────────────────────────────────────────────
+    function revealInFinder(path) {
+      // Trigger server-side open -R via a hidden fetch call to a dedicated endpoint
+      fetch(`${API_BASE}/api/reveal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path })
+      }).then(() => {
+        appendJarvisMessage(`
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-base">folder_open</span>
+            <span class="font-code-stream text-code-stream text-primary uppercase font-bold">REVEALING IN FINDER: ${escapeHtml(path)}</span>
+          </div>
+        `, null);
+      }).catch(() => {});
+    }
+
+    // ── SYSTEM HEALTH & STATUS CHECKER ──────────────────────────────────────
+    async function checkSystemStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/status`);
+        if (res.ok) {
+          const s = await res.json();
+          if (s.ai_model && modelBadgeText) {
+            modelBadgeText.textContent = s.ai_model.toUpperCase();
+          }
+        }
+      } catch (_) {}
+    }
+    // ═════════════════════════════════════════════════════════════════════════
+    // PROCEDURAL SCI-FI WEB AUDIO SFX SYNTHESIZER
+    // ═════════════════════════════════════════════════════════════════════════
+    let sfxEnabled = true;
+    let sfxAudioCtx = null;
+
+    function getSfxContext() {
+      if (!sfxAudioCtx) {
+        sfxAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (sfxAudioCtx.state === 'suspended') {
+        sfxAudioCtx.resume();
+      }
+      return sfxAudioCtx;
+    }
+
+    function playSfx(type) {
+      if (!sfxEnabled) return;
+      try {
+        const ctx = getSfxContext();
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'click') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(1200, now);
+          osc.frequency.exponentialRampToValueAtTime(800, now + 0.04);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+          osc.start(now);
+          osc.stop(now + 0.04);
+        } else if (type === 'mic_on') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(660, now);
+          osc.frequency.exponentialRampToValueAtTime(1320, now + 0.09);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+        } else if (type === 'action') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(1040, now + 0.15);
+          gain.gain.setValueAtTime(0.15, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+          osc.start(now);
+          osc.stop(now + 0.16);
+        } else if (type === 'abort') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(110, now + 0.25);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        }
+      } catch (_) {}
+    }
+
+    function toggleSfx() {
+      sfxEnabled = !sfxEnabled;
+      const lbl = document.getElementById('sfx-label');
+      const icon = document.getElementById('sfx-icon');
+      if (lbl) lbl.textContent = sfxEnabled ? 'SFX ON' : 'SFX OFF';
+      if (icon) icon.textContent = sfxEnabled ? 'volume_up' : 'volume_off';
+      if (sfxEnabled) playSfx('click');
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // THREE.JS 3D HOLOGRAPHIC FIBONACCI PARTICLE SPHERE
+    // ═════════════════════════════════════════════════════════════════════════
+    let holoScene, holoCamera, holoRenderer, holoPoints;
+    let holoGeometryType = 'sphere'; // 'sphere' or 'reactor'
+    const PARTICLE_COUNT = 1200;
+
+    function initThreeHoloSphere() {
+      const canvas = document.getElementById('threeHoloCanvas');
+      if (!canvas || typeof THREE === 'undefined') return;
+
+      holoScene = new THREE.Scene();
+      holoCamera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+      holoCamera.position.z = 240;
+
+      holoRenderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      holoRenderer.setSize(window.innerWidth, window.innerHeight);
+      holoRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      buildHoloGeometry();
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (holoPoints) {
+          holoPoints.rotation.y += 0.0035;
+          holoPoints.rotation.x += 0.0015;
+
+          // Dynamically scale particle sphere based on live voice audio frequency amplitude
+          const vol = window.liveAudioVolume || 0;
+          const scale = 1.0 + (vol / 255.0) * 0.45;
+          holoPoints.scale.set(scale, scale, scale);
+        }
+        holoRenderer.render(holoScene, holoCamera);
+      }
+      animate();
+
+      window.addEventListener('resize', () => {
+        if (!holoCamera || !holoRenderer) return;
+        holoCamera.aspect = window.innerWidth / window.innerHeight;
+        holoCamera.updateProjectionMatrix();
+        holoRenderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    function buildHoloGeometry() {
+      if (holoPoints) {
+        holoScene.remove(holoPoints);
+      }
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(PARTICLE_COUNT * 3);
+      const colors = new Float32Array(PARTICLE_COUNT * 3);
+
+      const color1 = new THREE.Color(0x00d4ff); // Stark cyan
+      const color2 = new THREE.Color(0xffaa00); // Gold
+
+      if (holoGeometryType === 'sphere') {
+        const phi = Math.PI * (3 - Math.sqrt(5)); // Fibonacci spiral
+        const radius = 95;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const y = 1 - (i / (PARTICLE_COUNT - 1)) * 2;
+          const r = Math.sqrt(1 - y * y);
+          const theta = phi * i;
+
+          positions[i * 3] = Math.cos(theta) * r * radius;
+          positions[i * 3 + 1] = y * radius;
+          positions[i * 3 + 2] = Math.sin(theta) * r * radius;
+
+          const mixed = color1.clone().lerp(color2, (y + 1) / 2);
+          colors[i * 3] = mixed.r;
+          colors[i * 3 + 1] = mixed.g;
+          colors[i * 3 + 2] = mixed.b;
+        }
+      } else {
+        // Arc Reactor plasma torus ring
+        const R = 75, r = 28;
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+          const u = (i / PARTICLE_COUNT) * Math.PI * 2 * 6;
+          const v = (i / PARTICLE_COUNT) * Math.PI * 2;
+          positions[i * 3] = (R + r * Math.cos(v)) * Math.cos(u);
+          positions[i * 3 + 1] = (R + r * Math.cos(v)) * Math.sin(u);
+          positions[i * 3 + 2] = r * Math.sin(v);
+
+          const mixed = color1.clone().lerp(color2, Math.abs(Math.sin(u)));
+          colors[i * 3] = mixed.r;
+          colors[i * 3 + 1] = mixed.g;
+          colors[i * 3 + 2] = mixed.b;
+        }
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const material = new THREE.PointsMaterial({
+        size: 2.2,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending
+      });
+
+      holoPoints = new THREE.Points(geometry, material);
+      holoScene.add(holoPoints);
+    }
+
+    function toggleHoloMode() {
+      playSfx('click');
+      holoGeometryType = (holoGeometryType === 'sphere') ? 'reactor' : 'sphere';
+      const lbl = document.getElementById('holo-mode-label');
+      if (lbl) lbl.textContent = (holoGeometryType === 'sphere') ? '3D Sphere' : 'Arc Core';
+      buildHoloGeometry();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // 4-TIER COGNITIVE MEMORY BRAIN CONTROLLER
+    // ═════════════════════════════════════════════════════════════════════════
+    let isBrainDrawerOpen = false;
+
+    async function fetchBrainData() {
+      try {
+        const res = await fetch(`${API_BASE}/api/brain`);
+        if (!res.ok) return;
+        const b = await res.json();
+
+        // Tier 1: Identity
+        const idBox = document.getElementById('brain-identity-text');
+        if (idBox && b.identity) {
+          idBox.textContent = `${b.identity.name} ${b.identity.version} // ${b.identity.persona} // ${b.identity.hardware}`;
+        }
+
+        // Tier 2: Working Memory
+        const statusBadge = document.getElementById('brain-working-status');
+        const dirBox = document.getElementById('brain-working-directive');
+        const thoughtBox = document.getElementById('brain-working-thought');
+        if (b.working_memory) {
+          if (statusBadge) statusBadge.textContent = b.working_memory.status || 'STANDBY';
+          if (dirBox) dirBox.textContent = b.working_memory.directive || 'Awaiting input';
+          if (thoughtBox) thoughtBox.textContent = `<think> ${b.working_memory.thought_trace || 'Systems nominal.'} </think>`;
+        }
+
+        // Tier 3: Episodic Memory
+        const epCount = document.getElementById('brain-episodic-count');
+        const epList = document.getElementById('brain-episodic-list');
+        if (b.episodic_memory && epList) {
+          if (epCount) epCount.textContent = `${b.episodic_memory.length} tasks`;
+          if (b.episodic_memory.length === 0) {
+            epList.innerHTML = `<div class="text-[10px] text-on-surface-variant italic">No episodic tasks logged yet this session.</div>`;
+          } else {
+            epList.innerHTML = b.episodic_memory.slice(0, 10).map(item => `
+              <div class="p-2 rounded bg-surface-container-high/60 border border-outline-variant/30 flex items-start justify-between gap-1 text-[10px]">
+                <div class="space-y-0.5 min-w-0">
+                  <div class="text-primary font-bold truncate max-w-[200px]">${escapeHtml(item.query || 'Task')}</div>
+                  <div class="text-on-surface-variant text-[9px] truncate max-w-[200px]">${escapeHtml(item.reply || '')}</div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded bg-primary/20 text-primary text-[9px] font-bold shrink-0">${item.command || 'NONE'}</span>
+              </div>
+            `).join('');
+          }
+        }
+
+        // Tier 4: Goal Queue
+        const goalCount = document.getElementById('brain-goal-count');
+        const goalList = document.getElementById('brain-goal-list');
+        if (b.goal_queue && goalList) {
+          if (goalCount) goalCount.textContent = `${b.goal_queue.length} active`;
+          goalList.innerHTML = b.goal_queue.map(g => `
+            <div class="flex items-center justify-between p-1.5 rounded bg-surface-container-high/60 border border-outline-variant/30 text-[10px]">
+              <span class="text-purple-200 truncate max-w-[260px]">• ${escapeHtml(g.title)}</span>
+              <span class="text-[9px] text-emerald-400 font-bold shrink-0">ACTIVE</span>
+            </div>
+          `).join('');
+        }
+      } catch (_) {}
+    }
+
+    function toggleBrainDrawer() {
+      playSfx('click');
+      const drawer = document.getElementById('brain-drawer');
+      if (!drawer) return;
+      isBrainDrawerOpen = !isBrainDrawerOpen;
+      if (isBrainDrawerOpen) {
+        drawer.classList.remove('translate-x-[120%]', 'opacity-0', 'pointer-events-none');
+        drawer.classList.add('translate-x-0', 'opacity-100', 'pointer-events-auto');
+        fetchBrainData();
+      } else {
+        drawer.classList.add('translate-x-[120%]', 'opacity-0', 'pointer-events-none');
+        drawer.classList.remove('translate-x-0', 'opacity-100', 'pointer-events-auto');
+      }
+    }
+
+    async function submitNewGoal() {
+      const input = document.getElementById('input-new-goal');
+      if (!input || !input.value.trim()) return;
+      const title = input.value.trim();
+      playSfx('action');
+      try {
+        const res = await fetch(`${API_BASE}/api/brain/goal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title })
+        });
+        if (res.ok) {
+          input.value = '';
+          fetchBrainData();
+          appendJarvisMessage(`
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-purple-300 text-base">task_alt</span>
+              <span class="font-code-stream text-code-stream text-purple-300 uppercase font-bold">COGNITIVE OBJECTIVE ENQUEUED: ${escapeHtml(title)}</span>
+            </div>
+          `, null);
+        }
+      } catch (_) {}
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // EMERGENCY PROTOCOL ZERO
+    // ═════════════════════════════════════════════════════════════════════════
+    async function executeProtocolZero() {
+      playSfx('abort');
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      stopVoiceRecognition();
+      closeCameraViewfinder();
+
+      try {
+        const res = await fetch(`${API_BASE}/api/protocol-zero`, { method: 'POST' });
+        appendJarvisMessage(`
+          <div class="p-3 rounded-xl bg-rose-950/90 border border-rose-500 text-rose-200 shadow-xl space-y-1">
+            <div class="flex items-center gap-2 font-bold font-headline-sm uppercase text-xs tracking-wider text-rose-300">
+              <span class="material-symbols-outlined text-rose-400">gpp_maybe</span>
+              <span>EMERGENCY PROTOCOL ZERO ENGAGED</span>
+            </div>
+            <div class="font-code-stream text-[11px] text-rose-100 leading-relaxed">
+              All active operations terminated. Audio synthesis cancelled. Microphone stream muted. Systems placed in safe standby, Sir.
+            </div>
+          </div>
+        `, null);
+      } catch (_) {}
+
+      fetchBrainData();
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════
+    // HARDWARE VITALS POLLING
+    // ═════════════════════════════════════════════════════════════════════════
+    async function fetchHardwareVitals() {
+      try {
+        const res = await fetch(`${API_BASE}/api/vitals`);
+        if (!res.ok) return;
+        const v = await res.json();
+        const cpuEl = document.getElementById('vitals-cpu');
+        const ramEl = document.getElementById('vitals-ram');
+        const battEl = document.getElementById('vitals-battery-val');
+        const battIcon = document.getElementById('battery-icon');
+        const storageEl = document.getElementById('vitals-storage-val');
+
+        if (cpuEl) cpuEl.textContent = `${v.cpu_percent}%`;
+        if (ramEl) ramEl.textContent = `${v.total_ram_gb}GB`;
+        if (battEl && v.battery) {
+          battEl.textContent = `${v.battery.percent}%`;
+          if (battIcon) battIcon.textContent = v.battery.charging ? 'battery_charging_full' : 'battery_full';
+        }
+        if (storageEl && v.storage) {
+          storageEl.textContent = `${v.storage.free_gb}GB FREE`;
+        }
+      } catch (_) {}
+    }
+
+    // Initialize 3D Hologram, Vitals, and SFX
+    setTimeout(() => {
+      initThreeHoloSphere();
+      fetchHardwareVitals();
+      setInterval(fetchHardwareVitals, 6000);
+      setInterval(() => {
+        if (isBrainDrawerOpen) fetchBrainData();
+      }, 5000);
+    }, 400);
+  </script>
+</body>
+</html>
+

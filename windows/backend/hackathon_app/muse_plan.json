@@ -1,0 +1,15 @@
+{
+  "project_name": "Simple Calculator",
+  "task_type": "webapp",
+  "architecture_summary": "A basic web application with a single HTML page and a backend JavaScript function for calculating the sum of two numbers.",
+  "steps": [
+    "Design a simple HTML page with two input fields for numbers and a button to calculate the sum.",
+    "Write a JavaScript function that takes the values from the input fields, performs addition, and displays the result in a designated area on the page.",
+    "Ensure the HTML and JavaScript code are integrated correctly.",
+    "Test the calculator by entering different numbers and verifying the accuracy of the sum displayed."
+  ],
+  "files_to_generate": [
+    "index.html",
+    "script.js"
+  ]
+}

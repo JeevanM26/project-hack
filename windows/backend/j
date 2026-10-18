@@ -1,0 +1,20 @@
+# filename: j Jarvis.py
+
+# J.A.R.V.I.S. Autonomous Principal Software Engineer
+
+class J Jarvis:
+    def __init__(self):
+        self.name = "J Jarvis"
+        self.age = 25
+        self.status = "Active"
+
+    def introduce(self):
+        print("Hello, I am", self.name)
+
+    def update_status(self, status):
+        self.status = status
+
+# Sample test calls
+j_jarvis = J Jarvis()
+j_jarvis.introduce()
+j_jarvis.update_status("Inactive")

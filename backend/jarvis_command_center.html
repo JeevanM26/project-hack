@@ -110,11 +110,17 @@
       </div>
     </div>
 
-    <!-- Latency & Log Toggle -->
-    <div class="flex items-center gap-3">
+    <!-- Latency, Vision & Memory Controls -->
+    <div class="flex items-center gap-2">
       <div id="latencyPill" class="text-[11px] mono px-2.5 py-1 rounded bg-cyan-950/60 border border-cyan-500/40 text-cyan-300">
         0ms READY
       </div>
+      <button id="btnOpticalScan" type="button" class="text-[11px] mono px-3 py-1 rounded bg-cyan-950/80 hover:bg-cyan-850 border border-cyan-400 text-cyan-300 transition flex items-center gap-1.5 shadow-lg shadow-cyan-950/50">
+        <span>👁️</span> Optical Sensor
+      </button>
+      <button id="btnCognitiveMemory" type="button" class="text-[11px] mono px-3 py-1 rounded bg-purple-950/80 hover:bg-purple-850 border border-purple-400 text-purple-300 transition flex items-center gap-1.5 shadow-lg shadow-purple-950/50">
+        <span>🧠</span> Brain / Memory
+      </button>
       <button id="btnToggleHudLog" type="button" class="text-[11px] mono px-3 py-1 rounded bg-slate-800/80 hover:bg-slate-700 border border-slate-600 text-slate-300 transition">
         HUD Log
       </button>
@@ -179,7 +185,16 @@
     </div>
 
     <!-- 3. Quick Directive Chips (One-Click Demonstrations for Judges) -->
-    <div class="flex items-center justify-center flex-wrap gap-1.5 max-w-4xl w-full text-[10px] mono">
+    <div class="flex items-center justify-center flex-wrap gap-1.5 max-w-5xl w-full text-[10px] mono">
+      <button type="button" data-cmd="look at me through the laptop camera and tell me what you observe" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-cyan-900/50 border border-cyan-400 text-cyan-300 hover:text-white transition shadow-sm shadow-cyan-950">
+        👁️ Look at Me (Camera)
+      </button>
+      <button type="button" data-cmd="visually inspect my active desktop screen and tell me what is open" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-sky-900/50 border border-sky-400 text-sky-300 hover:text-white transition shadow-sm shadow-sky-950">
+        🖥️ Inspect Desktop Screen
+      </button>
+      <button type="button" data-cmd="what did you do today and what tasks did we complete?" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-purple-900/50 border border-purple-400 text-purple-300 hover:text-white transition shadow-sm shadow-purple-950">
+        🧠 Memory Recall (SQLite)
+      </button>
       <button type="button" data-cmd="open netflix and play sci-fi movie" class="quick-chip px-2.5 py-1 rounded-lg bg-slate-900/80 hover:bg-rose-900/40 border border-rose-500/30 text-rose-300 hover:text-white transition">
         🎬 Open Netflix
       </button>
@@ -213,6 +228,70 @@
     </div>
 
   </footer>
+
+  <!-- ======================================================================================== -->
+  <!-- MODAL: OPTICAL SENSOR LIVE FEED & MOONDREAM VISION ANALYSIS                              -->
+  <!-- ======================================================================================== -->
+  <div id="opticalVisionModal" class="hidden fixed inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="max-w-xl w-full bg-[#0a0f1d] border border-cyan-400 rounded-2xl p-5 shadow-[0_0_60px_rgba(0,240,255,0.4)] flex flex-col gap-4">
+      <div class="flex items-center justify-between border-b border-cyan-500/30 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-cyan-400 animate-ping"></span>
+          <span class="orbitron text-sm text-cyan-300 font-bold tracking-widest">OPTICAL SENSOR ARRAY // HD WEBCAM</span>
+        </div>
+        <button id="btnCloseOpticalModal" type="button" class="text-lg text-slate-400 hover:text-white">&times;</button>
+      </div>
+      <div class="relative rounded-xl overflow-hidden border border-cyan-500/40 bg-black flex items-center justify-center min-h-[260px]">
+        <img id="opticalImagePreview" class="w-full h-auto max-h-[340px] object-cover" alt="Optical Frame" />
+        <div id="opticalLoadingIndicator" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-2">
+          <div class="w-8 h-8 rounded-full border-2 border-cyan-400 border-t-transparent animate-spin"></div>
+          <span class="mono text-xs text-cyan-300">Capturing optical frame & analyzing with Moondream...</span>
+        </div>
+      </div>
+      <div class="p-3 rounded-xl bg-slate-900/90 border border-cyan-500/20">
+        <div class="text-[10px] mono text-cyan-400 font-semibold mb-1 uppercase tracking-wider">Neural Vision Analysis (Moondream on Local RTX GPU):</div>
+        <p id="opticalAnalysisText" class="text-xs mono text-slate-200 leading-relaxed italic">
+          "Engaging optical sensor to observe user and environment..."
+        </p>
+      </div>
+      <div class="flex items-center justify-between pt-1">
+        <span class="text-[10px] mono text-slate-400">Zero Cloud Latency &bull; 100% On-Device Neural Vision</span>
+        <button id="btnRetriggerOptical" type="button" class="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs orbitron tracking-wider shadow-lg shadow-cyan-900/40 transition">
+          RE-SCAN OPTICAL FRAME
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================================== -->
+  <!-- DRAWER: COGNITIVE BRAIN & EPISODIC MEMORY (SQLITE ENGINE)                                -->
+  <!-- ======================================================================================== -->
+  <aside id="cognitiveMemoryDrawer" class="hidden fixed left-6 top-20 z-30 w-80 md:w-[420px] max-h-[80vh] bg-black/90 border border-purple-500/40 rounded-2xl p-4 shadow-[0_0_50px_rgba(168,85,247,0.3)] backdrop-blur-xl flex flex-col gap-3 transition-all duration-300">
+    <div class="flex items-center justify-between border-b border-purple-500/30 pb-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse"></span>
+        <span class="orbitron text-xs text-purple-300 font-bold tracking-wider">COGNITIVE BRAIN // EPISODIC LOGS</span>
+      </div>
+      <button id="btnCloseMemoryDrawer" type="button" class="text-base text-slate-400 hover:text-white">&times;</button>
+    </div>
+    <!-- Companion Profile -->
+    <div id="memoryProfileSection" class="p-2.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-[10px] mono text-purple-200 space-y-1">
+      <div><strong>USER:</strong> Jeevan (Sir) &bull; <strong>STATUS:</strong> Active Master</div>
+      <div><strong>AI CORE:</strong> J.A.R.V.I.S. Mark VII &bull; <strong>DB:</strong> SQLite jarvis_brain.db</div>
+      <div><strong>ACTIVE TASK:</strong> <span id="memoryCurrentTask" class="text-cyan-300">Standing by</span></div>
+    </div>
+    <!-- Episodic Memories Table -->
+    <div class="text-[10px] mono text-slate-400 uppercase tracking-wider font-semibold">Recent Episodic Memories:</div>
+    <div id="memoryEpisodesList" class="flex-1 overflow-y-auto hud-scroll space-y-2 pr-1 max-h-[46vh]">
+      <!-- Populated via API -->
+    </div>
+    <div class="pt-2 border-t border-purple-500/20 flex items-center justify-between">
+      <span class="text-[9px] mono text-slate-400">Persistent Open-Source Memory Engine</span>
+      <button id="btnRefreshMemory" type="button" class="text-[10px] mono px-2.5 py-1 rounded bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-400/40 transition">
+        Refresh
+      </button>
+    </div>
+  </aside>
 
   <!-- ======================================================================================== -->
   <!-- FLOATING HUD TERMINAL (TELEMETRY & GEMMA 4 REASONING)                                    -->
@@ -555,6 +634,17 @@
             renderMediaOverlay(d.url, d.embed_url, cmd);
           } else if (d.action === 'gmail_draft_created') {
             renderGmailOverlay(d.to, d.subject, d.body, d.url);
+          } else if (d.action === 'optical_camera_scan') {
+            const modal = document.getElementById('opticalVisionModal');
+            const img = document.getElementById('opticalImagePreview');
+            const text = document.getElementById('opticalAnalysisText');
+            modal.classList.remove('hidden');
+            if (d.image_base64) img.src = `data:image/jpeg;base64,${d.image_base64}`;
+            text.textContent = `"${d.analysis || d.speech || 'Observation recorded.'}"`;
+          } else if (d.action === 'query_brain_memory') {
+            const drawer = document.getElementById('cognitiveMemoryDrawer');
+            drawer.classList.remove('hidden');
+            refreshMemoryList();
           }
         } else {
           if (preOpenedTab && !preOpenedTab.closed) preOpenedTab.close();
@@ -566,6 +656,85 @@
         state.spherePulse = 1.0;
         logHud(`[COMM ERROR] Could not reach backend: ${err.message}`);
         speakText(`Backend communication offline. Ensure FastAPI is running on port 8000.`);
+      }
+    }
+
+    // -------------------------------------------------------------
+    // OPTICAL VISION SENSOR SCANNER
+    // -------------------------------------------------------------
+    async function triggerOpticalScan() {
+      const modal = document.getElementById('opticalVisionModal');
+      const loader = document.getElementById('opticalLoadingIndicator');
+      const text = document.getElementById('opticalAnalysisText');
+      const img = document.getElementById('opticalImagePreview');
+
+      modal.classList.remove('hidden');
+      loader.classList.remove('hidden');
+      text.textContent = 'Engaging laptop webcam and analyzing frame via local Moondream vision...';
+      logHud('\n[OPTICAL SENSOR] Engaging laptop camera array...');
+
+      try {
+        const r = await fetch(`${state.backendUrl}/api/jarvis/optical-scan`, { method: 'POST' });
+        const d = await r.json();
+        loader.classList.add('hidden');
+
+        if (d.ok && d.image_base64) {
+          img.src = `data:image/jpeg;base64,${d.image_base64}`;
+          text.textContent = `"${d.analysis || 'Visual scan complete.'}"`;
+          speakText(d.speech || `Optical scan complete. I observe: ${d.analysis}`);
+          logHud(`[OPTICAL ANALYSIS] ${d.analysis}`);
+        } else {
+          text.textContent = d.error || 'Failed to capture camera frame.';
+          speakText('Could not access optical camera sensor, sir.');
+        }
+      } catch (err) {
+        loader.classList.add('hidden');
+        text.textContent = `Communication error: ${err.message}`;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // COGNITIVE BRAIN & EPISODIC MEMORY VIEWER
+    // -------------------------------------------------------------
+    async function openMemoryDrawer() {
+      const drawer = document.getElementById('cognitiveMemoryDrawer');
+      drawer.classList.toggle('hidden');
+      if (drawer.classList.contains('hidden')) return;
+
+      logHud('\n[COGNITIVE BRAIN] Polling jarvis_brain.db episodic memories...');
+      await refreshMemoryList();
+    }
+
+    async function refreshMemoryList() {
+      const list = document.getElementById('memoryEpisodesList');
+      const taskSpan = document.getElementById('memoryCurrentTask');
+      list.innerHTML = '<div class="text-[10px] mono text-slate-400 p-2">Querying SQLite database...</div>';
+
+      try {
+        const r = await fetch(`${state.backendUrl}/api/jarvis/memory`);
+        const d = await r.json();
+        if (d.working_context && d.working_context.current_task) {
+          taskSpan.textContent = d.working_context.current_task;
+        }
+
+        const tasks = d.recent_tasks || [];
+        if (!tasks.length) {
+          list.innerHTML = '<div class="text-[10px] mono text-slate-500 p-2">No episodic memories recorded yet.</div>';
+          return;
+        }
+
+        list.innerHTML = tasks.map(t => `
+          <div class="p-2 rounded-xl bg-slate-900/80 border border-purple-500/30 text-[10px] mono space-y-1">
+            <div class="flex items-center justify-between text-purple-300">
+              <span class="font-bold uppercase">${t.tool_used || t.action_name || 'ACTION'}</span>
+              <span class="text-slate-500 text-[9px]">${t.timestamp || ''}</span>
+            </div>
+            <div class="text-slate-300"><strong class="text-cyan-400">User:</strong> "${t.user_prompt || ''}"</div>
+            <div class="text-slate-400 text-[9px] italic leading-tight">${t.outcome_summary || ''}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = `<div class="text-[10px] mono text-red-400 p-2">Failed to load memory: ${err.message}</div>`;
       }
     }
 
@@ -596,6 +765,18 @@
           document.getElementById('mainCommandInput').value = cmd;
           executeCommand(cmd, true);
         });
+      });
+
+      document.getElementById('btnOpticalScan').addEventListener('click', triggerOpticalScan);
+      document.getElementById('btnRetriggerOptical').addEventListener('click', triggerOpticalScan);
+      document.getElementById('btnCloseOpticalModal').addEventListener('click', () => {
+        document.getElementById('opticalVisionModal').classList.add('hidden');
+      });
+
+      document.getElementById('btnCognitiveMemory').addEventListener('click', openMemoryDrawer);
+      document.getElementById('btnRefreshMemory').addEventListener('click', refreshMemoryList);
+      document.getElementById('btnCloseMemoryDrawer').addEventListener('click', () => {
+        document.getElementById('cognitiveMemoryDrawer').classList.add('hidden');
       });
 
       document.getElementById('btnToggleHudLog').addEventListener('click', () => {

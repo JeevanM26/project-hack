@@ -38,6 +38,26 @@ except ImportError:
     except ImportError:
         execute_computer_use = None
 
+try:
+    from jarvis_memory import get_cognitive_brain_summary, query_memory, record_episodic_memory
+except ImportError:
+    try:
+        from backend.jarvis_memory import get_cognitive_brain_summary, query_memory, record_episodic_memory
+    except ImportError:
+        get_cognitive_brain_summary = None
+        query_memory = None
+        record_episodic_memory = None
+
+try:
+    from jarvis_vision import scan_laptop_camera, scan_desktop_screen
+except ImportError:
+    try:
+        from backend.jarvis_vision import scan_laptop_camera, scan_desktop_screen
+    except ImportError:
+        scan_laptop_camera = None
+        scan_desktop_screen = None
+
+
 import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -1429,6 +1449,52 @@ async def screenshot_verify(req: ScreenshotVerifyRequest):
         "clicked_elements": clicked_elements,
         "vision_report": vision_report,
     }
+
+
+@app.get("/api/jarvis/memory")
+async def get_jarvis_memory():
+    """Returns J.A.R.V.I.S. cognitive brain state and episodic memory logs from SQLite."""
+    if get_cognitive_brain_summary:
+        return get_cognitive_brain_summary()
+    return {"status": "Memory module unavailable"}
+
+
+@app.post("/api/jarvis/optical-scan")
+async def jarvis_optical_scan():
+    """Engages the laptop webcam to scan the user and environment with local Moondream vision."""
+    if scan_laptop_camera:
+        res = scan_laptop_camera()
+        if record_episodic_memory and res.get("ok"):
+            record_episodic_memory(
+                user_prompt="Optical camera scan",
+                action_name="optical_camera_scan",
+                tool_used="laptop_webcam",
+                outcome_summary=res.get("analysis", "")
+            )
+        return res
+    return {"ok": False, "error": "Vision module unavailable"}
+
+
+@app.post("/api/jarvis/screen-scan")
+async def jarvis_screen_scan():
+    """Captures and inspects the active Windows 11 desktop with local Moondream vision."""
+    if scan_desktop_screen:
+        res = scan_desktop_screen("Desktop layout inspection")
+        if record_episodic_memory and res.get("ok"):
+            record_episodic_memory(
+                user_prompt="Desktop screen scan",
+                action_name="desktop_screen_scan",
+                tool_used="screen_grab",
+                outcome_summary=res.get("analysis", "")
+            )
+        return res
+    return {"ok": False, "error": "Vision module unavailable"}
+
+
+@app.post("/api/jarvis/command")
+async def jarvis_direct_command(req: CommandRequest):
+    """Direct computer-use dispatch alias."""
+    return await open_native_app(req)
 
 
 @app.post("/api/open-app")

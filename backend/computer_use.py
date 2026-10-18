@@ -31,6 +31,26 @@ import requests
 
 logger = logging.getLogger("jarvis.computer_use")
 
+try:
+    from jarvis_memory import record_episodic_memory, get_cognitive_brain_summary, query_memory, get_companion_profile
+except ImportError:
+    try:
+        from backend.jarvis_memory import record_episodic_memory, get_cognitive_brain_summary, query_memory, get_companion_profile
+    except ImportError:
+        record_episodic_memory = None
+        get_cognitive_brain_summary = None
+        query_memory = None
+        get_companion_profile = None
+
+try:
+    from jarvis_vision import scan_laptop_camera, scan_desktop_screen
+except ImportError:
+    try:
+        from backend.jarvis_vision import scan_laptop_camera, scan_desktop_screen
+    except ImportError:
+        scan_laptop_camera = None
+        scan_desktop_screen = None
+
 # -------------------------------------------------------------
 # System Binaries & Environment Configuration
 # -------------------------------------------------------------
@@ -391,12 +411,35 @@ def query_gemma_computer_use(instruction: str, system_state: Dict[str, Any]) -> 
     Sends the user instruction directly to Gemma 4 via Ollama.
     Gemma 4 dynamically reasons, decides which OS tool to call,
     writes emails with custom subject/body, formulates web queries,
-    creates PDF documents, or generates procedural 3D Blender Python code.
+    creates PDF documents, generates procedural 3D Blender Python code,
+    inspects the user via optical camera sensors, checks screen visuals,
+    or recalls episodic memory from SQLite.
     """
     model_name = get_live_gemma_model()
 
-    system_prompt = f"""You are J.A.R.V.I.S. Autonomous Computer-Use Engine on Windows 11.
-You control real desktop applications, browsers, Blender 3D, and OS UI tools.
+    companion_ctx = ""
+    if get_companion_profile:
+        try:
+            prof = get_companion_profile()
+            companion_ctx = f"Companion Persona: {prof.get('ai_persona', 'J.A.R.V.I.S.')}. User: {prof.get('user_name', 'Jeevan')} (Address as {prof.get('user_title', 'Sir')}). Neural Engine: {prof.get('neural_engine', 'Gemma 4 + Moondream')}."
+        except Exception:
+            pass
+
+    recent_memories_ctx = ""
+    if get_cognitive_brain_summary:
+        try:
+            brain_summary = get_cognitive_brain_summary()
+            episodes = [f"- {e.get('user_prompt')}: {e.get('outcome_summary')}" for e in brain_summary.get("recent_tasks", [])[:4]]
+            if episodes:
+                recent_memories_ctx = "Recently Executed Directives in Memory:\n" + "\n".join(episodes)
+        except Exception:
+            pass
+
+    system_prompt = f"""You are J.A.R.V.I.S. Autonomous Computer-Use Engine & Companion Brain on Windows 11.
+You control real desktop applications, browsers, Blender 3D, camera optical sensors, and Antigravity IDE.
+{companion_ctx}
+{recent_memories_ctx}
+
 Current Desktop State:
 - Calculator open: {system_state.get('calc_running', False)} (PID: {system_state.get('calc_pid')})
 - Notepad open: {system_state.get('notepad_running', False)} (PID: {system_state.get('notepad_pid')})
@@ -429,10 +472,16 @@ Your capabilities and tools:
    - "file_name": appropriate filename with extension (e.g. "binary_search.py", "snake_game.py", "startup_app.py", "simple_os.py")
    - "code_content": complete, fully-functional, executable source code written by you
    - "summary": concise summary of what was coded
+10. "optical_camera_scan": User wants you to look at them, inspect the room/user via the laptop webcam, recognize their appearance or environment, or check optical sensors (e.g. "look at me", "check optical sensors", "who am I", "what am I wearing", "inspect camera", "optical sensor"). Parameters:
+   - "user_prompt": prompt or question regarding what to observe (e.g. "Describe the person and room")
+11. "desktop_screen_scan": User wants you to visually inspect their desktop screen or check open windows using multimodal vision (e.g. "look at my screen", "inspect screen", "what is on my screen"). Parameters:
+   - "prompt": question or target UI area to analyze
+12. "query_brain_memory": User asks what you did, what happened earlier, or asks about companion memory (e.g. "what did you do today?", "what tasks did we complete?", "what is in your memory?", "who are you?", "companion status"). Parameters:
+   - "query": search keywords or question about past actions
 
 Analyze the user's instruction and return ONLY a valid JSON object matching this schema:
 {{
-  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app",
+  "tool": "calculator" | "draft_email" | "browser" | "download_tool" | "code_and_open" | "generate_pdf" | "generate_image" | "blender_3d" | "launch_app" | "optical_camera_scan" | "desktop_screen_scan" | "query_brain_memory",
   "thought": "<concise reasoning why you chose this tool>",
   "speech": "<concise spoken response for voice feedback to user>",
   "parameters": {{}}
@@ -480,6 +529,25 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
     if not raw:
         return None
 
+    def finish(res: Dict[str, Any]) -> Dict[str, Any]:
+        if record_episodic_memory and res and res.get("ok"):
+            try:
+                record_episodic_memory(
+                    user_prompt=raw,
+                    agent_thought=res.get("thought", ""),
+                    action_name=res.get("action", ""),
+                    tool_used=res.get("tool", decision.get("tool") if "decision" in locals() and decision else ""),
+                    outcome_summary=res.get("speech", res.get("message", "")),
+                    metadata={
+                        "target": res.get("target"),
+                        "model": res.get("model"),
+                        "latency_ms": res.get("latency_ms"),
+                    }
+                )
+            except Exception as ex:
+                logger.warning(f"Failed to record episodic memory: {ex}")
+        return res
+
     # Inspect current OS state to provide full awareness to Gemma 4
     calc_running, calc_pid = is_process_running("calc")
     notepad_running, notepad_pid = is_process_running("notepad")
@@ -524,7 +592,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             state_desc = "Calculator was already open. Focused existing window and" if calc_running else "Opened Calculator and"
             res_desc = f" performed {expr}, equals {calc_result}." if expr else " brought Calculator to foreground."
 
-            return {
+            return finish({
                 "ok": True,
                 "action": "calculator_calculated" if expr else "calculator_focused",
                 "already_running": calc_running,
@@ -538,7 +606,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 2. TOOL: DRAFT EMAIL (Dynamic Body, Subject & User Confirmation)
@@ -572,7 +640,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             open_url_in_browser(compose_url)
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
-            return {
+            return finish({
                 "ok": True,
                 "action": "gmail_draft_created",
                 "subject": subject,
@@ -585,7 +653,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 3. TOOL: BROWSER (YouTube, Netflix, Bookings, Google Search)
@@ -614,7 +682,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             elif not speech_text:
                 speech_text = f"Opened web browser for {target_url}."
 
-            return {
+            return finish({
                 "ok": True,
                 "action": "youtube_live_playback" if is_youtube else "browser_navigation",
                 "url": target_url,
@@ -626,7 +694,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 4. TOOL: DOWNLOAD TOOL / BEST BROWSER
@@ -641,7 +709,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
 
             open_url_in_browser(download_url)
             latency = round((time.perf_counter() - t0) * 1000, 1)
-            return {
+            return finish({
                 "ok": True,
                 "action": "browser_download_opened",
                 "tool_name": tool_name,
@@ -652,7 +720,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 5. TOOL: GENERATE PDF
@@ -710,7 +778,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                     pass
 
                 latency = round((time.perf_counter() - t0) * 1000, 1)
-                return {
+                return finish({
                     "ok": True,
                     "action": "pdf_generated",
                     "title": doc_title,
@@ -722,7 +790,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                     "thought": thought,
                     "model": model_used,
                     "latency_ms": latency,
-                }
+                })
             except Exception as e:
                 logger.warning(f"PDF generation error: {e}")
 
@@ -735,7 +803,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
             open_url_in_browser(image_url)
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
-            return {
+            return finish({
                 "ok": True,
                 "action": "image_generated",
                 "prompt": img_prompt,
@@ -746,7 +814,7 @@ def execute_computer_use(instruction: str, target_directory: str = "./workspace_
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 7. TOOL: BLENDER 3D (Dynamic Procedural Python bpy Script)
@@ -797,7 +865,7 @@ print("Model '{model_name}' generated successfully.")
                 pass
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
-            return {
+            return finish({
                 "ok": True,
                 "action": "blender_3d_modeled",
                 "model_name": model_name,
@@ -808,7 +876,7 @@ print("Model '{model_name}' generated successfully.")
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 8. TOOL: LAUNCH APP (State-Aware App Management)
@@ -849,7 +917,7 @@ print("Model '{model_name}' generated successfully.")
                 pass
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
-            return {
+            return finish({
                 "ok": True,
                 "action": action,
                 "already_running": is_running,
@@ -860,7 +928,7 @@ print("Model '{model_name}' generated successfully.")
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
-            }
+            })
 
         # -------------------------------------------------------------
         # 9. TOOL: CODE AND OPEN IN SYSTEM IDE
@@ -875,13 +943,32 @@ print("Model '{model_name}' generated successfully.")
             file_path = out_dir / file_name
             file_path.write_text(code_content, encoding="utf-8")
 
+            # Also generate ANTIGRAVITY_DIRECTIVE.md in target directory
+            directive_path = out_dir / "ANTIGRAVITY_DIRECTIVE.md"
+            directive_content = f"""# J.A.R.V.I.S. Autonomous Directive for Antigravity IDE
+Date: {time.strftime('%Y-%m-%d %H:%M:%S')}
+Target File: {file_name}
+
+## Objective
+{summary}
+
+## Directives for Antigravity IDE Pair Programmer
+1. Review code generated by Gemma 4 in `{file_name}`.
+2. Execute syntax and structural verification.
+3. Integrate with companion modules as directed by Sir (Jeevan).
+"""
+            try:
+                directive_path.write_text(directive_content, encoding="utf-8")
+            except Exception:
+                pass
+
             opened_in = "Notepad"
             switch_to_default_desktop()
             if os.path.exists(ANTIGRAVITY_IDE_EXE):
-                subprocess.Popen([ANTIGRAVITY_IDE_EXE, str(file_path)])
+                subprocess.Popen([ANTIGRAVITY_IDE_EXE, str(out_dir), str(file_path)])
                 opened_in = "Antigravity IDE"
             elif shutil.which("code"):
-                subprocess.Popen(["code", str(file_path)], shell=True)
+                subprocess.Popen(["code", str(out_dir), str(file_path)], shell=True)
                 opened_in = "VS Code"
             else:
                 subprocess.Popen(["notepad.exe", str(file_path)])
@@ -899,19 +986,141 @@ print("Model '{model_name}' generated successfully.")
                 pass
 
             latency = round((time.perf_counter() - t0) * 1000, 1)
-            return {
+            res = {
                 "ok": True,
                 "action": "code_generated_and_opened",
                 "file_name": file_name,
                 "file_path": str(file_path),
+                "directive_path": str(directive_path),
                 "code": code_content,
                 "opened_in": opened_in,
                 "target": opened_in,
-                "speech": f"I've written the complete code for {file_name} and opened it in your {opened_in}, sir.",
-                "message": f"[Gemma 4 ({model_used})] Synthesized {file_name} ({len(code_content)} chars). Opened in {opened_in}.",
+                "speech": f"I've written the complete code for {file_name} and opened it directly in {opened_in}, sir.",
+                "message": f"[Gemma 4 ({model_used})] Synthesized {file_name} ({len(code_content)} chars). Formulated ANTIGRAVITY_DIRECTIVE.md and opened in {opened_in}.",
                 "thought": thought,
                 "model": model_used,
                 "latency_ms": latency,
             }
+            if record_episodic_memory:
+                record_episodic_memory(user_prompt=raw, agent_thought=thought, action_name="code_generated_and_opened", tool_used="code_and_open", outcome_summary=res["message"], metadata={"file": file_name, "ide": opened_in})
+            return res
+
+        # -------------------------------------------------------------
+        # 10. TOOL: OPTICAL CAMERA SCAN (Multimodal Laptop Webcam Eye)
+        # -------------------------------------------------------------
+        if tool == "optical_camera_scan":
+            optic_res = scan_laptop_camera() if scan_laptop_camera else {"ok": False, "error": "Vision module unavailable"}
+            analysis = optic_res.get("analysis", "")
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            speech_txt = speech or (f"Optical scan complete, sir. I observe {analysis}" if analysis else "I've engaged optical sensors on your laptop camera.")
+            res = {
+                "ok": True,
+                "action": "optical_camera_scan",
+                "analysis": analysis,
+                "image_base64": optic_res.get("image_base64"),
+                "file_path": optic_res.get("file_path"),
+                "target": "Laptop Optical Sensor (Camera)",
+                "speech": speech_txt,
+                "message": f"[Moondream Multimodal Vision] Camera analysis: {analysis}",
+                "thought": thought,
+                "model": "moondream",
+                "latency_ms": latency,
+            }
+            if record_episodic_memory:
+                record_episodic_memory(user_prompt=raw, agent_thought=thought, action_name="optical_camera_scan", tool_used="optical_camera_scan", outcome_summary=res["message"], metadata={"model": "moondream"})
+            return res
+
+        # -------------------------------------------------------------
+        # 11. TOOL: DESKTOP SCREEN SCAN (Multimodal Desktop Eye)
+        # -------------------------------------------------------------
+        if tool == "desktop_screen_scan":
+            scr_res = scan_desktop_screen(task_context=raw) if scan_desktop_screen else {"ok": False, "error": "Vision module unavailable"}
+            analysis = scr_res.get("analysis", "")
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            speech_txt = speech or f"Visual desktop scan complete: {analysis[:180]}..."
+            res = {
+                "ok": True,
+                "action": "desktop_screen_scan",
+                "analysis": analysis,
+                "image_base64": scr_res.get("image_base64"),
+                "file_path": scr_res.get("file_path"),
+                "target": "Windows 11 Desktop Screen",
+                "speech": speech_txt,
+                "message": f"[Moondream Multimodal Vision] Screen analysis: {analysis}",
+                "thought": thought,
+                "model": "moondream",
+                "latency_ms": latency,
+            }
+            if record_episodic_memory:
+                record_episodic_memory(user_prompt=raw, agent_thought=thought, action_name="desktop_screen_scan", tool_used="desktop_screen_scan", outcome_summary=res["message"], metadata={"model": "moondream"})
+            return res
+
+        # -------------------------------------------------------------
+        # 12. TOOL: QUERY BRAIN MEMORY (Cognitive SQLite Recall)
+        # -------------------------------------------------------------
+        if tool == "query_brain_memory":
+            q = params.get("query", raw)
+            matches = query_memory(q) if query_memory else []
+            brain = get_cognitive_brain_summary() if get_cognitive_brain_summary else {}
+            recent = brain.get("recent_tasks", [])
+            episodes_desc = ", ".join([e.get("user_prompt", "") for e in recent[:3]]) if recent else "standing by on desktop"
+            speech_txt = speech or f"According to my cognitive memory core, today we have completed: {episodes_desc}."
+            latency = round((time.perf_counter() - t0) * 1000, 1)
+            res = {
+                "ok": True,
+                "action": "query_brain_memory",
+                "brain_summary": brain,
+                "memory_matches": matches,
+                "target": "Cognitive Memory SQLite Engine",
+                "speech": speech_txt,
+                "message": f"[J.A.R.V.I.S. Brain] Recalled {len(recent)} recent episodic memories from jarvis_brain.db.",
+                "thought": thought,
+                "model": model_used,
+                "latency_ms": latency,
+            }
+            if record_episodic_memory:
+                record_episodic_memory(user_prompt=raw, agent_thought=thought, action_name="query_brain_memory", tool_used="query_brain_memory", outcome_summary=res["message"], metadata={"query": q})
+            return res
+
+    # -------------------------------------------------------------
+    # Fallback Direct Heuristics in case LLM is busy or unparseable
+    # -------------------------------------------------------------
+    raw_lower = raw.lower()
+    if any(k in raw_lower for k in ["look at me", "camera", "webcam", "optical sensor", "who am i", "what am i wearing"]):
+        optic_res = scan_laptop_camera() if scan_laptop_camera else {"ok": False}
+        analysis = optic_res.get("analysis", "Optical sensor active.")
+        latency = round((time.perf_counter() - t0) * 1000, 1)
+        res = {
+            "ok": True,
+            "action": "optical_camera_scan",
+            "analysis": analysis,
+            "image_base64": optic_res.get("image_base64"),
+            "target": "Laptop Optical Sensor (Camera)",
+            "speech": f"Optical scan complete, sir. I observe: {analysis}",
+            "message": f"[Moondream Multimodal Vision] Camera analysis: {analysis}",
+            "latency_ms": latency,
+        }
+        if record_episodic_memory:
+            record_episodic_memory(user_prompt=raw, action_name="optical_camera_scan", tool_used="optical_camera_scan", outcome_summary=res["message"])
+        return res
+
+    if any(k in raw_lower for k in ["what did you do", "tasks completed", "what is in your memory", "check your memory", "brain"]):
+        brain = get_cognitive_brain_summary() if get_cognitive_brain_summary else {}
+        recent = brain.get("recent_tasks", [])
+        episodes_desc = ", ".join([e.get("user_prompt", "") for e in recent[:3]]) if recent else "monitoring system"
+        latency = round((time.perf_counter() - t0) * 1000, 1)
+        res = {
+            "ok": True,
+            "action": "query_brain_memory",
+            "brain_summary": brain,
+            "target": "Cognitive Memory SQLite Engine",
+            "speech": f"According to my memory logs, today we have completed: {episodes_desc}.",
+            "message": f"[J.A.R.V.I.S. Brain] Recalled {len(recent)} memories from SQLite.",
+            "latency_ms": latency,
+        }
+        if record_episodic_memory:
+            record_episodic_memory(user_prompt=raw, action_name="query_brain_memory", tool_used="query_brain_memory", outcome_summary=res["message"])
+        return res
 
     return None
+

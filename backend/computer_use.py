@@ -523,13 +523,30 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
     try:
         import win32gui
         import ctypes
+        import psutil
         import uiautomation as auto
 
         user32 = ctypes.windll.user32
 
+        # 0. Check existing Calculator processes & enforce strictly 1 instance
+        calc_procs = []
+        for p in psutil.process_iter(["name", "pid"]):
+            try:
+                if "calc" in p.info["name"].lower():
+                    calc_procs.append(p)
+            except Exception:
+                pass
+
+        if len(calc_procs) > 1:
+            for extra_p in calc_procs[1:]:
+                try:
+                    extra_p.kill()
+                except Exception:
+                    pass
+
         # 1. Find live Calculator window via UIA first
         calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
-        if not calc_ctrl.Exists(0, 0):
+        if not calc_ctrl.Exists(0.2, 0.1) and len(calc_procs) == 0:
             subprocess.Popen("calc.exe", shell=True)
             time.sleep(1.2)
             calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
@@ -540,6 +557,7 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
                     t = win32gui.GetWindowText(h)
                     if "calc" in t.lower() or "calculator" in t.lower():
                         acc.append(h)
+                return True
             wins = []
             win32gui.EnumWindows(enum_cb, wins)
             if wins:

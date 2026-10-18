@@ -388,6 +388,7 @@
         <button type="button" onclick="quickFillAndRun('download python')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 transition">📥 Download</button>
         <button type="button" onclick="quickFillAndRun('search google for gemma 4 multimodal vision')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-sky-500/30 border border-sky-500/40 text-sky-200 transition">🔍 Google</button>
         <button type="button" onclick="quickFillAndRun('play kalyani song on youtube')" class="px-2.5 py-0.5 rounded-full bg-black/75 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 transition">🎬 YouTube</button>
+        <button type="button" onclick="quickFillAndRun('close all apps')" class="px-2.5 py-0.5 rounded-full bg-rose-950/70 hover:bg-rose-600/50 border border-rose-500/40 text-rose-300 transition">❌ Close All</button>
       </div>
 
       <div class="w-full hud-glass rounded-2xl p-2.5 flex items-center gap-2.5 shadow-2xl border-2 border-amber-500/50 bg-black/90 backdrop-blur-2xl ring-2 ring-amber-500/20">
@@ -1123,6 +1124,16 @@
 
 
       try {
+        // 2.5 Close Applications & Windows
+        if (/\b(close|exit|terminate|kill|quit|shut\s+down|dismiss)\s+(all\s+apps|all\s+windows|everything|calculator|calc|notepad|edge|chrome|brave|firefox|browser|terminal|powershell|cmd|code|vs code|vscode|task manager|taskmgr|settings|file explorer|explorer|files|downloads|documents|spotify|discord|paint|word|excel)\b/i.test(low) ||
+            /^(?:close|exit|quit|kill)\s+[a-z0-9_ -]+$/i.test(low)) {
+          state.orbColor = 'crimson';
+          const d = await postApi('/api/close-app', { instruction: cmd });
+          await speak(d.spoken_response || ('Closed ' + d.target + ', sir.'));
+          await refreshActiveTasks();
+          return;
+        }
+
         // 3. Hardware & System Controls (Volume, Screenshot, Lock, Desktop)
         if (/\b(volume up|volume down|louder|quieter|mute|unmute|screenshot|take screenshot|capture screen|minimize all|show desktop|lock screen|lock pc)\b/.test(low)) {
           state.orbColor = 'cyan';

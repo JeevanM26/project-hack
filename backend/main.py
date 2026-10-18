@@ -1805,13 +1805,47 @@ def dispatch_to_antigravity_ide(prompt_text: str, target_dir: str = "./hackathon
 
 
 
+def get_primary_browser_exe() -> Optional[str]:
+    candidates = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Users\Jeevan\AppData\Local\BraveSoftware\Brave-Browser\Application\brave.exe",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    ]
+    try:
+        import psutil
+        running_names = set()
+        for p in psutil.process_iter(["name"]):
+            try:
+                running_names.add(p.info["name"].lower())
+            except Exception:
+                pass
+
+        if "msedge.exe" in running_names and os.path.exists(candidates[0]):
+            return candidates[0]
+        if "brave.exe" in running_names and os.path.exists(candidates[1]):
+            return candidates[1]
+        if "chrome.exe" in running_names and os.path.exists(candidates[2]):
+            return candidates[2]
+    except Exception:
+        pass
+
+    for c in candidates:
+        if os.path.exists(c):
+            return c
+    return None
+
+
 def open_system_target(target: str, tab_key: str = "") -> None:
     if target.startswith(("http://", "https://", "whatsapp://", "mailto:")):
-        reused = bool(tab_key and tab_key in ACTIVE_BROWSER_TABS)
+        browser_exe = get_primary_browser_exe()
+        if browser_exe and platform.system() == "Windows":
+            subprocess.Popen([browser_exe, target])
+        else:
+            subprocess.Popen(f'start "" "{target}"', shell=True)
+
         if tab_key:
             ACTIVE_BROWSER_TABS[tab_key] = target
-        webbrowser.open(target, new=0 if reused else 2)
-        time.sleep(0.3)
+        time.sleep(0.4)
         bring_browser_to_foreground()
         return
 
@@ -2932,6 +2966,150 @@ async def camera_analyze_endpoint(req: JarvisCommandRequest):
 
 
 
+def find_or_reuse_app_window(target_name: str, win_key: str) -> Optional[int]:
+    if platform.system() != "Windows":
+        return None
+    try:
+        import win32gui
+        import ctypes
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenDesktopW("default", 0, False, 0x1FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+
+        target_low = target_name.lower()
+        key_low = win_key.lower()
+        found_hwnds = []
+
+        def cb(h, _):
+            if win32gui.IsWindow(h):
+                t = win32gui.GetWindowText(h).lower()
+                c = win32gui.GetClassName(h).lower()
+                if (key_low in t or key_low in c or target_low in t or target_low in c) and "visual studio code" not in t:
+                    rect = win32gui.GetWindowRect(h)
+                    w = rect[2] - rect[0]
+                    ht = rect[3] - rect[1]
+                    if w > 20 and ht > 20:
+                        found_hwnds.append(h)
+            return True
+
+        win32gui.EnumWindows(cb, None)
+        if found_hwnds:
+            force_foreground_window(found_hwnds[0])
+            return found_hwnds[0]
+    except Exception as exc:
+        logger.debug(f"find_or_reuse_app_window: {exc}")
+    return None
+
+
+def is_app_process_running(proc_keywords: List[str]) -> bool:
+    try:
+        import psutil
+        for p in psutil.process_iter(["name", "pid"]):
+            p_name = p.info["name"].lower()
+            if any(k in p_name for k in proc_keywords):
+                return True
+    except Exception:
+        pass
+    return False
+
+
+def enforce_single_instance(proc_keyword: str) -> None:
+    try:
+        import psutil
+        found = []
+        for p in psutil.process_iter(["name", "pid"]):
+            if proc_keyword.lower() in p.info["name"].lower():
+                found.append(p)
+        if len(found) > 1:
+            for p in found[1:]:
+                try:
+                    p.kill()
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+
+def perform_close_application(win_keys: List[str], proc_keys: List[str]) -> Tuple[bool, int, int]:
+    closed_windows = 0
+    killed_procs = 0
+    if platform.system() == "Windows":
+        try:
+            import win32gui
+            import ctypes
+            user32 = ctypes.windll.user32
+            hdesk = user32.OpenDesktopW("default", 0, False, 0x1FF)
+            if hdesk:
+                user32.SetThreadDesktop(hdesk)
+
+            def cb(h, _):
+                nonlocal closed_windows
+                if win32gui.IsWindow(h):
+                    t = win32gui.GetWindowText(h).lower()
+                    c = win32gui.GetClassName(h).lower()
+                    if any(k in t or k in c for k in win_keys):
+                        user32.ShowWindow(h, 0)  # SW_HIDE
+                        user32.PostMessageW(h, 0x0010, 0, 0)  # WM_CLOSE
+                        closed_windows += 1
+                return True
+
+            win32gui.EnumWindows(cb, None)
+        except Exception as exc:
+            logger.debug(f"perform_close_application windows error: {exc}")
+
+        time.sleep(0.3)
+        if proc_keys:
+            try:
+                import psutil
+                for p in psutil.process_iter(["name", "pid"]):
+                    p_name = p.info["name"].lower()
+                    if "explorer" in p_name and "cabinetwclass" in win_keys:
+                        continue
+                    if any(k in p_name for k in proc_keys):
+                        try:
+                            p.kill()
+                            killed_procs += 1
+                        except Exception:
+                            pass
+            except Exception as exc:
+                logger.debug(f"perform_close_application process error: {exc}")
+
+        # Post-kill sweep: hide any lingering ghost frames that matched win_keys
+        try:
+            import win32gui
+            def cb_ghost(h, _):
+                if win32gui.IsWindow(h) and user32.IsWindowVisible(h):
+                    t = win32gui.GetWindowText(h).lower()
+                    c = win32gui.GetClassName(h).lower()
+                    if any(k in t or k in c for k in win_keys):
+                        user32.ShowWindow(h, 0)
+                return True
+            win32gui.EnumWindows(cb_ghost, None)
+        except Exception:
+            pass
+
+    return (closed_windows > 0 or killed_procs > 0), closed_windows, killed_procs
+
+
+def close_all_user_applications() -> List[str]:
+    closed = []
+    ok, cw, kp = perform_close_application(["calculator"], ["calculatorapp", "calc"])
+    if ok: closed.append("Calculator")
+
+    ok, cw, kp = perform_close_application(["notepad"], ["notepad"])
+    if ok: closed.append("Notepad")
+
+    ok, cw, kp = perform_close_application(["cabinetwclass"], [])
+    if ok: closed.append("File Explorer Folders")
+
+    ok, cw, kp = perform_close_application(["paint"], ["mspaint", "paintapp"])
+    if ok: closed.append("Paint")
+
+    ACTIVE_OS_APPS.clear()
+    return closed
+
+
 APP_COMMAND_MAP: Dict[str, Tuple[str, str, str]] = {
     "calculator": ("Calculator", "calc.exe", "Calculator"),
     "calc": ("Calculator", "calc.exe", "Calculator"),
@@ -3004,17 +3182,23 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
     expr = math_m.group(1).replace(" ", "") if math_m else ""
     result = str(eval(expr, {"__builtins__": None}, {})) if expr else None
 
-    # 3. Check if Window Already Open
-    uia = get_live_uia_tree()
-    open_wins = uia.get("open_windows", [])
-    already_open = any(win_key.lower() in str(w.get("title", "")).lower() for w in open_wins) or target_name.lower() in ACTIVE_OS_APPS
+    # 3. Check if Window or Process Already Open (STRICT REUSE)
+    existing_hwnd = find_or_reuse_app_window(target_name, win_key)
+    app_proc_kw = [target_name.lower().replace(" ", "")]
+    if target_name == "Calculator":
+        app_proc_kw = ["calc", "calculatorapp"]
+        enforce_single_instance("CalculatorApp")
+    elif target_name == "Notepad":
+        app_proc_kw = ["notepad"]
+
+    already_open = bool(existing_hwnd) or is_app_process_running(app_proc_kw) or target_name.lower() in ACTIVE_OS_APPS
 
     # 4. Calculator Authentic UIA Flow
     if target_name == "Calculator" and expr and perform_calculator_uia:
         if not already_open:
             if platform.system() == "Windows":
                 subprocess.Popen("start calc.exe", shell=True)
-            time.sleep(0.5)
+            time.sleep(0.8)
         ok_uia, disp_text = await asyncio.to_thread(perform_calculator_uia, expr)
         ACTIVE_OS_APPS["calculator"] = {"is_open": True, "opened_at": time.time()}
         res_val = disp_text.replace("Display is ", "").strip() if "Display is" in disp_text else (disp_text or result or "")
@@ -3074,7 +3258,10 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
         time.sleep(0.6)
         uia_focus_window(win_key)
     else:
-        uia_focus_window(win_key)
+        if existing_hwnd:
+            force_foreground_window(existing_hwnd)
+        else:
+            uia_focus_window(win_key)
 
     # 7. Type text into target app if requested (e.g. "open notepad and type hello world", "type hello in notepad")
     type_m = re.search(r"\b(?:type|write|saying|enter|input)\s+[\"']?([^\"'\n]+)[\"']?", raw, re.I)
@@ -3126,6 +3313,101 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
         "detail": outcome,
         "spoken_response": outcome,
         "typed_text": type_text,
+        "brain": BRAIN.snapshot(),
+    }
+
+
+@app.post("/api/close-app")
+async def close_os_app_endpoint(req: JarvisCommandRequest):
+    raw = (req.instruction or req.prompt or req.target or "").strip()
+    low = raw.lower()
+
+    is_close_all = bool(re.search(r"\b(all|all apps|all windows|everything|all tasks)\b", low))
+    if is_close_all:
+        closed = close_all_user_applications()
+        outcome = f"Closed all active user applications ({', '.join(closed) or 'workspace clean'}), sir."
+        BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "CLOSE_ALL_APPS", outcome)
+        BRAIN.record_completed_task("close_all_apps", raw, outcome)
+        return {"ok": True, "target": "all", "closed": closed, "spoken_response": outcome, "brain": BRAIN.snapshot()}
+
+    target_name = "Application"
+    win_keys = []
+    proc_keys = []
+
+    if any(k in low for k in ["calc", "calculator"]):
+        target_name = "Calculator"
+        win_keys = ["calculator"]
+        proc_keys = ["calculatorapp", "calc"]
+    elif "notepad" in low:
+        target_name = "Notepad"
+        win_keys = ["notepad"]
+        proc_keys = ["notepad"]
+    elif any(k in low for k in ["edge", "msedge"]):
+        target_name = "Microsoft Edge"
+        win_keys = ["edge"]
+        proc_keys = ["msedge"]
+    elif "brave" in low:
+        target_name = "Brave"
+        win_keys = ["brave"]
+        proc_keys = ["brave"]
+    elif "chrome" in low:
+        target_name = "Google Chrome"
+        win_keys = ["chrome"]
+        proc_keys = ["chrome"]
+    elif any(k in low for k in ["terminal", "powershell", "cmd"]):
+        target_name = "Terminal"
+        win_keys = ["powershell", "cmd", "terminal"]
+        proc_keys = ["powershell", "pwsh", "cmd", "windowsterminal"]
+    elif any(k in low for k in ["explorer", "folder", "downloads", "documents", "files"]):
+        target_name = "File Explorer"
+        win_keys = ["cabinetwclass"]
+        proc_keys = []
+    elif "spotify" in low:
+        target_name = "Spotify"
+        win_keys = ["spotify"]
+        proc_keys = ["spotify"]
+    elif "discord" in low:
+        target_name = "Discord"
+        win_keys = ["discord"]
+        proc_keys = ["discord"]
+    elif "paint" in low:
+        target_name = "Paint"
+        win_keys = ["paint"]
+        proc_keys = ["mspaint", "paintapp"]
+    elif "word" in low:
+        target_name = "Microsoft Word"
+        win_keys = ["word"]
+        proc_keys = ["winword"]
+    elif "excel" in low:
+        target_name = "Microsoft Excel"
+        win_keys = ["excel"]
+        proc_keys = ["excel"]
+    elif any(k in low for k in ["browser", "web"]):
+        target_name = "Web Browser"
+        win_keys = ["edge", "brave", "chrome"]
+        proc_keys = ["msedge", "brave", "chrome"]
+    else:
+        m = re.search(r"\b(?:close|exit|terminate|kill|quit|shut down)\s+([a-zA-Z0-9_ -]+)", raw, re.I)
+        target_name = m.group(1).strip() if m else "Application"
+        win_keys = [target_name.lower()]
+        proc_keys = [target_name.lower().replace(" ", "")]
+
+    ok, closed_wins, killed_procs = perform_close_application(win_keys, proc_keys)
+    ACTIVE_OS_APPS.pop(target_name.lower(), None)
+    if "calculator" in target_name.lower():
+        ACTIVE_OS_APPS.pop("calculator", None)
+
+    outcome = f"Closed {target_name} ({closed_wins} window(s) dismissed), sir." if ok else f"Closed {target_name}, sir."
+    BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "CLOSE_APP", outcome)
+    BRAIN.record_completed_task("close_app", raw, outcome)
+
+    return {
+        "ok": True,
+        "target": target_name,
+        "closed_windows": closed_wins,
+        "killed_processes": killed_procs,
+        "detail": outcome,
+        "spoken_response": outcome,
         "brain": BRAIN.snapshot(),
     }
 

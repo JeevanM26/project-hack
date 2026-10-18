@@ -532,7 +532,8 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
         calc_procs = []
         for p in psutil.process_iter(["name", "pid"]):
             try:
-                if "calc" in p.info["name"].lower():
+                p_name = p.info["name"].lower()
+                if "calc" in p_name or "calculator" in p_name:
                     calc_procs.append(p)
             except Exception:
                 pass
@@ -540,7 +541,7 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
         if len(calc_procs) > 1:
             for extra_p in calc_procs[1:]:
                 try:
-                    extra_p.kill()
+                    subprocess.run(["taskkill", "/F", "/PID", str(extra_p.pid)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 except Exception:
                     pass
 
@@ -548,8 +549,11 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
         calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
         if not calc_ctrl.Exists(0.2, 0.1) and len(calc_procs) == 0:
             subprocess.Popen("calc.exe", shell=True)
-            time.sleep(1.2)
-            calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
+            for _ in range(15):
+                time.sleep(0.2)
+                calc_ctrl = auto.WindowControl(searchDepth=3, RegexName=".*Calculator.*")
+                if calc_ctrl.Exists(0.2, 0.1):
+                    break
 
         if not calc_ctrl.Exists(1, 0):
             def enum_cb(h, acc):
@@ -652,11 +656,19 @@ def perform_calculator_uia(expr: str) -> Tuple[bool, str]:
                 if fallback_ctrl.Exists(1, 0):
                     disp = fallback_ctrl.Name
 
-            # Last fallback to computed math if display control is slow to update
-            if not disp:
-                math_val = safe_eval_math(expr)
-                if math_val is not None:
-                    disp = f"Display is {math_val}"
+            # Restore browser foreground after brief glance so user is never stuck
+            try:
+                time.sleep(0.6)
+                def bring_browser_cb(h, _):
+                    if win32gui.IsWindowVisible(h):
+                        t = win32gui.GetWindowText(h).lower()
+                        if any(b in t for b in ["chrome", "edge", "brave", "firefox", "j.a.r.v.i.s", "localhost:8000", "127.0.0.1", "index.html"]):
+                            user32.SetForegroundWindow(h)
+                            return False
+                    return True
+                win32gui.EnumWindows(bring_browser_cb, None)
+            except Exception:
+                pass
 
             return True, disp
     except Exception as exc:

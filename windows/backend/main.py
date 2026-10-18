@@ -3754,10 +3754,6 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
 
     # 4. Calculator Authentic UIA Flow
     if target_name == "Calculator" and expr and perform_calculator_uia:
-        if not already_open:
-            if platform.system() == "Windows":
-                subprocess.Popen("start calc.exe", shell=True)
-            time.sleep(0.8)
         ok_uia, disp_text = await asyncio.to_thread(perform_calculator_uia, expr)
         ACTIVE_OS_APPS["calculator"] = {"is_open": True, "opened_at": time.time()}
         res_val = disp_text.replace("Display is ", "").strip() if "Display is" in disp_text else (disp_text or result or "")

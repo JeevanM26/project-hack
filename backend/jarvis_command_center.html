@@ -1047,8 +1047,9 @@
           return;
         }
 
-        // 4a. Dedicated: Modern Web Calculator synthesized from scratch
-        if (/\b(web\s*calc|modern\s*calc|custom\s*calc|live\s*calc|scratch\s*calc|web\s*calculator|modern\s*calculator|custom\s*calculator)\b/i.test(low)) {
+        // 4a. Calculator: Default to Custom Synthesized Modern Web Calculator
+        if (/\b(calculator|calc|web\s*calc|modern\s*calc|custom\s*calc|live\s*calc|scratch\s*calc)\b/i.test(low) &&
+            !/\b(windows|native|os|win32|exe)\b/i.test(low)) {
           state.orbColor = 'cyan';
           const webCalcUrl = state.backendUrl + '/hackathon_app/index.html';
           window.open(webCalcUrl, '_blank');
@@ -1057,6 +1058,7 @@
             actions: [
               { label: '🧮 Launch Fullscreen Web Calc', url: webCalcUrl, icon: '🧮' },
               { label: '✨ Regenerate Fresh Calc', command: 'create a fresh new calculator with modern ui from scratch', icon: '✨' },
+              { label: '🔢 Run Native Windows Calc', command: 'open windows calculator and calculate 125 * 8', icon: '🔢' },
               { label: '❌ Close Windows Calc', command: 'close calculator', icon: '❌' }
             ]
           });
@@ -1064,10 +1066,11 @@
           return;
         }
 
-        // 4b. Native OS Calculator & Notepad Apps
-        if (/\b(calculator|calc|notepad)\b/.test(low)) {
+        // 4b. Native OS Applications (Windows Calculator, Notepad, etc.)
+        if (/\b(notepad|terminal|blender|explorer|paint)\b/.test(low) ||
+            (/\b(calculator|calc)\b/i.test(low) && /\b(windows|native|os|win32|exe)\b/i.test(low))) {
           state.orbColor = 'emerald';
-          showChatTyping('Launching and automating application...');
+          showChatTyping('Automating native OS application...');
           const d = await postApi('/api/open-app', { instruction: cmd });
           hideChatTyping();
           const reply = (d.spoken_response || d.detail || 'Executed application command') + ', sir.';

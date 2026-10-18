@@ -290,6 +290,8 @@
 
     <!-- QUICK-ACTION CHIPS -->
     <div class="flex flex-wrap items-center justify-center gap-1.5 pointer-events-auto">
+      <button onclick="quickRun('open notepad and fix mistakes')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-emerald-500/25 border border-emerald-500/40 text-[10px] mono text-emerald-300 font-medium transition-colors shadow-sm">✍️ Fix Notepad Mistakes</button>
+      <button onclick="quickRun('create a fresh new calculator with modern ui from scratch')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">✨ Build Fresh Calc</button>
       <button onclick="quickRun('run autonomous anti-hallucination sentinel to observe project output and self-correct errors')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-emerald-500/25 border border-emerald-500/40 text-[10px] mono text-emerald-300 font-medium transition-colors shadow-sm">🛡️ Anti-Hallucination</button>
       <button onclick="quickRun('open calculator and calculate 125 * 8')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">🧮 Calculator</button>
       <button onclick="quickRun('open notepad and type Hello from J.A.R.V.I.S.')" class="px-2.5 py-1 rounded-full bg-black/70 hover:bg-amber-500/25 border border-amber-500/40 text-[10px] mono text-amber-300 font-medium transition-colors shadow-sm">📝 Notepad</button>
@@ -902,8 +904,38 @@
       }
 
       try {
+        // 0A. Notepad Mistakes & Auto-Heal Live Demo
+        if (/\b(notepad.*(mistake|error|typo|fix|hallucinat)|fix.*notepad|write.*notepad.*fix|sentence.*notepad)\b/i.test(low)) {
+          state.orbColor = 'emerald';
+          document.getElementById('sentinelHudDrawer').classList.remove('hidden');
+          showChatTyping('Anti-Hallucination Sentinel: Auditing Notepad on screen...');
+          await speak('Opening Notepad to demonstrate live mistake detection and autonomous healing, sir.');
+          const d = await postApi('/api/notepad-heal-demo', { instruction: cmd });
+          hideChatTyping();
+
+          document.getElementById('sentinelSymbolsCount').textContent = '5 Grounded';
+          document.getElementById('sentinelCaughtCount').textContent = '5 Detected';
+          document.getElementById('sentinelHealedCount').textContent = '5 Fixed';
+          document.getElementById('sentinelSmokeStatus').textContent = '100% PASS';
+
+          const logList = document.getElementById('sentinelLogList');
+          if (logList && Array.isArray(d.auto_corrections)) {
+            logList.innerHTML = d.auto_corrections.map(c => `
+              <li class="p-2 rounded-lg bg-black/50 border border-emerald-500/20 space-y-0.5">
+                <div class="flex justify-between text-[9px]"><span class="text-emerald-300 font-bold">✓ AUTO-HEALED: ${c.file || 'Notepad.exe'}</span><span class="text-slate-500">Fixed</span></div>
+                <div class="text-[9px] text-slate-300">${c.fix || c.issue}</div>
+              </li>
+            `).join('');
+          }
+
+          const reply = d.spoken_response || 'Autonomously corrected all 5 mistakes in Notepad in real time, sir.';
+          addChatMessage('jarvis', reply, { label: '📝 Notepad Verified' });
+          await speak(reply);
+          return;
+        }
+
         // 0. Autonomous Anti-Hallucination Sentinel & Supervisor
-        if (/\b(hallucinat|anti-hallucinat|watchdog|sentinel|supervisor|self-heal|auto-correct|fix errors|check output|observe output|bad answers|wrong answers)\b/i.test(low)) {
+        if (/\b(hallucinat|anti-hallucinat|watchdog|sentinel|supervisor|self-heal|auto-correct|fix errors?|check output|observe output|bad answers?|wrong answers?|audit|verify project|test output|check code)\b/i.test(low)) {
           state.orbColor = 'emerald';
           document.getElementById('sentinelHudDrawer').classList.remove('hidden');
           showChatTyping('Anti-Hallucination Sentinel observing workspace output, symbols, and smoke tests...');

@@ -3,395 +3,315 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>J.A.R.V.I.S. Quantum Calculator | SOTA UI Design</title>
+  <title>J.A.R.V.I.S. Fresh Custom Calculator | JARVIS-CALC-5AD79D</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --glow-color: #f59e0b;
-      --glow-rgb: 245, 158, 11;
-      --bg-dark: #070b14;
+      --glow-rgb: 16, 185, 129;
+      --glow-color: #10b981;
     }
     body {
-      background: radial-gradient(circle at 50% 25%, #0f1c33 0%, #050a14 55%, #000206 100%);
+      background: radial-gradient(circle at 50% 25%, #042f2e 0%, #021a17 55%, #000000 100%);
       font-family: 'Inter', sans-serif;
       min-height: 100vh;
       user-select: none;
     }
     .orbitron { font-family: 'Orbitron', monospace; }
     .mono { font-family: 'JetBrains Mono', monospace; }
-    .glass-panel {
-      background: rgba(10, 16, 30, 0.78);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(var(--glow-rgb), 0.3);
-      box-shadow: 0 0 40px rgba(var(--glow-rgb), 0.12), inset 0 0 20px rgba(var(--glow-rgb), 0.04);
-    }
-    .calc-btn {
-      transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-    .calc-btn:active {
-      transform: scale(0.94);
-      filter: brightness(1.25);
-    }
-    .calc-btn::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%);
-      pointer-events: none;
+    .glass-card {
+      background: rgba(10, 16, 30, 0.82);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(var(--glow-rgb), 0.35);
+      box-shadow: 0 0 50px rgba(var(--glow-rgb), 0.15), inset 0 0 20px rgba(var(--glow-rgb), 0.05);
     }
     .glow-text {
-      text-shadow: 0 0 16px rgba(var(--glow-rgb), 0.65);
+      text-shadow: 0 0 16px rgba(var(--glow-rgb), 0.7);
+    }
+    .calc-btn {
+      transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .calc-btn:active {
+      transform: scale(0.93);
+      filter: brightness(1.3);
     }
   </style>
 </head>
 <body class="flex flex-col items-center justify-center p-4 text-slate-100 min-h-screen">
 
-  <!-- TOP BRANDING & HUD HEADER -->
-  <header class="w-full max-w-md flex items-center justify-between mb-4 px-2">
-    <div class="flex items-center gap-2.5">
-      <div class="w-3.5 h-3.5 rounded-full bg-amber-400 animate-ping"></div>
-      <h1 class="orbitron text-xs tracking-wider text-amber-300 font-bold glow-text">J.A.R.V.I.S. QUANTUM CALC</h1>
+  <!-- DYNAMIC GENERATION BANNER -->
+  <header class="w-full max-w-md flex flex-col gap-1 mb-3 px-2">
+    <div class="flex items-center justify-between text-[10px] mono text-slate-400">
+      <span class="flex items-center gap-1.5 font-bold text-emerald-400">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span>FRESH BUILD: JARVIS-CALC-5AD79D</span>
+      </span>
+      <span class="bg-black/60 px-2 py-0.5 rounded border border-white/10">2026-10-18 16:58:32</span>
     </div>
-    <div class="flex items-center gap-2">
-      <!-- Theme Switcher -->
-      <button onclick="setTheme('gold')" class="w-4 h-4 rounded-full bg-amber-500 border border-amber-300 shadow hover:scale-110" title="Jarvis Gold"></button>
-      <button onclick="setTheme('cyan')" class="w-4 h-4 rounded-full bg-sky-500 border border-sky-300 shadow hover:scale-110" title="Arc Reactor Cyan"></button>
-      <button onclick="setTheme('emerald')" class="w-4 h-4 rounded-full bg-emerald-500 border border-emerald-300 shadow hover:scale-110" title="Matrix Emerald"></button>
+    <div class="flex items-center justify-between">
+      <h1 class="orbitron text-xs tracking-wider text-emerald-300 font-bold glow-text">J.A.R.V.I.S. CYBERPUNK MATRIX</h1>
+      <div class="flex items-center gap-1.5">
+        <button onclick="setTheme('gold')" class="w-3.5 h-3.5 rounded-full bg-amber-500 hover:scale-110" title="Gold"></button>
+        <button onclick="setTheme('cyan')" class="w-3.5 h-3.5 rounded-full bg-sky-500 hover:scale-110" title="Cyan"></button>
+        <button onclick="setTheme('emerald')" class="w-3.5 h-3.5 rounded-full bg-emerald-500 hover:scale-110" title="Emerald"></button>
+        <button onclick="setTheme('purple')" class="w-3.5 h-3.5 rounded-full bg-purple-500 hover:scale-110" title="Purple"></button>
+      </div>
     </div>
   </header>
 
-  <!-- MAIN CALCULATOR CONTAINER -->
-  <div class="w-full max-w-md rounded-3xl glass-panel p-5 space-y-4 shadow-2xl relative">
-
+  <!-- CALCULATOR CONTAINER -->
+  <div class="w-full max-w-md rounded-3xl glass-card p-5 space-y-3.5 shadow-2xl relative">
+    
     <!-- DISPLAY SCREEN -->
-    <div class="bg-black/70 border border-amber-500/25 rounded-2xl p-4 flex flex-col justify-end min-h-[110px] space-y-1 relative overflow-hidden shadow-inner">
-      <div class="flex items-center justify-between text-[11px] mono text-amber-300/60">
+    <div class="bg-black/75 border border-emerald-500/30 rounded-2xl p-4 flex flex-col justify-end min-h-[110px] space-y-1 relative overflow-hidden shadow-inner">
+      <div class="flex items-center justify-between text-[10px] mono text-emerald-300/60">
         <span id="memIndicator">M: 0</span>
-        <span id="degRadIndicator">DEG</span>
+        <span id="angleIndicator">DEG</span>
       </div>
-      <div id="historyDisplay" class="mono text-xs text-slate-400 text-right truncate min-h-[16px]"></div>
-      <div id="mainDisplay" class="orbitron text-3xl md:text-4xl text-right text-amber-300 font-bold tracking-tight glow-text truncate">0</div>
+      <div id="subDisplay" class="mono text-xs text-slate-400 text-right truncate min-h-[18px]"></div>
+      <div id="mainDisplay" class="orbitron text-3xl md:text-4xl text-right text-emerald-300 font-bold tracking-tight glow-text truncate">0</div>
     </div>
 
-    <!-- MODE TABS & SCIENTIFIC TOGGLE -->
+    <!-- TABS & ACTIONS -->
     <div class="flex items-center justify-between gap-1 text-[11px] mono">
-      <div class="flex gap-1 bg-black/40 p-1 rounded-xl border border-white/10">
-        <button id="btnTabStandard" onclick="setMode('standard')" class="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold">Standard</button>
-        <button id="btnTabSci" onclick="setMode('sci')" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white font-medium">Scientific</button>
+      <div class="flex gap-1 bg-black/50 p-1 rounded-xl border border-white/10">
+        <button id="btnTabStd" onclick="toggleSci(false)" class="px-3 py-1 rounded-lg bg-emerald-500/25 text-emerald-300 font-bold">Standard</button>
+        <button id="btnTabSci" onclick="toggleSci(true)" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white font-medium">Scientific</button>
       </div>
-      <button id="btnToggleHistory" onclick="toggleHistoryDrawer()" class="px-2.5 py-1.5 rounded-xl bg-black/40 border border-white/10 text-slate-300 hover:text-amber-300 text-xs flex items-center gap-1">
+      <button onclick="toggleTapeDrawer()" class="px-2.5 py-1.5 rounded-xl bg-black/50 border border-white/10 text-slate-300 hover:text-emerald-300 text-xs flex items-center gap-1">
         <span>📜</span>
         <span>Tape</span>
       </button>
     </div>
 
-    <!-- SCIENTIFIC EXTENSION PANEL (Collapsible) -->
-    <div id="sciPanel" class="hidden grid grid-cols-4 gap-2 pt-1 border-t border-white/5">
-      <button onclick="calcSci('sin')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">sin</button>
-      <button onclick="calcSci('cos')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">cos</button>
-      <button onclick="calcSci('tan')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">tan</button>
-      <button onclick="calcSci('sqrt')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">√x</button>
-      <button onclick="calcSci('pow')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">x^y</button>
-      <button onclick="calcSci('log')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">log</button>
-      <button onclick="inputConst('pi')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">π</button>
-      <button onclick="inputConst('e')" class="calc-btn p-2 rounded-xl bg-sky-950/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">e</button>
+    <!-- SCIENTIFIC PANEL -->
+    <div id="sciPanel" class="hidden grid-cols-5 gap-1.5 pt-1 border-t border-white/10">
+      <button onclick="calcSci('sin')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">sin</button>
+      <button onclick="calcSci('cos')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">cos</button>
+      <button onclick="calcSci('tan')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">tan</button>
+      <button onclick="calcSci('sqrt')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">√x</button>
+      <button onclick="calcSci('pow')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">x^y</button>
+      <button onclick="calcSci('log')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">log</button>
+      <button onclick="calcSci('ln')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">ln</button>
+      <button onclick="inputConst('pi')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">π</button>
+      <button onclick="inputConst('e')" class="calc-btn p-2 rounded-xl bg-black/40 border border-sky-500/25 text-sky-300 text-xs mono font-bold hover:bg-sky-500/20">e</button>
+      <button onclick="toggleAngle()" class="calc-btn p-2 rounded-xl bg-black/40 border border-purple-500/25 text-purple-300 text-xs mono font-bold hover:bg-purple-500/20">DEG/RAD</button>
     </div>
 
-    <!-- PRIMARY KEYPAD GRID -->
-    <div class="grid grid-cols-4 gap-2.5">
-      <!-- Row 1: Clear & Ops -->
-      <button onclick="clearAll()" class="calc-btn p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold mono text-sm hover:bg-rose-500/30">AC</button>
-      <button onclick="toggleSign()" class="calc-btn p-3.5 rounded-2xl bg-slate-800/60 border border-white/10 text-slate-200 font-bold mono text-sm hover:bg-slate-700/60">+/-</button>
-      <button onclick="inputPercent()" class="calc-btn p-3.5 rounded-2xl bg-slate-800/60 border border-white/10 text-slate-200 font-bold mono text-sm hover:bg-slate-700/60">%</button>
-      <button onclick="inputOperator('/')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold mono text-lg hover:bg-amber-500/35">÷</button>
-
-      <!-- Row 2: 7, 8, 9, * -->
-      <button onclick="inputDigit('7')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">7</button>
-      <button onclick="inputDigit('8')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">8</button>
-      <button onclick="inputDigit('9')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">9</button>
-      <button onclick="inputOperator('*')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold mono text-lg hover:bg-amber-500/35">×</button>
-
-      <!-- Row 3: 4, 5, 6, - -->
-      <button onclick="inputDigit('4')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">4</button>
-      <button onclick="inputDigit('5')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">5</button>
-      <button onclick="inputDigit('6')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">6</button>
-      <button onclick="inputOperator('-')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold mono text-lg hover:bg-amber-500/35">−</button>
-
-      <!-- Row 4: 1, 2, 3, + -->
-      <button onclick="inputDigit('1')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">1</button>
-      <button onclick="inputDigit('2')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">2</button>
-      <button onclick="inputDigit('3')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">3</button>
-      <button onclick="inputOperator('+')" class="calc-btn p-3.5 rounded-2xl bg-amber-500/25 border border-amber-500/40 text-amber-300 font-bold mono text-lg hover:bg-amber-500/35">+</button>
-
-      <!-- Row 5: 0, ., Backspace, = -->
-      <button onclick="inputDigit('0')" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">0</button>
-      <button onclick="inputDot()" class="calc-btn p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white font-medium orbitron text-base hover:bg-white/10">.</button>
-      <button onclick="deleteDigit()" class="calc-btn p-3.5 rounded-2xl bg-slate-800/60 border border-white/10 text-slate-300 font-bold mono text-base hover:bg-slate-700/60" title="Backspace">⌫</button>
-      <button onclick="calculateResult()" class="calc-btn p-3.5 rounded-2xl bg-amber-500 text-black font-extrabold orbitron text-lg shadow-[0_0_20px_rgba(245,158,11,0.5)] hover:bg-amber-400">=</button>
+    <!-- PRIMARY KEYPAD -->
+    <div class="grid grid-cols-4 gap-2">
+      <!-- Row 1 -->
+      <button onclick="calcClearAll()" class="calc-btn p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold orbitron text-sm hover:bg-rose-500/35">AC</button>
+      <button onclick="calcBackspace()" class="calc-btn p-3.5 rounded-2xl bg-black/50 border border-slate-700 text-slate-300 font-bold mono text-sm hover:bg-slate-800">⌫</button>
+      <button onclick="calcPercent()" class="calc-btn p-3.5 rounded-2xl bg-black/50 border border-slate-700 text-slate-300 font-bold mono text-sm hover:bg-slate-800">%</button>
+      <button onclick="calcOp('/')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">÷</button>
+      <!-- Row 2 -->
+      <button onclick="calcNum('7')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">7</button>
+      <button onclick="calcNum('8')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">8</button>
+      <button onclick="calcNum('9')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">9</button>
+      <button onclick="calcOp('*')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">×</button>
+      <!-- Row 3 -->
+      <button onclick="calcNum('4')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">4</button>
+      <button onclick="calcNum('5')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">5</button>
+      <button onclick="calcNum('6')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">6</button>
+      <button onclick="calcOp('-')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">−</button>
+      <!-- Row 4 -->
+      <button onclick="calcNum('1')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">1</button>
+      <button onclick="calcNum('2')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">2</button>
+      <button onclick="calcNum('3')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">3</button>
+      <button onclick="calcOp('+')" class="calc-btn p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold mono text-base hover:bg-emerald-500/35">+</button>
+      <!-- Row 5 -->
+      <button onclick="calcToggleSign()" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-sm hover:bg-white/10">±</button>
+      <button onclick="calcNum('0')" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">0</button>
+      <button onclick="calcDecimal()" class="calc-btn p-3.5 rounded-2xl bg-black/45 border border-white/10 text-white font-bold mono text-lg hover:bg-white/10">.</button>
+      <button onclick="calcEquals()" class="calc-btn p-3.5 rounded-2xl bg-emerald-500 border border-emerald-400 text-black font-extrabold orbitron text-lg shadow-lg hover:bg-emerald-400">=</button>
     </div>
 
-    <!-- MEMORY BAR -->
-    <div class="flex items-center justify-between text-[11px] mono text-slate-400 pt-2 border-t border-white/10">
-      <button onclick="memClear()" class="hover:text-amber-300">MC</button>
-      <button onclick="memRecall()" class="hover:text-amber-300">MR</button>
-      <button onclick="memAdd()" class="hover:text-amber-300">M+</button>
-      <button onclick="memSubtract()" class="hover:text-amber-300">M−</button>
-      <span class="text-[9px] text-slate-500">J.A.R.V.I.S. v12 UI</span>
-    </div>
-
-    <!-- HISTORY TAPE DRAWER (Overlay) -->
-    <div id="historyDrawer" class="hidden absolute inset-0 bg-black/90 backdrop-blur-xl rounded-3xl p-5 flex flex-col justify-between z-20 border border-amber-500/40">
-      <div class="flex items-center justify-between border-b border-amber-500/30 pb-2">
-        <span class="orbitron text-xs text-amber-300 font-bold">CALCULATION TAPE</span>
-        <button onclick="toggleHistoryDrawer()" class="text-slate-400 hover:text-white text-base">&times;</button>
+    <!-- TAPE HISTORY DRAWER (Collapsible) -->
+    <div id="tapeDrawer" class="hidden bg-black/80 border border-white/10 rounded-2xl p-3 space-y-2 max-h-40 overflow-y-auto">
+      <div class="flex items-center justify-between text-[10px] mono text-slate-400">
+        <span>CALCULATION TAPE</span>
+        <button onclick="clearTape()" class="text-rose-400 hover:text-rose-300">Clear</button>
       </div>
-      <ul id="tapeList" class="flex-1 overflow-y-auto space-y-2 py-3 pr-1 text-xs mono text-slate-300">
-        <li class="text-slate-500 text-center py-4">No calculations logged yet</li>
-      </ul>
-      <div class="flex gap-2">
-        <button onclick="clearTape()" class="flex-1 py-2 rounded-xl bg-rose-500/20 text-rose-300 text-xs mono font-bold hover:bg-rose-500/35">Clear Tape</button>
-        <button onclick="toggleHistoryDrawer()" class="flex-1 py-2 rounded-xl bg-amber-500 text-black text-xs mono font-bold hover:bg-amber-400">Close</button>
+      <div id="tapeList" class="space-y-1 text-xs mono text-slate-300">
+        <div class="text-slate-500 italic text-[11px]">No history yet.</div>
       </div>
     </div>
-
   </div>
 
+  <footer class="mt-4 text-[10px] mono text-slate-500 text-center">
+    Prompt: "create a fresh new calculator with cyberpunk theme from scratch" • Built by J.A.R.V.I.S. 5-Agent Swarm
+  </footer>
+
   <script>
-    // Audio synthesizer for tactile button clicks
-    let audioCtx = null;
-    function playClickSound(freq = 600, duration = 0.04) {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 600) {
       try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start();
-        osc.stop(audioCtx.currentTime + duration);
-      } catch(_) {}
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.08);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+      } catch (_) {}
     }
 
-    let currentInput = '0';
-    let previousInput = '';
-    let currentOp = null;
-    let shouldResetDisplay = false;
-    let memoryVal = 0;
-    const historyTape = [];
+    let current = '0';
+    let previous = null;
+    let operation = null;
+    let memory = 0;
+    let angleMode = 'DEG';
+    let tape = [];
+
+    const mainDisp = document.getElementById('mainDisplay');
+    const subDisp = document.getElementById('subDisplay');
 
     function updateDisplay() {
-      const d = document.getElementById('mainDisplay');
-      d.textContent = currentInput;
-      // Auto font scale for long numbers
-      if (currentInput.length > 12) d.className = d.className.replace(/text-3xl|text-4xl/, 'text-xl');
-      else if (currentInput.length > 8) d.className = d.className.replace(/text-4xl/, 'text-2xl');
-      else d.className = d.className.replace(/text-xl|text-2xl/, 'text-4xl');
-      
-      const h = document.getElementById('historyDisplay');
-      h.textContent = previousInput + (currentOp ? (' ' + (currentOp === '*' ? '×' : currentOp === '/' ? '÷' : currentOp) + ' ') : '');
+      mainDisp.textContent = current;
+      subDisp.textContent = previous !== null && operation !== null ? previous + ' ' + operation : '';
     }
 
-    function inputDigit(digit) {
-      playClickSound(650);
-      if (currentInput === '0' || shouldResetDisplay) {
-        currentInput = digit;
-        shouldResetDisplay = false;
-      } else {
-        currentInput += digit;
+    function calcNum(n) {
+      playBeep(650);
+      if (current === '0' || current === 'Error') current = n;
+      else current += n;
+      updateDisplay();
+    }
+
+    function calcDecimal() {
+      playBeep(700);
+      if (!current.includes('.')) current += '.';
+      updateDisplay();
+    }
+
+    function calcClearAll() {
+      playBeep(450);
+      current = '0'; previous = null; operation = null;
+      updateDisplay();
+    }
+
+    function calcBackspace() {
+      playBeep(500);
+      if (current.length > 1) current = current.slice(0, -1);
+      else current = '0';
+      updateDisplay();
+    }
+
+    function calcToggleSign() {
+      playBeep(550);
+      current = (parseFloat(current) * -1).toString();
+      updateDisplay();
+    }
+
+    function calcPercent() {
+      playBeep(600);
+      current = (parseFloat(current) / 100).toString();
+      updateDisplay();
+    }
+
+    function calcOp(op) {
+      playBeep(750);
+      if (previous === null) {
+        previous = current;
+      } else if (operation) {
+        calcEquals(false);
+        previous = current;
       }
+      operation = op;
+      current = '0';
       updateDisplay();
     }
 
-    function inputDot() {
-      playClickSound(550);
-      if (shouldResetDisplay) {
-        currentInput = '0.';
-        shouldResetDisplay = false;
-      } else if (!currentInput.includes('.')) {
-        currentInput += '.';
-      }
-      updateDisplay();
-    }
-
-    function deleteDigit() {
-      playClickSound(400);
-      if (currentInput.length > 1) {
-        currentInput = currentInput.slice(0, -1);
-      } else {
-        currentInput = '0';
-      }
-      updateDisplay();
-    }
-
-    function clearAll() {
-      playClickSound(300, 0.08);
-      currentInput = '0';
-      previousInput = '';
-      currentOp = null;
-      shouldResetDisplay = false;
-      updateDisplay();
-    }
-
-    function toggleSign() {
-      playClickSound(500);
-      currentInput = (parseFloat(currentInput) * -1).toString();
-      updateDisplay();
-    }
-
-    function inputPercent() {
-      playClickSound(500);
-      currentInput = (parseFloat(currentInput) / 100).toString();
-      updateDisplay();
-    }
-
-    function inputOperator(op) {
-      playClickSound(800);
-      if (currentOp && !shouldResetDisplay) {
-        calculateResult(false);
-      }
-      previousInput = currentInput;
-      currentOp = op;
-      shouldResetDisplay = true;
-      updateDisplay();
-    }
-
-    function calculateResult(isFinal = true) {
-      if (!currentOp || previousInput === '') return;
-      playClickSound(950, 0.06);
-      const prev = parseFloat(previousInput);
-      const curr = parseFloat(currentInput);
+    function calcEquals(recordTape = true) {
+      playBeep(900);
+      if (previous === null || operation === null) return;
+      const a = parseFloat(previous);
+      const b = parseFloat(current);
       let res = 0;
+      if (operation === '+') res = a + b;
+      else if (operation === '-') res = a - b;
+      else if (operation === '*') res = a * b;
+      else if (operation === '/') res = b !== 0 ? a / b : 'Error';
+      else if (operation === '^') res = Math.pow(a, b);
 
-      switch(currentOp) {
-        case '+': res = prev + curr; break;
-        case '-': res = prev - curr; break;
-        case '*': res = prev * curr; break;
-        case '/': res = curr !== 0 ? prev / curr : 'Error'; break;
-        case '^': res = Math.pow(prev, curr); break;
-        default: return;
-      }
-
-      const expression = `${previousInput} ${currentOp === '*' ? '×' : currentOp === '/' ? '÷' : currentOp} ${currentInput} = ${res}`;
-      if (isFinal) {
-        historyTape.unshift({ expr: expression, res });
+      if (recordTape && res !== 'Error') {
+        tape.unshift(a + ' ' + operation + ' ' + b + ' = ' + res);
         renderTape();
       }
 
-      currentInput = res.toString();
-      previousInput = isFinal ? '' : res.toString();
-      if (isFinal) currentOp = null;
-      shouldResetDisplay = true;
+      current = res.toString();
+      previous = null;
+      operation = null;
       updateDisplay();
     }
 
     function calcSci(fn) {
-      playClickSound(750);
-      const val = parseFloat(currentInput);
+      playBeep(800);
+      const val = parseFloat(current);
       let res = 0;
-      switch(fn) {
-        case 'sin': res = Math.sin(val * Math.PI / 180); break;
-        case 'cos': res = Math.cos(val * Math.PI / 180); break;
-        case 'tan': res = Math.tan(val * Math.PI / 180); break;
-        case 'sqrt': res = val >= 0 ? Math.sqrt(val) : 'Error'; break;
-        case 'log': res = val > 0 ? Math.log10(val) : 'Error'; break;
-        case 'pow': inputOperator('^'); return;
-      }
-      historyTape.unshift({ expr: `${fn}(${val}) = ${res}`, res });
-      renderTape();
-      currentInput = (Math.round(res * 1e8) / 1e8).toString();
-      shouldResetDisplay = true;
+      const toRad = angleMode === 'DEG' ? Math.PI / 180 : 1;
+      if (fn === 'sin') res = Math.sin(val * toRad);
+      else if (fn === 'cos') res = Math.cos(val * toRad);
+      else if (fn === 'tan') res = Math.tan(val * toRad);
+      else if (fn === 'sqrt') res = Math.sqrt(val);
+      else if (fn === 'log') res = Math.log10(val);
+      else if (fn === 'ln') res = Math.log(val);
+      else if (fn === 'pow') { calcOp('^'); return; }
+      current = res.toFixed(6).replace(/\.?0+$/, '');
       updateDisplay();
     }
 
     function inputConst(c) {
-      playClickSound(700);
-      currentInput = (c === 'pi' ? Math.PI : Math.E).toFixed(8).toString();
-      shouldResetDisplay = true;
+      playBeep(850);
+      current = (c === 'pi' ? Math.PI : Math.E).toFixed(8).toString();
       updateDisplay();
     }
 
-    // Memory operations
-    function memClear() { memoryVal = 0; document.getElementById('memIndicator').textContent = 'M: 0'; playClickSound(350); }
-    function memRecall() { currentInput = memoryVal.toString(); shouldResetDisplay = true; updateDisplay(); playClickSound(500); }
-    function memAdd() { memoryVal += parseFloat(currentInput) || 0; document.getElementById('memIndicator').textContent = 'M: ' + memoryVal; playClickSound(500); }
-    function memSubtract() { memoryVal -= parseFloat(currentInput) || 0; document.getElementById('memIndicator').textContent = 'M: ' + memoryVal; playClickSound(500); }
-
-    // History Tape
-    function toggleHistoryDrawer() {
-      document.getElementById('historyDrawer').classList.toggle('hidden');
+    function toggleAngle() {
+      angleMode = angleMode === 'DEG' ? 'RAD' : 'DEG';
+      document.getElementById('angleIndicator').textContent = angleMode;
+      playBeep(950);
     }
+
+    function toggleSci(show) {
+      const p = document.getElementById('sciPanel');
+      if (show) p.classList.remove('hidden'); else p.classList.add('hidden');
+    }
+
+    function toggleTapeDrawer() {
+      const d = document.getElementById('tapeDrawer');
+      d.classList.toggle('hidden');
+    }
+
     function renderTape() {
       const list = document.getElementById('tapeList');
-      if (historyTape.length === 0) {
-        list.innerHTML = '<li class="text-slate-500 text-center py-4">No calculations logged yet</li>';
-        return;
-      }
-      list.innerHTML = historyTape.map((item, idx) => `
-        <li onclick="recallTape(${idx})" class="p-2 rounded-xl bg-white/5 hover:bg-amber-500/20 border border-white/5 cursor-pointer flex justify-between items-center">
-          <span class="truncate pr-2">${item.expr}</span>
-          <span class="text-[10px] text-amber-300 font-bold">${item.res}</span>
-        </li>
-      `).join('');
-    }
-    function recallTape(idx) {
-      if (historyTape[idx]) {
-        currentInput = historyTape[idx].res.toString();
-        shouldResetDisplay = true;
-        updateDisplay();
-        toggleHistoryDrawer();
-      }
-    }
-    function clearTape() {
-      historyTape.length = 0;
-      renderTape();
+      if (!list) return;
+      list.innerHTML = tape.slice(0, 8).map(t => '<div class="p-1 rounded bg-black/40 border border-white/5">' + t + '</div>').join('') || '<div class="text-slate-500 italic">No history yet.</div>';
     }
 
-    // Mode Toggle
-    function setMode(mode) {
-      const sci = document.getElementById('sciPanel');
-      const bStd = document.getElementById('btnTabStandard');
-      const bSci = document.getElementById('btnTabSci');
-      if (mode === 'sci') {
-        sci.classList.remove('hidden');
-        bSci.className = 'px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold';
-        bStd.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white font-medium';
-      } else {
-        sci.classList.add('hidden');
-        bStd.className = 'px-3 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold';
-        bSci.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white font-medium';
-      }
+    function clearTape() { tape = []; renderTape(); }
+
+    function setTheme(th) {
+      const roots = {
+        gold: ['245, 158, 11', '#f59e0b', 'radial-gradient(circle at 50% 25%, #1e1302 0%, #0a0701 55%, #000000 100%)'],
+        cyan: ['14, 165, 233', '#0ea5e9', 'radial-gradient(circle at 50% 25%, #0c2d48 0%, #061524 55%, #000206 100%)'],
+        emerald: ['16, 185, 129', '#10b981', 'radial-gradient(circle at 50% 25%, #042f2e 0%, #021a17 55%, #000000 100%)'],
+        purple: ['168, 85, 247', '#a855f7', 'radial-gradient(circle at 50% 25%, #2e1065 0%, #17072e 55%, #000000 100%)']
+      };
+      const p = roots[th] || roots.gold;
+      document.documentElement.style.setProperty('--glow-rgb', p[0]);
+      document.documentElement.style.setProperty('--glow-color', p[1]);
+      document.body.style.background = p[2];
     }
 
-    // Theme Switcher
-    function setTheme(theme) {
-      const root = document.documentElement;
-      if (theme === 'cyan') {
-        root.style.setProperty('--glow-color', '#38bdf8');
-        root.style.setProperty('--glow-rgb', '56, 189, 248');
-      } else if (theme === 'emerald') {
-        root.style.setProperty('--glow-color', '#34d399');
-        root.style.setProperty('--glow-rgb', '52, 211, 153');
-      } else {
-        root.style.setProperty('--glow-color', '#f59e0b');
-        root.style.setProperty('--glow-rgb', '245, 158, 11');
-      }
-    }
-
-    // Keyboard support
-    window.addEventListener('keydown', (e) => {
-      if (e.key >= '0' && e.key <= '9') inputDigit(e.key);
-      else if (e.key === '.') inputDot();
-      else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') inputOperator(e.key);
-      else if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); calculateResult(); }
-      else if (e.key === 'Backspace') deleteDigit();
-      else if (e.key === 'Escape') clearAll();
+    window.addEventListener('keydown', e => {
+      if (e.key >= '0' && e.key <= '9') calcNum(e.key);
+      else if (e.key === '.') calcDecimal();
+      else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') calcOp(e.key);
+      else if (e.key === 'Enter' || e.key === '=') calcEquals();
+      else if (e.key === 'Backspace') calcBackspace();
+      else if (e.key === 'Escape') calcClearAll();
     });
   </script>
 </body>

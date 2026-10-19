@@ -1,0 +1,4 @@
+=== AI HALLUCINATION SAMPLE ===
+The quikc brown fox jumpd ovre the lasy dog.
+Antigravity LLM output: retrun math.calcualte_totl(x, y)
+[Status: UNVERIFIED - 5 Hallucinations & Syntax Errors Detected]

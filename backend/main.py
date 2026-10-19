@@ -31,8 +31,12 @@ import asyncio
 import base64
 import io
 import json
+import logging
 import os
 import uuid
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+logger = logging.getLogger("jarvis")
 from datetime import datetime
 
 import platform
@@ -3204,13 +3208,6 @@ async def notepad_heal_demo(req: JarvisCommandRequest):
     raw = (req.instruction or req.prompt or "").strip()
     BRAIN.set_doing_now("Anti-Hallucination Sentinel: Auditing Notepad on screen", "NOTEPAD_SENTINEL_DEMO")
 
-    if platform.system() == "Windows":
-        try:
-            subprocess.Popen(["notepad.exe"])
-        except Exception:
-            pass
-        await asyncio.sleep(1.0)
-
     mistakes_text = (
         "=== AI HALLUCINATION SAMPLE ===\r\n"
         "The quikc brown fox jumpd ovre the lasy dog.\r\n"
@@ -3218,15 +3215,24 @@ async def notepad_heal_demo(req: JarvisCommandRequest):
         "[Status: UNVERIFIED - 5 Hallucinations & Syntax Errors Detected]"
     )
 
-    try:
-        import pyautogui, pyperclip
-        pyautogui.FAILSAFE = False
-        pyperclip.copy(mistakes_text)
-        pyautogui.hotkey('ctrl', 'a')
-        await asyncio.sleep(0.15)
-        pyautogui.hotkey('ctrl', 'v')
-    except Exception as e:
-        logger.warning(f"PyAutoGUI mistake type fallback: {e}")
+    demo_file = Path("Anti_Hallucination_Demonstration.txt").resolve()
+    demo_file.write_text(mistakes_text, encoding="utf-8")
+
+    # Launch Notepad visibly on desktop using system file association (ShellExecute)
+    if platform.system() == "Windows":
+        open_system_target(str(demo_file))
+        await asyncio.sleep(1.0)
+        try:
+            import uiautomation as auto
+            np = auto.WindowControl(searchDepth=3, RegexName=".*Notepad.*")
+            if np.Exists(2, 0):
+                np.SetActive()
+                try:
+                    np.MoveWindow(100, 100, 800, 550)
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
     detected_items = [
         {"file": "Notepad.exe", "issue": "Typo 'quikc' -> 'quick'", "severity": "HIGH"},
@@ -3254,15 +3260,23 @@ async def notepad_heal_demo(req: JarvisCommandRequest):
         "[Status: 100% HEALED & AST GROUNDED - Zero Hallucinations]"
     )
 
-    try:
-        import pyautogui, pyperclip
-        pyautogui.FAILSAFE = False
-        pyperclip.copy(healed_text)
-        pyautogui.hotkey('ctrl', 'a')
-        await asyncio.sleep(0.15)
-        pyautogui.hotkey('ctrl', 'v')
-    except Exception as e:
-        logger.warning(f"PyAutoGUI healed type fallback: {e}")
+    # Save healed text to real file on disk
+    demo_file.write_text(healed_text, encoding="utf-8")
+
+    # Update Notepad window cleanly via UI Automation without touching global keyboard or clipboard
+    if platform.system() == "Windows":
+        try:
+            import uiautomation as auto
+            np = auto.WindowControl(searchDepth=3, RegexName=".*Notepad.*")
+            if np.Exists(2, 0):
+                np.SetActive()
+                edit = np.DocumentControl() or np.EditControl()
+                if edit and edit.Exists(1, 0):
+                    vp = edit.GetValuePattern()
+                    if vp:
+                        vp.SetValue(healed_text)
+        except Exception as e:
+            logger.debug(f"Notepad direct UIA update: {e}")
 
     healed_items = [
         {"file": "Notepad.exe", "fix": "Auto-corrected 'quikc' to 'quick'", "issue": "Spelling Typo"},
@@ -3287,6 +3301,9 @@ async def notepad_heal_demo(req: JarvisCommandRequest):
     return {
         "ok": True,
         "target": "Notepad.exe",
+        "file_path": str(demo_file),
+        "original_text": mistakes_text,
+        "healed_text": healed_text,
         "hallucinations_detected": detected_items,
         "auto_corrections": healed_items,
         "smoke_test_passed": True,

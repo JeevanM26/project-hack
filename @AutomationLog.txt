@@ -1,0 +1,2 @@
+2026-10-19 23:51:58.960 <string>[1] <module> -> Find Control Timeout(10s): {ControlType: DocumentControl}
+2026-10-19 23:52:28.516 <string>[1] <module> -> Find Control Timeout(10s): {RegexName: '.*Notepad.*', ControlType: WindowControl}

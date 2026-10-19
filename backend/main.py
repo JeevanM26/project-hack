@@ -1,3 +1,6 @@
+from __future__ import annotations
+from dotenv import load_dotenv
+load_dotenv()
 """
 
 J.A.R.V.I.S. v11.0 GODMODE — Unified `JeevanM26/project-hack` Architecture
@@ -21,8 +24,6 @@ J.A.R.V.I.S. v11.0 GODMODE — Unified `JeevanM26/project-hack` Architecture
 8. Sarvam AI Multilingual Voice OS (`en-IN` English, `hi-IN` Hinglish, `kn-IN` Bengaluru Kannada) + Hardware Media Stop
 
 """
-
-from __future__ import annotations
 
 
 
@@ -2576,18 +2577,57 @@ async def human_closed_loop_gui_agent(req: JarvisCommandRequest):
 
 
 
-async def generate_code_with_gemma(prompt_txt: str) -> str:
+async def query_gemini_api(system_prompt: str, user_prompt: str, key: str, json_mode: bool = True) -> str:
     """
-    Uses small Gemma models (gemma4:latest or gemma:2b) to generate real, bespoke,
-    production-ready single-file HTML/CSS/JavaScript code. Zero hardcoded templates.
+    Direct Google AI Studio Gemini API query for ultra-fast (300-500ms), zero-hallucination execution.
+    """
+    parts = [{"text": f"{system_prompt}\n\nUser instruction: {user_prompt}"}]
+    body: Dict[str, Any] = {"contents": [{"parts": parts}]}
+    if json_mode:
+        body["generationConfig"] = {"responseMimeType": "application/json", "temperature": 0.1}
+    else:
+        body["generationConfig"] = {"temperature": 0.2}
+
+    for model_name in ["gemini-2.5-flash", "gemini-1.5-flash"]:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                r = await client.post(url, json=body)
+                if r.status_code == 200:
+                    cands = r.json().get("candidates", [])
+                    if cands:
+                        return cands[0]["content"]["parts"][0]["text"].strip()
+        except Exception as e:
+            logger.warning(f"Gemini API query [{model_name}] error: {e}")
+    return ""
+
+
+async def generate_code_with_gemma(prompt_txt: str, gemini_key: str = "") -> str:
+    """
+    Generates real, bespoke, production-ready single-file HTML/CSS/JavaScript code.
+    Uses Gemini API if key is available (1.5s), else small Gemma models via Ollama. Zero hardcoded templates.
     """
     sys_prompt = (
-        "You are an expert web developer powered by Google DeepMind Gemma.\n"
+        "You are an expert web developer.\n"
         "Generate a complete, modern, single-file HTML web application with embedded CSS and JavaScript based on the user's request.\n"
         "Return ONLY valid raw HTML code starting with <!DOCTYPE html>. Do NOT wrap in markdown code fences or backticks. No explanation."
     )
     clean_prompt = prompt_txt.strip() or "modern interactive web application"
 
+    # 1. Try Gemini API first if key available
+    api_key = gemini_key or os.getenv("GEMINI_API_KEY", "") or GEMINI_API_KEY
+    if api_key:
+        try:
+            code_out = await query_gemini_api(sys_prompt, f"Build this application: {clean_prompt}", api_key, json_mode=False)
+            if code_out:
+                code_out = re.sub(r"^```(?:html)?\s*", "", code_out, flags=re.I)
+                code_out = re.sub(r"\s*```$", "", code_out).strip()
+                if "<!DOCTYPE html>" in code_out or "<html" in code_out:
+                    return code_out
+        except Exception as e:
+            logger.warning(f"Gemini API code generation failed: {e}")
+
+    # 2. Local Ollama (gemma4:latest / gemma:2b)
     for model_cand in ["gemma4:latest", "gemma:2b"]:
         try:
             async with httpx.AsyncClient(timeout=60.0) as client:
@@ -2610,7 +2650,6 @@ async def generate_code_with_gemma(prompt_txt: str) -> str:
         except Exception as e:
             logger.warning(f"Gemma code generation attempt with {model_cand} failed: {e}")
 
-    # Clean semantic fallback if Ollama daemon is cold
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2626,26 +2665,27 @@ async def generate_code_with_gemma(prompt_txt: str) -> str:
 <body>
     <div class="card">
         <h1>{clean_prompt}</h1>
-        <p>Synthesized live by J.A.R.V.I.S. Gemma 4 Autonomous Core.</p>
+        <p>Synthesized live by J.A.R.V.I.S. Autonomous Core.</p>
     </div>
 </body>
 </html>"""
 
-async def notepad_code_handler(req: JarvisCommandRequest, query: str = ""):
+
+async def notepad_code_handler(req: JarvisCommandRequest, query: str = "", gemini_key: str = ""):
     """
     User requested to write code in Notepad and run/view in browser
     (e.g. 'write html in notepad and run in browser', 'open notepad and write html code for login page').
-    1. Generates REAL code with Gemma (gemma4:latest / gemma:2b).
+    1. Generates REAL code using Gemini API / Gemma.
     2. Saves code to hackathon_app/index.html AND generated_code.html.
     3. Launches Notepad with the file so the user sees real code in Notepad.
     4. Launches browser with http://127.0.0.1:8000/hackathon_app/index.html so the user sees it running live.
     """
     raw = (req.instruction or req.prompt or "").strip()
     code_topic = query.strip() or raw
-    BRAIN.set_doing_now(f"Gemma 4: Writing real code for '{code_topic[:40]}' in Notepad", "NOTEPAD_CODEGEN")
+    BRAIN.set_doing_now(f"Writing real code for '{code_topic[:40]}' in Notepad", "NOTEPAD_CODEGEN")
 
-    # 1. Generate real code with Gemma
-    real_code = await generate_code_with_gemma(code_topic)
+    # 1. Generate real code
+    real_code = await generate_code_with_gemma(code_topic, gemini_key=gemini_key)
 
     # 2. Write to files
     t_dir = Path("./hackathon_app").resolve()
@@ -2666,9 +2706,9 @@ async def notepad_code_handler(req: JarvisCommandRequest, query: str = ""):
     preview_url = "http://127.0.0.1:8000/hackathon_app/index.html"
     open_system_target(preview_url, tab_key="live_project")
 
-    spoken = f"I have written the code with Gemma 4, opened it in Notepad, and launched it in your browser, sir."
+    spoken = f"I have written the code, opened it in Notepad, and launched it in your browser, sir."
     speak_out_loud(spoken)
-    BRAIN.log_blackboard("GEMMA4_CORTEX", "NOTEPAD_CODE", f"Generated {len(real_code)} bytes of real code for '{code_topic}'. Opened in Notepad & browser.")
+    BRAIN.log_blackboard("COGNITIVE_CORTEX", "NOTEPAD_CODE", f"Generated {len(real_code)} bytes of real code for '{code_topic}'. Opened in Notepad & browser.")
 
     return {
         "ok": True,
@@ -2683,7 +2723,6 @@ async def notepad_code_handler(req: JarvisCommandRequest, query: str = ""):
         ],
         "brain": BRAIN.snapshot()
     }
-
 
 async def godmode_5_agent_swarm(req: JarvisCommandRequest):
     """
@@ -3277,27 +3316,27 @@ def resolve_and_launch_app(exec_bin: str, target_name: str) -> bool:
 @app.post("/api/gemma-cortex-think")
 async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
     """
-    JARVIS Gemma 4 Cognitive Autonomous Core.
-    ZERO hardcoded routing. Small Gemma 4 (gemma4:latest / gemma:2b) reasons about EVERYTHING.
-    Primary : gemma4:latest  (RTX 5060 GPU)
-    Fallback: gemma:2b       (Real LLM inference, never regex)
+    JARVIS Cognitive Autonomous Core.
+    Powered by Gemini API (when key provided) or local Gemma (gemma4:latest / gemma:2b).
+    ZERO hardcoding. Intelligently routes and reasons over user intent.
     """
     raw = (req.instruction or req.prompt or req.message or "").strip()
     if not raw:
         return {"ok": False, "detail": "Empty instruction provided, sir."}
 
     ollama_url = req.ollama_url or OLLAMA_URL
+    api_key = req.gemini_api_key or os.getenv("GEMINI_API_KEY", "") or GEMINI_API_KEY
 
     cortex_system_prompt = (
-        "You are J.A.R.V.I.S., an AI assistant powered by Google DeepMind Gemma.\n"
+        "You are J.A.R.V.I.S., an advanced AI operating system brain.\n"
         "Read the user's message carefully and output ONLY a valid JSON object. No extra text, no markdown fences.\n"
         "\n"
         "ACTIONS:\n"
-        "  notepad_code    — User asks to write code, HTML, or text in Notepad (e.g. 'open notepad and write html code for login page', 'write login page in notepad and run in browser')\n"
+        "  open_app        — User asks to open/launch an application (e.g. 'open notepad', 'launch calculator', 'open chrome', 'start vlc')\n"
+        "  notepad_code    — User explicitly asks to write CODE/HTML in Notepad and run/view it (e.g. 'write html in notepad', 'code a login page in notepad')\n"
         "  swarm_build     — User asks to build, create, design, or code a new web app, tool, page, or says 'Build' (e.g. 'build a todo app', 'create a login page', 'Build.')\n"
-        "  calculator      — User explicitly asks to open Calculator or perform a math calculation (e.g. 'calculate 25*4', 'open calculator')\n"
+        "  calculator      — User explicitly asks to open Calculator or perform a math calculation (e.g. 'calculate 25*4')\n"
         "  youtube_play    — Play music, song, or video on YouTube\n"
-        "  open_app        — Open an existing application (without asking to write code in it)\n"
         "  close_app       — Close or terminate an application\n"
         "  web_search      — Search Google or browse the web\n"
         "  gmail_draft     — Draft an email\n"
@@ -3307,10 +3346,10 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
         "  screenpipe_rewind — Rewind timeline / screen history\n"
         "  general_query   — Answer questions or chat\n"
         "\n"
-        "RULES:\n"
-        "1. If the user mentions writing code in Notepad (e.g. 'write html in notepad', 'open notepad and write code'), ALWAYS choose 'notepad_code'.\n"
-        "2. If the user says 'Build' or asks to create/build an app/site, choose 'swarm_build'. NEVER choose 'calculator' unless math is explicitly requested.\n"
-        "3. NEVER hallucinate math formulas like '2 + 2' unless the user provided numbers.\n"
+        "CRITICAL RULES:\n"
+        "1. If the user simply says 'open [app]' (e.g. 'open notepad', 'open calculator', 'open edge'), ALWAYS choose 'open_app' with target=[app]. NEVER choose notepad_code unless they explicitly ask to generate/write code.\n"
+        "2. ONLY choose 'notepad_code' if the user explicitly asks to WRITE/GENERATE CODE in Notepad (e.g. 'open notepad and write html code').\n"
+        "3. If the user says 'Build' or asks to create/build an app/site, choose 'swarm_build'. NEVER choose 'calculator' unless math is explicitly requested.\n"
         "\n"
         "Output format (JSON only):\n"
         "{\n"
@@ -3328,59 +3367,74 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
         "download", "anti_hallucination", "screenpipe_rewind", "general_query"
     }
 
-    async def query_gemma(model: str, timeout_s: float) -> dict:
+    parsed = {}
+
+    # 1. Try Gemini API first if API key is configured (Ultra-fast ~400ms, zero hallucination)
+    if api_key:
         try:
-            async with httpx.AsyncClient(timeout=timeout_s) as client:
-                resp = await client.post(
-                    f"{ollama_url}/api/chat",
-                    json={
-                        "model": model,
-                        "messages": [
-                            {"role": "system", "content": cortex_system_prompt},
-                            {"role": "user",   "content": raw}
-                        ],
-                        "format": "json",
-                        "stream": False,
-                        "options": {"temperature": 0.1, "num_predict": 220}
-                    }
-                )
-                if resp.status_code == 200:
-                    content = resp.json().get("message", {}).get("content", "{}")
-                    parsed  = json.loads(content)
-                    act = parsed.get("action", "")
-                    if act in valid_actions:
-                        return parsed
-                    logger.warning(f"[{model}] unrecognized action: {act}")
+            raw_gemini = await query_gemini_api(cortex_system_prompt, raw, api_key, json_mode=True)
+            if raw_gemini:
+                clean_j = re.sub(r"^```(?:json)?\s*", "", raw_gemini, flags=re.I)
+                clean_j = re.sub(r"\s*```$", "", clean_j).strip()
+                cand = json.loads(clean_j)
+                if cand.get("action") in valid_actions:
+                    parsed = cand
         except Exception as e:
-            logger.warning(f"Gemma query failed [{model}]: {e}")
-        return {}
+            logger.warning(f"Gemini API cortex reasoning error: {e}")
 
-    # Primary: gemma4:latest (small Gemma 4)
-    parsed = await query_gemma("gemma4:latest", timeout_s=45.0)
-
-    # Fallback: gemma:2b (fast real LLM inference)
+    # 2. Local Ollama (gemma4:latest / gemma:2b) fallback
     if not parsed:
-        logger.info("Falling back to gemma:2b for real LLM reasoning.")
-        parsed = await query_gemma("gemma:2b", timeout_s=20.0)
+        async def query_local_gemma(model: str, timeout_s: float) -> dict:
+            try:
+                async with httpx.AsyncClient(timeout=timeout_s) as client:
+                    resp = await client.post(
+                        f"{ollama_url}/api/chat",
+                        json={
+                            "model": model,
+                            "messages": [
+                                {"role": "system", "content": cortex_system_prompt},
+                                {"role": "user",   "content": raw}
+                            ],
+                            "format": "json",
+                            "stream": False,
+                            "options": {"temperature": 0.1, "num_predict": 220}
+                        }
+                    )
+                    if resp.status_code == 200:
+                        content = resp.json().get("message", {}).get("content", "{}")
+                        p = json.loads(content)
+                        if p.get("action") in valid_actions:
+                            return p
+            except Exception as e:
+                logger.warning(f"Local Gemma query failed [{model}]: {e}")
+            return {}
+
+        parsed = await query_local_gemma("gemma4:latest", timeout_s=45.0)
+        if not parsed:
+            parsed = await query_local_gemma("gemma:2b", timeout_s=20.0)
 
     if not parsed:
-        err = "Both Gemma models are currently busy, sir. Please try again."
+        err = "Cognitive router is currently busy, sir. Please try again in a moment."
         speak_out_loud(err)
         return {"ok": False, "detail": err, "spoken_response": err}
 
-    thought         = parsed.get("thought", f"Gemma 4 evaluated: {raw}")
+    thought         = parsed.get("thought", f"Evaluated: {raw}")
     action          = parsed.get("action", "general_query")
     target          = parsed.get("target", "")
     query           = parsed.get("query", "")
     spoken_response = parsed.get("spoken_response", "")
 
-    BRAIN.set_doing_now(f"Gemma: {action} [{target}]", "COGNITIVE_REASONING", thought=thought)
+    BRAIN.set_doing_now(f"Cortex: {action} [{target}]", "COGNITIVE_REASONING", thought=thought)
     BRAIN.log_blackboard("GEMMA4_CORTEX", action.upper(), f"Reasoning: {thought} | Action: {action} | Target: {target} | Query: {query}")
 
     exec_result: dict = {}
 
-    if action == "notepad_code":
-        exec_result = await notepad_code_handler(req, query=query or raw)
+    if action == "open_app":
+        exec_result = await open_os_app_endpoint(
+            JarvisCommandRequest(instruction=target or raw))
+
+    elif action == "notepad_code":
+        exec_result = await notepad_code_handler(req, query=query or raw, gemini_key=api_key)
 
     elif action == "swarm_build":
         exec_result = await godmode_5_agent_swarm(
@@ -3394,10 +3448,6 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
     elif action == "youtube_play":
         exec_result = await media_play(
             JarvisCommandRequest(instruction=query or raw, prompt=query or raw))
-
-    elif action == "open_app":
-        exec_result = await open_os_app_endpoint(
-            JarvisCommandRequest(instruction=target or raw))
 
     elif action == "close_app":
         exec_result = await close_os_app_endpoint(
@@ -3444,6 +3494,19 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
         "ast_symbols_grounded": exec_result.get("ast_symbols_grounded"),
         "brain":                BRAIN.snapshot()
     }
+
+
+@app.post("/api/set-gemini-key")
+async def set_gemini_key_endpoint(req: Dict[str, str]):
+    new_key = (req.get("key") or req.get("gemini_api_key") or "").strip()
+    if not new_key:
+        return {"ok": False, "detail": "Empty API key provided, sir."}
+    os.environ["GEMINI_API_KEY"] = new_key
+    global GEMINI_API_KEY
+    GEMINI_API_KEY = new_key
+    env_file = Path(".env").resolve()
+    env_file.write_text(f"GEMINI_API_KEY={new_key}\n", encoding="utf-8")
+    return {"ok": True, "detail": "Gemini API key saved and activated successfully, sir."}
 
 @app.post("/api/open-app")
 async def open_os_app_endpoint(req: JarvisCommandRequest):

@@ -3743,183 +3743,175 @@ def resolve_and_launch_app(exec_bin: str, target_name: str) -> bool:
 @app.post("/api/gemma-cortex-think")
 async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
     """
-    JARVIS Gemma 4 Cognitive Autonomous Core.
-    Powered by Google DeepMind Gemma (jarvis-gemma4:latest / gemma4:latest / gemma4:27b).
-    Analyzes intent using deep chain-of-thought (<thought>...</thought>), extracts structured
-    parameters, updates the 4-tier memory & blackboard, and executes actions autonomously.
+    JARVIS Gemma Cognitive Autonomous Core.
+    ZERO hardcoded routing.  Gemma reasons about EVERYTHING.
+    Primary : jarvis-gemma4:latest  (~6 s, RTX 5060 GPU)
+    Fallback: gemma:2b              (~2 s, fast LLM  – still REAL inference, never regex)
+    If both fail   -> honest error message, never a silent wrong action.
     """
     raw = (req.instruction or req.prompt or req.message or "").strip()
     if not raw:
         return {"ok": False, "detail": "Empty instruction provided, sir."}
 
-    low = raw.lower()
+    ollama_url = req.ollama_url or OLLAMA_URL
 
-    # System prompt for structured Gemma 4 cognitive reasoning
     cortex_system_prompt = (
-        "You are J.A.R.V.I.S. Gemma 4 Cognitive Autonomous Core, an advanced AI operating system brain powered by Google DeepMind Gemma.\n"
-        "You think, reason, and understand user intent with deep natural language comprehension.\n"
-        "You NEVER blindly guess Notepad unless the user explicitly requests Notepad or text editing.\n"
-        "When the user asks to build, create, design, or code any app, site, tool, or software (e.g. 'build ...', 'create ...', 'code ...', 'make ...'), choose 'swarm_build' with the user request as the query.\n"
-        "When given any user instruction, command, or query, you reason through the user's intent in your thought process, then output a structured JSON plan with:\n"
-        "- \"thought\": Step-by-step reasoning about user intent, target application, and execution strategy.\n"
-        "- \"action\": One of: youtube_play, open_app, close_app, calculator, web_search, gmail_draft, whatsapp_send, anti_hallucination_sentinel, swarm_build, screenpipe_rewind, download, general_query.\n"
-        "- \"target\": Specific target app, platform, website, or recipient.\n"
-        "- \"query\": Extracted parameters (song name, math formula, search terms, recipient, or prompt).\n"
-        "- \"spoken_response\": Crisp, polite British Jarvis spoken response to the user."
+        "You are J.A.R.V.I.S., an AI operating system assistant powered by Google DeepMind Gemma.\n"
+        "Understand the user's intent and output ONLY a valid JSON object. No extra text. No markdown fences.\n"
+        "Choose exactly one action from this list:\n"
+        "  youtube_play              — play a song, video or music on YouTube\n"
+        "  swarm_build               — build, create, code, design any app / page / tool / software\n"
+        "  calculator                — open calculator or evaluate a maths expression\n"
+        "  open_app                  — open or launch any desktop or web application\n"
+        "  close_app                 — close, exit, quit or kill an application\n"
+        "  web_search                — search Google or browse any URL\n"
+        "  gmail_draft               — draft or compose an email / Gmail message\n"
+        "  whatsapp_send             — send a WhatsApp message\n"
+        "  download                  — download or install software / files\n"
+        "  anti_hallucination_sentinel — fix code mistakes, run sentinel / self-heal\n"
+        "  screenpipe_rewind         — search screen history or rewind timeline\n"
+        "  general_query             — answer a general question or handle anything else\n"
+        "\n"
+        "Required JSON format:\n"
+        "{\n"
+        '  "thought": "<brief step-by-step reasoning about intent>",\n'
+        '  "action": "<one action from the list above>",\n'
+        '  "target": "<specific app, platform, website, or recipient>",\n'
+        '  "query": "<extracted parameter: song name / math expr / search term / etc.>",\n'
+        '  "spoken_response": "<short polite British J.A.R.V.I.S. reply to speak aloud>"\n'
+        "}"
     )
 
-    thought = ""
-    action = ""
-    target = ""
-    query = ""
-    spoken_response = ""
+    valid_actions = {
+        "youtube_play", "swarm_build", "calculator", "open_app", "close_app",
+        "web_search", "gmail_draft", "whatsapp_send", "download",
+        "anti_hallucination_sentinel", "screenpipe_rewind", "general_query"
+    }
 
-    ollama_url = req.ollama_url or OLLAMA_URL
-    model_name = req.model or "jarvis-gemma4:latest"
+    async def query_gemma(model: str, timeout_s: float) -> dict:
+        """Hit Ollama with the model, parse the JSON, validate the action. Never guesses."""
+        try:
+            async with httpx.AsyncClient(timeout=timeout_s) as client:
+                resp = await client.post(
+                    f"{ollama_url}/api/chat",
+                    json={
+                        "model": model,
+                        "messages": [
+                            {"role": "system", "content": cortex_system_prompt},
+                            {"role": "user",   "content": raw}
+                        ],
+                        "format": "json",
+                        "stream": False,
+                        "options": {"temperature": 0.1, "num_predict": 200}
+                    }
+                )
+                if resp.status_code == 200:
+                    content = resp.json().get("message", {}).get("content", "{}")
+                    parsed  = json.loads(content)
+                    if parsed.get("action") in valid_actions:
+                        return parsed
+                    logger.warning(f"[{model}] returned invalid action: {parsed.get('action')}")
+        except Exception as e:
+            logger.warning(f"Gemma query failed [{model}]: {e}")
+        return {}
 
-    # 1. Query Gemma 4 via Ollama
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            resp = await client.post(
-                f"{ollama_url}/api/chat",
-                json={
-                    "model": model_name,
-                    "messages": [
-                        {"role": "system", "content": cortex_system_prompt},
-                        {"role": "user", "content": raw}
-                    ],
-                    "format": "json",
-                    "stream": False,
-                    "options": {"temperature": 0.1, "num_predict": 160}
-                }
-            )
-            if resp.status_code == 200:
-                body = resp.json()
-                content = body.get("message", {}).get("content", "{}")
-                parsed = json.loads(content)
-                thought = parsed.get("thought", "")
-                action = parsed.get("action", "")
-                target = parsed.get("target", "")
-                query = parsed.get("query", "")
-                spoken_response = parsed.get("spoken_response", "")
-    except Exception as e:
-        logger.warning(f"Gemma 4 Cortex LLM query fallback triggered: {e}")
+    # ── 1. PRIMARY: jarvis-gemma4:latest ──────────────────────────────────────
+    parsed = await query_gemma("jarvis-gemma4:latest", timeout_s=45.0)
 
-    # 2. Resilient Semantic Heuristic Fallback (if Ollama times out or is cold)
-    if not action or action not in [
-        "youtube_play", "open_app", "close_app", "calculator", "web_search",
-        "gmail_draft", "whatsapp_send", "anti_hallucination_sentinel", "swarm_build",
-        "screenpipe_rewind", "download", "general_query"
-    ]:
-        if any(w in low for w in ["youtube", "play", "song", "music", "video", "soundtrack"]):
-            action = "youtube_play"
-            target = "YouTube"
-            query = re.sub(r"^(?:open\s+youtube\s+and\s+play|play|watch|stream)\s+", "", raw, flags=re.I).strip()
-            thought = f"Semantic Fallback: Identified media playback request for '{query or raw}' on YouTube."
-        elif any(w in low for w in ["create", "build", "make", "code", "design", "develop", "generate", "write a"]) and \
-             any(w in low for w in ["calculator", "calc", "app", "ui", "web", "tool", "game", "site", "page", "software"]):
-            action = "swarm_build"
-            target = "Web Application"
-            query = raw
-            thought = f"Semantic Fallback: Identified 5-agent swarm UI synthesis request for '{raw}'."
-        elif any(w in low for w in ["calc", "calculator", "compute", "math"]):
-            action = "calculator"
-            target = "Calculator"
-            thought = "Semantic Fallback: Identified mathematical computation request."
-        elif any(w in low for w in ["notepad.*(mistake|error|typo|fix|hallucinat)", "hallucinat", "anti-hallucinat", "watchdog", "sentinel", "self-heal"]):
-            action = "anti_hallucination_sentinel"
-            target = "Anti-Hallucination Sentinel"
-            thought = "Semantic Fallback: Identified AST code verification and anti-hallucination sentinel request."
-        elif any(w in low for w in ["gmail", "email", "mail"]):
-            action = "gmail_draft"
-            target = "Gmail"
-            thought = "Semantic Fallback: Identified email composition request."
-        elif any(w in low for w in ["close", "exit", "terminate", "kill", "quit"]):
-            action = "close_app"
-            target = raw
-            thought = "Semantic Fallback: Identified application shutdown request."
-        elif any(w in low for w in ["download", "install", "get latest"]):
-            action = "download"
-            target = raw
-            thought = "Semantic Fallback: Identified software download request."
-        elif any(w in low for w in ["search", "google", "look up", "browse"]):
-            action = "web_search"
-            target = "Google"
-            thought = "Semantic Fallback: Identified web search request."
-        elif any(w in low for w in ["rewind", "timeline", "screenpipe"]):
-            action = "screenpipe_rewind"
-            target = "Screenpipe"
-            thought = "Semantic Fallback: Identified 24/7 screen timeline rewind request."
-        else:
-            action = "open_app"
-            target = raw
-            thought = f"Semantic Fallback: Identified OS application launch request for '{raw}'."
+    # ── 2. FALLBACK: gemma:2b  (real LLM inference — NEVER regex) ─────────────
+    if not parsed:
+        logger.info("Primary model unavailable → falling back to gemma:2b (real inference).")
+        parsed = await query_gemma("gemma:2b", timeout_s=20.0)
 
-    if not thought:
-        thought = f"Gemma 4 evaluated user intent: {action} on {target}."
+    # ── 3. BOTH FAILED → honest error, never a silent wrong action ─────────────
+    if not parsed:
+        err = "Both Gemma models are currently unavailable, sir. Please try again in a moment."
+        speak_out_loud(err)
+        return {"ok": False, "detail": err, "spoken_response": err}
 
-    # 3. Update Cognitive State & Blackboard
-    BRAIN.set_doing_now(f"Gemma 4: {action} [{target}]", "COGNITIVE_REASONING", thought=thought)
-    BRAIN.log_blackboard("GEMMA4_CORTEX", action.upper(), f"Reasoning: {thought} | Action: {action} | Target: {target} | Query: {query}")
+    thought          = parsed.get("thought",          f"Gemma reasoned about: {raw}")
+    action           = parsed.get("action",           "general_query")
+    target           = parsed.get("target",           "")
+    query            = parsed.get("query",            "")
+    spoken_response  = parsed.get("spoken_response",  "")
 
-    # 4. Autonomous Execution Dispatch
-    exec_result = {}
+    BRAIN.set_doing_now(f"Gemma: {action} [{target}]", "COGNITIVE_REASONING", thought=thought)
+    BRAIN.log_blackboard(
+        "GEMMA4_CORTEX", action.upper(),
+        f"Reasoning: {thought} | Action: {action} | Target: {target} | Query: {query}"
+    )
+
+    # ── Execution dispatch — Gemma chose the action, we simply execute it ──────
+    exec_result: dict = {}
+
     if action == "youtube_play":
-        exec_req = JarvisCommandRequest(instruction=query or raw, prompt=query or raw)
-        exec_result = await media_play(exec_req)
+        exec_result = await media_play(
+            JarvisCommandRequest(instruction=query or raw, prompt=query or raw))
+
     elif action == "calculator":
         calc_inst = f"calculator {query}" if query else raw
-        exec_req = JarvisCommandRequest(instruction=calc_inst, prompt=calc_inst)
-        exec_result = await open_os_app_endpoint(exec_req)
+        exec_result = await open_os_app_endpoint(
+            JarvisCommandRequest(instruction=calc_inst, prompt=calc_inst))
+
     elif action == "swarm_build":
-        exec_req = JarvisCommandRequest(instruction=query or raw, prompt=query or raw, target_directory="./hackathon_app")
-        exec_result = await godmode_5_agent_swarm(exec_req)
+        exec_result = await godmode_5_agent_swarm(
+            JarvisCommandRequest(instruction=query or raw, prompt=query or raw,
+                                 target_directory="./hackathon_app"))
+
     elif action == "anti_hallucination_sentinel":
-        if "notepad" in low or "heal" in low or "demo" in low or "mistake" in low:
+        low_check = raw.lower()
+        if any(w in low_check for w in ["notepad", "heal", "demo", "mistake"]):
             exec_result = await notepad_heal_demo(req)
         else:
             exec_result = await anti_hallucination_watchdog(req)
+
     elif action == "open_app":
-        low_target = (target or "").lower()
-        if "youtube" in low_target:
-            exec_result = await media_play(JarvisCommandRequest(instruction=query or raw))
-        elif any(w in low_target for w in ["calculator", "calc"]):
-            exec_result = await open_os_app_endpoint(JarvisCommandRequest(instruction=raw))
-        elif any(w in low_target for w in ["google", "search"]):
-            exec_result = await web_search_endpoint(JarvisCommandRequest(query=query or raw))
-        else:
-            exec_result = await open_os_app_endpoint(JarvisCommandRequest(instruction=target or raw))
+        exec_result = await open_os_app_endpoint(
+            JarvisCommandRequest(instruction=target or raw))
+
     elif action == "close_app":
-        exec_result = await close_os_app_endpoint(JarvisCommandRequest(instruction=target or raw))
+        exec_result = await close_os_app_endpoint(
+            JarvisCommandRequest(instruction=target or raw))
+
     elif action == "web_search":
-        exec_result = await web_search_endpoint(JarvisCommandRequest(query=query or raw, instruction=raw))
+        exec_result = await web_search_endpoint(
+            JarvisCommandRequest(query=query or raw, instruction=raw))
+
     elif action == "gmail_draft":
-        exec_result = await gmail_draft(JarvisCommandRequest(instruction=raw, prompt=query or raw))
+        exec_result = await gmail_draft(
+            JarvisCommandRequest(instruction=raw, prompt=query or raw))
+
     elif action == "whatsapp_send":
         exec_result = await whatsapp_send(JarvisCommandRequest(instruction=raw))
+
     elif action == "download":
-        exec_result = await download_resource_endpoint(JarvisCommandRequest(instruction=query or raw))
+        exec_result = await download_resource_endpoint(
+            JarvisCommandRequest(instruction=query or raw))
+
     elif action == "screenpipe_rewind":
         exec_result = await screen_rewind_search_endpoint(req)
+
     elif action == "general_query":
         spoken_response = spoken_response or "I have processed your request, sir."
         exec_result = {"ok": True, "detail": spoken_response, "spoken_response": spoken_response}
 
-    final_spoken = exec_result.get("spoken_response") or spoken_response or f"Processed {action} for you, sir."
+    final_spoken = (
+        exec_result.get("spoken_response") or spoken_response or "Done, sir."
+    )
     return {
-        "ok": True,
-        "thought": thought,
-        "action": action,
-        "target": target,
-        "query": query,
-        "spoken_response": final_spoken,
-        "execution": exec_result,
-        "preview_url": exec_result.get("preview_url") or exec_result.get("url") or exec_result.get("watch_url"),
-        "url": exec_result.get("url") or exec_result.get("watch_url") or exec_result.get("preview_url"),
-        "actions": exec_result.get("actions"),
-        "auto_corrections": exec_result.get("auto_corrections"),
+        "ok":                   True,
+        "thought":              thought,
+        "action":               action,
+        "target":               target,
+        "query":                query,
+        "spoken_response":      final_spoken,
+        "execution":            exec_result,
+        "preview_url":          exec_result.get("preview_url") or exec_result.get("url") or exec_result.get("watch_url"),
+        "url":                  exec_result.get("url") or exec_result.get("watch_url") or exec_result.get("preview_url"),
+        "actions":              exec_result.get("actions"),
+        "auto_corrections":     exec_result.get("auto_corrections"),
         "ast_symbols_grounded": exec_result.get("ast_symbols_grounded"),
-        "brain": BRAIN.snapshot()
+        "brain":                BRAIN.snapshot()
     }
 
 
@@ -3927,19 +3919,6 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
 async def open_os_app_endpoint(req: JarvisCommandRequest):
     raw = (req.instruction or req.prompt or "").strip()
     low = raw.lower()
-
-    # Route media / YouTube requests directly to media_play
-    if any(w in low for w in ["youtube", "netflix", "play", "song", "music", "video"]):
-        return await media_play(req)
-
-    # Route web searches directly to web_search
-    if any(w in low for w in ["search for", "google for", "look up"]) and not any(w in low for w in ["app", "calc", "notepad"]):
-        return await web_search_endpoint(JarvisCommandRequest(query=raw, instruction=raw))
-
-    # Route software creation / UI design requests directly to 5-Agent Swarm
-    if any(w in low for w in ["create", "build", "make", "code", "design", "develop", "generate", "write a"]) and \
-       any(w in low for w in ["calculator", "calc", "app", "ui", "web", "tool", "game", "site", "page", "software"]):
-        return await godmode_5_agent_swarm(req)
 
     # 1. Resolve Target Application from APP_COMMAND_MAP
     target_name = ""

@@ -3743,11 +3743,11 @@ def resolve_and_launch_app(exec_bin: str, target_name: str) -> bool:
 @app.post("/api/gemma-cortex-think")
 async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
     """
-    JARVIS Gemma Cognitive Autonomous Core.
-    ZERO hardcoded routing.  Gemma reasons about EVERYTHING.
-    Primary : jarvis-gemma4:latest  (~6 s, RTX 5060 GPU)
-    Fallback: gemma:2b              (~2 s, fast LLM  – still REAL inference, never regex)
-    If both fail   -> honest error message, never a silent wrong action.
+    JARVIS Gemma 4 Cognitive Autonomous Core.
+    ZERO hardcoded routing. Gemma 4 small (gemma4:latest, 4B) reasons about EVERYTHING.
+    Primary : gemma4:latest  (~5s, RTX 5060 GPU, small Gemma 4)
+    Fallback: gemma:2b       (~2s, real LLM inference — NEVER regex/keywords)
+    Both fail → honest error. Never silent wrong action.
     """
     raw = (req.instruction or req.prompt or req.message or "").strip()
     if not raw:
@@ -3756,40 +3756,50 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
     ollama_url = req.ollama_url or OLLAMA_URL
 
     cortex_system_prompt = (
-        "You are J.A.R.V.I.S., an AI operating system assistant powered by Google DeepMind Gemma.\n"
-        "Understand the user's intent and output ONLY a valid JSON object. No extra text. No markdown fences.\n"
-        "Choose exactly one action from this list:\n"
-        "  youtube_play              — play a song, video or music on YouTube\n"
-        "  swarm_build               — build, create, code, design any app / page / tool / software\n"
-        "  calculator                — open calculator or evaluate a maths expression\n"
-        "  open_app                  — open or launch any desktop or web application\n"
-        "  close_app                 — close, exit, quit or kill an application\n"
-        "  web_search                — search Google or browse any URL\n"
-        "  gmail_draft               — draft or compose an email / Gmail message\n"
-        "  whatsapp_send             — send a WhatsApp message\n"
-        "  download                  — download or install software / files\n"
-        "  anti_hallucination_sentinel — fix code mistakes, run sentinel / self-heal\n"
-        "  screenpipe_rewind         — search screen history or rewind timeline\n"
-        "  general_query             — answer a general question or handle anything else\n"
+        "You are J.A.R.V.I.S., an AI assistant powered by Google DeepMind Gemma 4.\n"
+        "Read the user's message carefully and output ONLY a valid JSON object. No extra text. No markdown fences.\n"
         "\n"
-        "Required JSON format:\n"
+        "CRITICAL RULES you must follow:\n"
+        "1. If the user explicitly names an OS/desktop app (e.g. Notepad, Chrome, Calculator, VLC, Spotify, Paint),"
+        " set action='open_app' and target=that app name. Do NOT change it to swarm_build.\n"
+        "2. Use swarm_build ONLY when the user asks you to BUILD/CREATE a new app and does NOT mention an existing OS app.\n"
+        "3. If the user says 'open Notepad and write X', action='open_app', target='Notepad', query='X'.\n"
+        "4. youtube_play is ONLY for playing media on YouTube.\n"
+        "5. calculator is ONLY for opening the Calculator app or evaluating math.\n"
+        "\n"
+        "Choose exactly one action:\n"
+        "  youtube_play        — play a song, video or music on YouTube\n"
+        "  swarm_build         — build/create/design a brand-new app, page, tool (no OS app mentioned)\n"
+        "  calculator          — open Calculator app or evaluate a maths expression\n"
+        "  open_app            — open/launch any existing desktop or web application\n"
+        "  close_app           — close, exit, quit or kill an application\n"
+        "  web_search          — search Google or navigate to a website\n"
+        "  gmail_draft         — draft or compose an email\n"
+        "  whatsapp_send       — send a WhatsApp message\n"
+        "  download            — download or install software / files\n"
+        "  notepad_heal_demo   — open Notepad and write/demonstrate code or text healing\n"
+        "  anti_hallucination  — run the anti-hallucination sentinel watchdog audit\n"
+        "  screenpipe_rewind   — search screen history or rewind timeline\n"
+        "  general_query       — answer a general question or anything else\n"
+        "\n"
+        "Output format (JSON only):\n"
         "{\n"
-        '  "thought": "<brief step-by-step reasoning about intent>",\n'
+        '  "thought": "<your reasoning about exactly what the user wants>",\n'
         '  "action": "<one action from the list above>",\n'
-        '  "target": "<specific app, platform, website, or recipient>",\n'
-        '  "query": "<extracted parameter: song name / math expr / search term / etc.>",\n'
-        '  "spoken_response": "<short polite British J.A.R.V.I.S. reply to speak aloud>"\n'
+        '  "target": "<specific app, website, platform, or person>",\n'
+        '  "query": "<extracted key parameter: song name, math expr, search term, message body, etc.>",\n'
+        '  "spoken_response": "<short polite British J.A.R.V.I.S. spoken reply>"\n'
         "}"
     )
 
     valid_actions = {
         "youtube_play", "swarm_build", "calculator", "open_app", "close_app",
         "web_search", "gmail_draft", "whatsapp_send", "download",
-        "anti_hallucination_sentinel", "screenpipe_rewind", "general_query"
+        "notepad_heal_demo", "anti_hallucination", "screenpipe_rewind", "general_query"
     }
 
     async def query_gemma(model: str, timeout_s: float) -> dict:
-        """Hit Ollama with the model, parse the JSON, validate the action. Never guesses."""
+        """Query Ollama, parse JSON, validate action. Returns {} on any failure."""
         try:
             async with httpx.AsyncClient(timeout=timeout_s) as client:
                 resp = await client.post(
@@ -3802,46 +3812,47 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
                         ],
                         "format": "json",
                         "stream": False,
-                        "options": {"temperature": 0.1, "num_predict": 200}
+                        "options": {"temperature": 0.1, "num_predict": 220}
                     }
                 )
                 if resp.status_code == 200:
                     content = resp.json().get("message", {}).get("content", "{}")
                     parsed  = json.loads(content)
-                    if parsed.get("action") in valid_actions:
+                    act = parsed.get("action", "")
+                    if act in valid_actions:
                         return parsed
-                    logger.warning(f"[{model}] returned invalid action: {parsed.get('action')}")
+                    logger.warning(f"[{model}] returned unrecognised action: '{act}' — retrying with fallback.")
         except Exception as e:
             logger.warning(f"Gemma query failed [{model}]: {e}")
         return {}
 
-    # ── 1. PRIMARY: jarvis-gemma4:latest ──────────────────────────────────────
-    parsed = await query_gemma("jarvis-gemma4:latest", timeout_s=45.0)
+    # ── 1. PRIMARY: gemma4:latest  (Gemma 4 small, 4B, RTX 5060) ──────────────
+    parsed = await query_gemma("gemma4:latest", timeout_s=45.0)
 
-    # ── 2. FALLBACK: gemma:2b  (real LLM inference — NEVER regex) ─────────────
+    # ── 2. FALLBACK: gemma:2b  (real LLM reasoning — NEVER keyword matching) ───
     if not parsed:
-        logger.info("Primary model unavailable → falling back to gemma:2b (real inference).")
+        logger.info("gemma4:latest unavailable → gemma:2b (real LLM fallback).")
         parsed = await query_gemma("gemma:2b", timeout_s=20.0)
 
-    # ── 3. BOTH FAILED → honest error, never a silent wrong action ─────────────
+    # ── 3. BOTH FAILED → honest error, zero silent wrong action ────────────────
     if not parsed:
         err = "Both Gemma models are currently unavailable, sir. Please try again in a moment."
         speak_out_loud(err)
         return {"ok": False, "detail": err, "spoken_response": err}
 
-    thought          = parsed.get("thought",          f"Gemma reasoned about: {raw}")
-    action           = parsed.get("action",           "general_query")
-    target           = parsed.get("target",           "")
-    query            = parsed.get("query",            "")
-    spoken_response  = parsed.get("spoken_response",  "")
+    thought         = parsed.get("thought",         f"Gemma 4 reasoned about: {raw}")
+    action          = parsed.get("action",          "general_query")
+    target          = parsed.get("target",          "")
+    query           = parsed.get("query",           "")
+    spoken_response = parsed.get("spoken_response", "")
 
-    BRAIN.set_doing_now(f"Gemma: {action} [{target}]", "COGNITIVE_REASONING", thought=thought)
+    BRAIN.set_doing_now(f"Gemma4: {action} [{target}]", "COGNITIVE_REASONING", thought=thought)
     BRAIN.log_blackboard(
         "GEMMA4_CORTEX", action.upper(),
         f"Reasoning: {thought} | Action: {action} | Target: {target} | Query: {query}"
     )
 
-    # ── Execution dispatch — Gemma chose the action, we simply execute it ──────
+    # ── Execution dispatch — Gemma chose, we execute. Zero keywords here. ──────
     exec_result: dict = {}
 
     if action == "youtube_play":
@@ -3858,12 +3869,13 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
             JarvisCommandRequest(instruction=query or raw, prompt=query or raw,
                                  target_directory="./hackathon_app"))
 
-    elif action == "anti_hallucination_sentinel":
-        low_check = raw.lower()
-        if any(w in low_check for w in ["notepad", "heal", "demo", "mistake"]):
-            exec_result = await notepad_heal_demo(req)
-        else:
-            exec_result = await anti_hallucination_watchdog(req)
+    elif action == "notepad_heal_demo":
+        # Gemma explicitly decided: open Notepad and write/heal/demo
+        exec_result = await notepad_heal_demo(req)
+
+    elif action == "anti_hallucination":
+        # Gemma explicitly decided: run the AST watchdog sentinel audit
+        exec_result = await anti_hallucination_watchdog(req)
 
     elif action == "open_app":
         exec_result = await open_os_app_endpoint(
@@ -3895,9 +3907,7 @@ async def gemma_cortex_think_endpoint(req: JarvisCommandRequest):
         spoken_response = spoken_response or "I have processed your request, sir."
         exec_result = {"ok": True, "detail": spoken_response, "spoken_response": spoken_response}
 
-    final_spoken = (
-        exec_result.get("spoken_response") or spoken_response or "Done, sir."
-    )
+    final_spoken = exec_result.get("spoken_response") or spoken_response or "Done, sir."
     return {
         "ok":                   True,
         "thought":              thought,

@@ -1,10 +1,10 @@
 @echo off
-title J.A.R.V.I.S. v12.0 SOTA GODMODE (Cross-Platform Hub)
+title J.A.R.V.I.S. v12.0 SOTA GODMODE (Windows 11)
 cd /d "%~dp0"
-echo ============================================================
-echo   Starting J.A.R.V.I.S. Windows 11 RTX 5060 Edition
-echo   OmniParser Set-of-Mark + 5-Agent Gemma 4 Swarm + Sentinel
-echo ============================================================
-start http://127.0.0.1:8000
-python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+python run.py
+if errorlevel 1 (
+    echo.
+    echo [!] Python returned an error code. Trying direct uvicorn start...
+    python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+)
 pause

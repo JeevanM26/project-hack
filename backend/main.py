@@ -3667,7 +3667,7 @@ def close_all_user_applications() -> List[str]:
 APP_COMMAND_MAP: Dict[str, Tuple[str, str, str]] = {
     "calculator": ("Calculator", "calc.exe", "Calculator"),
     "calc": ("Calculator", "calc.exe", "Calculator"),
-    "notepad": ("Notepad", r"explorer.exe shell:AppsFolder\Microsoft.WindowsNotepad_8wekyb3d8bbwe!App", "Notepad"),
+    "notepad": ("Notepad", "notepad.exe", "Notepad"),
     "vscode": ("Visual Studio Code", "code", "Visual Studio Code"),
     "code": ("Visual Studio Code", "code", "Visual Studio Code"),
     "vs code": ("Visual Studio Code", "code", "Visual Studio Code"),
@@ -3698,6 +3698,83 @@ APP_COMMAND_MAP: Dict[str, Tuple[str, str, str]] = {
     "word": ("Microsoft Word", "winword.exe", "Word"),
     "excel": ("Microsoft Excel", "excel.exe", "Excel"),
 }
+
+
+def resolve_and_launch_app(exec_bin: str, target_name: str) -> bool:
+    """Robust launcher for Windows desktop apps, browsers, and store apps."""
+    if not exec_bin:
+        return False
+    low_bin = exec_bin.lower()
+
+    if exec_bin.startswith(("http://", "https://", "explorer.exe ", "start ")):
+        try:
+            subprocess.Popen(exec_bin, shell=True)
+            return True
+        except Exception:
+            pass
+
+    resolved = None
+    try:
+        import winreg
+        for root in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+            try:
+                base = os.path.basename(exec_bin)
+                with winreg.OpenKey(root, rf"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\{base}") as k:
+                    val, _ = winreg.QueryValueEx(k, "")
+                    if val and os.path.exists(val):
+                        resolved = val
+                        break
+            except Exception:
+                pass
+    except Exception:
+        pass
+
+    if not resolved:
+        prog_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+        prog_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+        local_app = os.environ.get("LOCALAPPDATA", "")
+        app_data = os.environ.get("APPDATA", "")
+        lookup = {
+            "msedge.exe": [rf"{prog_files_x86}\Microsoft\Edge\Application\msedge.exe", rf"{prog_files}\Microsoft\Edge\Application\msedge.exe"],
+            "chrome.exe": [rf"{prog_files}\Google\Chrome\Application\chrome.exe", rf"{prog_files_x86}\Google\Chrome\Application\chrome.exe", rf"{local_app}\Google\Chrome\Application\chrome.exe"],
+            "brave.exe": [rf"{prog_files}\BraveSoftware\Brave-Browser\Application\brave.exe", rf"{local_app}\BraveSoftware\Brave-Browser\Application\brave.exe"],
+            "code": [rf"{local_app}\Programs\Microsoft VS Code\Code.exe", rf"{prog_files}\Microsoft VS Code\Code.exe"],
+            "spotify.exe": [rf"{app_data}\Spotify\Spotify.exe"],
+        }
+        for k, paths in lookup.items():
+            if k in low_bin:
+                for p in paths:
+                    if os.path.exists(p):
+                        resolved = p
+                        break
+                if resolved:
+                    break
+
+    if not resolved:
+        import shutil
+        resolved = shutil.which(exec_bin) or shutil.which(os.path.basename(exec_bin))
+
+    if resolved and os.path.exists(resolved):
+        try:
+            subprocess.Popen([resolved])
+            return True
+        except Exception:
+            pass
+
+    try:
+        if hasattr(os, "startfile"):
+            os.startfile(exec_bin)
+            return True
+    except Exception:
+        pass
+
+    try:
+        subprocess.Popen(f'start "" {exec_bin}', shell=True)
+        return True
+    except Exception:
+        pass
+
+    return False
 
 
 @app.post("/api/open-app")
@@ -3752,7 +3829,36 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
 
     already_open = bool(existing_hwnd) or is_app_process_running(app_proc_kw) or target_name.lower() in ACTIVE_OS_APPS
 
-    # 4. Calculator Authentic UIA Flow
+    # 4a. Calculator Default to Modern Web Calculator unless Windows Native UIA is explicitly requested
+    is_native_calc = any(k in low for k in ["windows", "native", "win32", "calc.exe", "os", "uia"])
+    if target_name == "Calculator" and not is_native_calc and not (expr and perform_calculator_uia):
+        t_dir = Path("./hackathon_app").resolve()
+        t_dir.mkdir(parents=True, exist_ok=True)
+        html_file = t_dir / "index.html"
+        if not html_file.exists():
+            html_file.write_text(generate_fresh_calculator(raw), encoding="utf-8")
+        preview_url = "http://127.0.0.1:8000/hackathon_app/index.html"
+        open_system_target(preview_url, tab_key="live_calc")
+        outcome = "Opened your custom synthesized modern web calculator with cybernetic UI and audio, sir."
+        speak_out_loud(outcome)
+        BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "OPEN_WEB_CALC", outcome)
+        return {
+            "ok": True,
+            "target": "Web Calculator",
+            "preview_url": preview_url,
+            "url": preview_url,
+            "detail": outcome,
+            "spoken_response": outcome,
+            "actions": [
+                {"label": "🧮 Open Modern Web Calc", "url": preview_url, "icon": "✨"},
+                {"label": "✨ Regenerate Fresh Calc", "command": "create a fresh new calculator with modern ui from scratch", "icon": "✨"},
+                {"label": "🔢 Run Native Windows Calc", "command": "open windows calculator and calculate 125 * 8", "icon": "🔢"},
+                {"label": "❌ Close Windows Calc", "command": "close calculator", "icon": "❌"}
+            ],
+            "brain": BRAIN.snapshot(),
+        }
+
+    # 4b. Calculator Authentic UIA Flow
     if target_name == "Calculator" and expr and perform_calculator_uia:
         ok_uia, disp_text = await asyncio.to_thread(perform_calculator_uia, expr)
         ACTIVE_OS_APPS["calculator"] = {"is_open": True, "opened_at": time.time()}
@@ -3810,10 +3916,7 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
     # 6. Launch or Focus App
     if not already_open:
         if platform.system() == "Windows":
-            if exec_bin.startswith("explorer.exe ") or exec_bin.startswith("start "):
-                subprocess.Popen(exec_bin, shell=True)
-            else:
-                subprocess.Popen(f"start {exec_bin}", shell=True)
+            resolve_and_launch_app(exec_bin, target_name)
         ACTIVE_OS_APPS[target_name.lower()] = {"is_open": True, "opened_at": time.time()}
         time.sleep(0.6)
         uia_focus_window(win_key)

@@ -1,3 +1,3 @@
 # Antigravity IDE Autonomous Swarm Directive
 
-Create Google calculator.
+Build a calculator from scratch.

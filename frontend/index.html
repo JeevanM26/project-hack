@@ -1051,9 +1051,12 @@
         if (/\b(calculator|calc|web\s*calc|modern\s*calc|custom\s*calc|live\s*calc|scratch\s*calc)\b/i.test(low) &&
             !/\b(windows|native|os|win32|exe)\b/i.test(low)) {
           state.orbColor = 'cyan';
-          const webCalcUrl = state.backendUrl + '/hackathon_app/index.html';
-          window.open(webCalcUrl, '_blank');
-          const reply = 'Opened your custom synthesized modern web calculator with cybernetic UI and audio, sir.';
+          showChatTyping('Opening custom synthesized modern calculator...');
+          const d = await postApi('/api/open-app', { instruction: 'open modern calculator' });
+          const webCalcUrl = d.preview_url || (state.backendUrl + '/hackathon_app/index.html');
+          if (webCalcUrl) { window.open(webCalcUrl, '_blank'); }
+          hideChatTyping();
+          const reply = d.spoken_response || 'Opened your custom synthesized modern web calculator with cybernetic UI and audio, sir.';
           addChatMessage('jarvis', reply, {
             actions: [
               { label: '🧮 Launch Fullscreen Web Calc', url: webCalcUrl, icon: '🧮' },
@@ -1066,19 +1069,21 @@
           return;
         }
 
-        // 4b. Native OS Applications (Windows Calculator, Notepad, etc.)
-        if (/\b(notepad|terminal|blender|explorer|paint)\b/.test(low) ||
+        // 4b. Application Launching & OS Desktop Control (Notepad, Chrome, Edge, VS Code, Spotify, Paint, Word, Excel, etc.)
+        if (/\b(open|launch|start|run|bring up|focus)\b/i.test(low) ||
+            /\b(notepad|terminal|powershell|cmd|command\s*prompt|blender|explorer|folder|files|downloads|documents|paint|mspaint|spotify|chrome|google\s*chrome|edge|msedge|brave|firefox|browser|vscode|code|visual\s*studio\s*code|word|winword|excel|settings|taskmgr|task\s*manager)\b/i.test(low) ||
             (/\b(calculator|calc)\b/i.test(low) && /\b(windows|native|os|win32|exe)\b/i.test(low))) {
           state.orbColor = 'emerald';
-          showChatTyping('Automating native OS application...');
+          showChatTyping('Launching and automating application on desktop...');
           const d = await postApi('/api/open-app', { instruction: cmd });
+          if (d.url && d.url.startsWith('http')) { window.open(d.url, '_blank'); }
           hideChatTyping();
           const reply = (d.spoken_response || d.detail || 'Executed application command') + ', sir.';
           const isCalc = /\b(calculator|calc)\b/.test(low);
           const metaActions = d.actions || (isCalc ? [
             { label: '🧮 Open Modern Web Calc', url: d.preview_url || (state.backendUrl + '/hackathon_app/index.html'), icon: '✨' },
             { label: '❌ Dismiss Windows Calc', command: 'close calculator', icon: '❌' }
-          ] : (d.preview_url ? [{ label: '🚀 Open Application', url: d.preview_url, icon: '🚀' }] : null));
+          ] : (d.url || d.preview_url ? [{ label: '🚀 Open Application', url: d.url || d.preview_url, icon: '🚀' }] : null));
           addChatMessage('jarvis', reply, metaActions ? { actions: metaActions } : null);
           await speak(reply);
           return;
@@ -1094,6 +1099,51 @@
           hideChatTyping();
           const reply = d.spoken_response || ('Playing ' + (d.query || 'media') + ' on ' + (d.platform || 'YouTube') + ', sir.');
           addChatMessage('jarvis', reply, targetUrl ? { url: targetUrl, label: '🎬 Watch on YouTube' } : null);
+          await speak(reply);
+          return;
+        }
+
+        // 6. Gmail Draft & Compose
+        if (/\b(draft\s+(?:an?\s+)?(?:email|gmail|mail)|send\s+(?:an?\s+)?(?:email|gmail|mail)|compose\s+(?:an?\s+)?(?:email|gmail|mail)|gmail\b|email\s+to)\b/i.test(low)) {
+          state.orbColor = 'emerald';
+          showChatTyping('Composing Gmail draft...');
+          const d = await postApi('/api/gmail-draft', { instruction: cmd });
+          if (d.url) { window.open(d.url, '_blank'); }
+          hideChatTyping();
+          const reply = d.spoken_response || d.confirmation_prompt || 'Drafted email for you in Gmail, sir.';
+          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '✉️ Open Gmail Draft' } : null);
+          if (d.confirmation_prompt && d.recipient) {
+            state.pendingGmailDraft = { recipient: d.recipient, subject: d.subject, body: d.body };
+            document.getElementById('gmailConfirmBar').classList.remove('hidden');
+            document.getElementById('gmailConfirmText').textContent = 'Draft for ' + d.recipient + ' ready. Send now?';
+          }
+          await speak(reply);
+          return;
+        }
+
+        // 7. Software Downloads (Python, Node, Git, 7-Zip, VS Code, etc.)
+        if (/\b(download|install|get\s+(?:the\s+)?(?:latest\s+)?version)\b/i.test(low)) {
+          state.orbColor = 'cyan';
+          showChatTyping('Resolving official software download...');
+          const d = await postApi('/api/download', { instruction: cmd });
+          if (d.url && !d.saved_path) { window.open(d.url, '_blank'); }
+          hideChatTyping();
+          const reply = d.spoken_response || ('Initiated download for ' + (d.resource_name || 'software') + ', sir.');
+          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '📥 Download Portal' } : null);
+          await speak(reply);
+          return;
+        }
+
+        // 8. Google & Web Search
+        if (/\b(search(?:\s+google)?(?:\s+for)?|google\b|look\s+up|browse\b|navigate\s+to|open\s+website)\b/i.test(low) &&
+            !/\b(youtube|video|song|netflix|book|flight|hotel)\b/i.test(low)) {
+          state.orbColor = 'cyan';
+          showChatTyping('Searching Google & browsing web...');
+          const d = await postApi('/api/web-search', { query: cmd, instruction: cmd });
+          if (d.url) { window.open(d.url, '_blank'); }
+          hideChatTyping();
+          const reply = d.spoken_response || ('Searched Google for ' + (d.query || 'information') + ', sir.');
+          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '🔍 View Search Results' } : null);
           await speak(reply);
           return;
         }

@@ -2096,12 +2096,14 @@ class JarvisCommandRequest(BaseModel):
 
 
 @app.get("/")
-
 async def serve_ui():
-
+    root_index = Path(__file__).parent.parent / "index.html"
+    if root_index.exists():
+        return FileResponse(root_index)
     html_file = Path(__file__).parent / "jarvis_command_center.html"
-
-    return FileResponse(html_file) if html_file.exists() else {"status": "ok"}
+    if html_file.exists():
+        return FileResponse(html_file)
+    return {"status": "ok"}
 
 
 

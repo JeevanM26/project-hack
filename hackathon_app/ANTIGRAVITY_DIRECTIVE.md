@@ -1,3 +1,3 @@
 # Antigravity IDE Autonomous Swarm Directive
 
-Build a calculator from scratch.
+create a fresh new calculator with modern ui from scratch

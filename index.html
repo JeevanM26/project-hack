@@ -390,7 +390,7 @@
       geminiKey: '',
       sarvamKey: '',
       voiceLang: 'en-IN',
-      backendOnline: false,
+      backendOnline: (typeof window !== 'undefined' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')),
       alwaysWatch: true,
       somOverlay: true,
       ws: null,
@@ -423,6 +423,7 @@
         hardware_profile: { gpu: 'NVIDIA GeForce RTX 5060 (8GB VRAM)', qlora_trajectories_logged: 0 }
       }
     };
+    window.state = state;
 
     function formatTime(date) {
       const d = date || new Date();
@@ -849,6 +850,7 @@
       document.getElementById('mainCommandInput').value = text;
       executeCommand(text);
     };
+    window.executeCommand = executeCommand;
 
     async function executeCommand(rawInput) {
       const inp = document.getElementById('mainCommandInput');

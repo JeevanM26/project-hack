@@ -591,7 +591,7 @@ class JarvisCognitiveBrain:
                 conn.execute("INSERT OR REPLACE INTO self_identity VALUES (?, ?, ?)", (k, v, now))
             if conn.execute("SELECT COUNT(*) FROM todo_goals").fetchone()[0] == 0:
                 for g in [
-                    "Continuously watch desktop screen with OmniParser V2 Set-of-Mark (SoM) bounding boxes & reuse existing windows",
+                    "Continuously watch desktop screen with OmniParser V2 Set-of-Mark (SoM) bounding boxes & direct app execution",
                     "Verify every GUI click/type action with UI-TARS pre/post-action pixel-diff self-correction",
                     "Index 24/7 active windows & UIA controls into Screenpipe SQLite timeline for instant rewind search",
                     "Coordinate Orchestrator, AST Grounder, Coder, Auditor, and Human GUI Agent over the Shared Blackboard",
@@ -3515,69 +3515,6 @@ async def camera_analyze_endpoint(req: JarvisCommandRequest):
 
 
 
-def find_or_reuse_app_window(target_name: str, win_key: str) -> Optional[int]:
-    if platform.system() != "Windows":
-        return None
-    try:
-        import win32gui
-        import ctypes
-        user32 = ctypes.windll.user32
-        hdesk = user32.OpenDesktopW("default", 0, False, 0x1FF)
-        if hdesk:
-            user32.SetThreadDesktop(hdesk)
-
-        target_low = target_name.lower()
-        key_low = win_key.lower()
-        found_hwnds = []
-
-        def cb(h, _):
-            if win32gui.IsWindow(h):
-                t = win32gui.GetWindowText(h).lower()
-                c = win32gui.GetClassName(h).lower()
-                if (key_low in t or key_low in c or target_low in t or target_low in c) and "visual studio code" not in t:
-                    rect = win32gui.GetWindowRect(h)
-                    w = rect[2] - rect[0]
-                    ht = rect[3] - rect[1]
-                    if w > 20 and ht > 20:
-                        found_hwnds.append(h)
-            return True
-
-        win32gui.EnumWindows(cb, None)
-        if found_hwnds:
-            force_foreground_window(found_hwnds[0])
-            return found_hwnds[0]
-    except Exception as exc:
-        logger.debug(f"find_or_reuse_app_window: {exc}")
-    return None
-
-
-def is_app_process_running(proc_keywords: List[str]) -> bool:
-    try:
-        import psutil
-        for p in psutil.process_iter(["name", "pid"]):
-            p_name = p.info["name"].lower()
-            if any(k in p_name for k in proc_keywords):
-                return True
-    except Exception:
-        pass
-    return False
-
-
-def enforce_single_instance(proc_keyword: str) -> None:
-    try:
-        import psutil
-        found = []
-        for p in psutil.process_iter(["name", "pid"]):
-            if proc_keyword.lower() in p.info["name"].lower():
-                found.append(p)
-        if len(found) > 1:
-            for p in found[1:]:
-                try:
-                    p.kill()
-                except Exception:
-                    pass
-    except Exception:
-        pass
 
 
 def perform_close_application(win_keys: List[str], proc_keys: List[str]) -> Tuple[bool, int, int]:
@@ -3780,7 +3717,7 @@ def resolve_and_launch_app(exec_bin: str, target_name: str) -> bool:
 
 
 @app.post("/api/open-app")
-async def open_or_reuse_os_app(req: JarvisCommandRequest):
+async def open_os_app_endpoint(req: JarvisCommandRequest):
     raw = (req.instruction or req.prompt or "").strip()
     low = raw.lower()
 
@@ -3820,18 +3757,7 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
     expr = math_m.group(1).replace(" ", "") if math_m else ""
     result = str(eval(expr, {"__builtins__": None}, {})) if expr else None
 
-    # 3. Check if Window or Process Already Open (STRICT REUSE)
-    existing_hwnd = find_or_reuse_app_window(target_name, win_key)
-    app_proc_kw = [target_name.lower().replace(" ", "")]
-    if target_name == "Calculator":
-        app_proc_kw = ["calc", "calculatorapp"]
-        enforce_single_instance("CalculatorApp")
-    elif target_name == "Notepad":
-        app_proc_kw = ["notepad"]
-
-    already_open = bool(existing_hwnd) or is_app_process_running(app_proc_kw) or target_name.lower() in ACTIVE_OS_APPS
-
-    # 4a. Calculator Default to Modern Web Calculator unless Windows Native UIA is explicitly requested
+    # 3. Calculator Default to Modern Web Calculator unless Windows Native UIA is explicitly requested
     is_native_calc = any(k in low for k in ["windows", "native", "win32", "calc.exe", "os", "uia"])
     if target_name == "Calculator" and not is_native_calc and not (expr and perform_calculator_uia):
         t_dir = Path("./hackathon_app").resolve()
@@ -3860,7 +3786,7 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
             "brain": BRAIN.snapshot(),
         }
 
-    # 4b. Calculator Authentic UIA Flow
+    # 4. Calculator Authentic UIA Flow (when mathematical expression is provided)
     if target_name == "Calculator" and expr and perform_calculator_uia:
         ok_uia, disp_text = await asyncio.to_thread(perform_calculator_uia, expr)
         ACTIVE_OS_APPS["calculator"] = {"is_open": True, "opened_at": time.time()}
@@ -3870,7 +3796,6 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
         BRAIN.record_completed_task("os_app_uia", raw, outcome)
         return {
             "ok": True,
-            "already_open": already_open,
             "target": "Calculator",
             "performed_expression": expr,
             "calculated_result": res_val,
@@ -3891,7 +3816,6 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
         target_url = ""
         if query_m:
             item = query_m.group(1).strip()
-            # Remove browser name if included
             item = re.sub(r"^(?:in\s+)?(?:edge|chrome|brave|firefox|browser)\s*", "", item, flags=re.I).strip()
             if item.startswith(("http://", "https://")):
                 target_url = item
@@ -3902,12 +3826,12 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
 
         if target_url:
             open_system_target(target_url, tab_key="browser")
+            time.sleep(0.3)
             uia_focus_window(win_key)
             outcome = f"Opened {target_name} for '{target_url}'"
             BRAIN.record_completed_task("browser", raw, outcome)
             return {
                 "ok": True,
-                "already_open": already_open,
                 "target": target_name,
                 "url": target_url,
                 "detail": outcome,
@@ -3915,18 +3839,12 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
                 "brain": BRAIN.snapshot(),
             }
 
-    # 6. Launch or Focus App
-    if not already_open:
-        if platform.system() == "Windows":
-            resolve_and_launch_app(exec_bin, target_name)
-        ACTIVE_OS_APPS[target_name.lower()] = {"is_open": True, "opened_at": time.time()}
-        time.sleep(0.6)
-        uia_focus_window(win_key)
-    else:
-        if existing_hwnd:
-            force_foreground_window(existing_hwnd)
-        else:
-            uia_focus_window(win_key)
+    # 6. Clean Direct Launch - Always Spawns Fresh Instance Every Time
+    if platform.system() == "Windows":
+        resolve_and_launch_app(exec_bin, target_name)
+    ACTIVE_OS_APPS[target_name.lower()] = {"is_open": True, "opened_at": time.time()}
+    time.sleep(0.5)
+    uia_focus_window(win_key)
 
     # 7. Type text into target app if requested (e.g. "open notepad and type hello world", "type hello in notepad")
     type_m = re.search(r"\b(?:type|write|saying|enter|input)\s+[\"']?([^\"'\n]+)[\"']?", raw, re.I)
@@ -3967,7 +3885,7 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
                 safe_k = type_text.replace("{", "{{}").replace("}", "{}}")
                 subprocess.Popen(["powershell", "-NoProfile", "-Command", f"$w = New-Object -ComObject wscript.shell; $null = $w.AppActivate('{win_key}'); Start-Sleep -Milliseconds 250; $w.SendKeys('{safe_k}~')"])
 
-    outcome = f"{'Reused open' if already_open else 'Opened'} {target_name}" + (f" and typed '{type_text}'" if type_text else "")
+    outcome = f"Opened {target_name}" + (f" and typed '{type_text}'" if type_text else "")
     speak_out_loud(outcome)
     BRAIN.log_blackboard("HUMAN_GUI_EXECUTOR", "OS_WINDOW_DISPATCH", outcome)
     BRAIN.record_completed_task("os_app_dispatch", raw, outcome)
@@ -3980,7 +3898,6 @@ async def open_or_reuse_os_app(req: JarvisCommandRequest):
 
     return {
         "ok": True,
-        "already_open": already_open,
         "target": target_name,
         "detail": outcome,
         "spoken_response": outcome,

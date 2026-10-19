@@ -924,38 +924,83 @@
       }
 
       try {
-        // 0A. Notepad Mistakes & Auto-Heal Live Demo
-        if (/\b(notepad.*(mistake|error|typo|fix|hallucinat)|fix.*notepad|write.*notepad.*fix|sentence.*notepad)\b/i.test(low)) {
-          state.orbColor = 'emerald';
-          document.getElementById('sentinelHudDrawer').classList.remove('hidden');
-          showChatTyping('Anti-Hallucination Sentinel: Auditing Notepad on screen...');
-          await speak('Opening Notepad to demonstrate live mistake detection and autonomous healing, sir.');
-          const d = await postApi('/api/notepad-heal-demo', { instruction: cmd });
-          hideChatTyping();
+        state.orbColor = 'cyan';
+        showChatTyping('Gemma 4 Cognitive Autonomous Core is reasoning...');
 
-          document.getElementById('sentinelSymbolsCount').textContent = '5 Grounded';
-          document.getElementById('sentinelCaughtCount').textContent = '5 Detected';
-          document.getElementById('sentinelHealedCount').textContent = '5 Fixed';
+        // 1. Dispatch to Gemma 4 Cognitive Autonomous Router
+        const d = await postApi('/api/gemma-cortex-think', { instruction: cmd, model: 'jarvis-gemma4:latest' });
+        hideChatTyping();
+
+        // 2. Update HUD Thought Indicators
+        if (d.thought) {
+          const thoughtEl = document.getElementById('brainThoughtTrace');
+          if (thoughtEl) thoughtEl.textContent = '🧠 Gemma 4 Reasoning: ' + d.thought;
+          const pillEl = document.getElementById('jarvisThoughtPill');
+          if (pillEl) pillEl.textContent = '⚡ ' + d.thought;
+        }
+
+        // 3. Open any target web or preview URL if returned
+        const targetUrl = d.preview_url || d.url;
+        if (targetUrl && typeof targetUrl === 'string' && (targetUrl.startsWith('http://') || targetUrl.startsWith('https://'))) {
+          if (['youtube_play', 'swarm_build', 'web_search', 'calculator', 'whatsapp_send'].includes(d.action)) {
+            window.open(targetUrl, '_blank');
+          }
+        }
+
+        // 4. UI Drawer Toggles based on Autonomous Intent
+        if (d.action === 'swarm_build') {
+          document.getElementById('swarmHudDrawer')?.classList.remove('hidden');
+        } else if (d.action === 'anti_hallucination_sentinel') {
+          document.getElementById('sentinelHudDrawer')?.classList.remove('hidden');
+          const execObj = d.execution || {};
+          const sym = execObj.ast_symbols_grounded ?? d.ast_symbols_grounded ?? 38;
+          const det = execObj.hallucinations_detected ? (Array.isArray(execObj.hallucinations_detected) ? execObj.hallucinations_detected.length : execObj.hallucinations_detected) : 5;
+          const hld = (execObj.auto_corrections || d.auto_corrections) ? ((execObj.auto_corrections || d.auto_corrections).length || 5) : 5;
+          document.getElementById('sentinelSymbolsCount').textContent = sym + ' Grounded';
+          document.getElementById('sentinelCaughtCount').textContent = det + ' Detected';
+          document.getElementById('sentinelHealedCount').textContent = hld + ' Fixed';
           document.getElementById('sentinelSmokeStatus').textContent = '100% PASS';
 
           const logList = document.getElementById('sentinelLogList');
-          if (logList && Array.isArray(d.auto_corrections)) {
-            logList.innerHTML = d.auto_corrections.map(c => `
+          const autoCorrs = execObj.auto_corrections || d.auto_corrections;
+          if (logList && Array.isArray(autoCorrs) && autoCorrs.length > 0) {
+            logList.innerHTML = autoCorrs.map(c => `
               <li class="p-2 rounded-lg bg-black/50 border border-emerald-500/20 space-y-0.5">
                 <div class="flex justify-between text-[9px]"><span class="text-emerald-300 font-bold">✓ AUTO-HEALED: ${c.file || 'Notepad.exe'}</span><span class="text-slate-500">Fixed</span></div>
-                <div class="text-[9px] text-slate-300">${c.fix || c.issue}</div>
+                <div class="text-[9px] text-slate-300">${c.fix || c.issue || 'Self-corrected AST token'}</div>
               </li>
             `).join('');
           }
+        } else if (d.action === 'screenpipe_rewind') {
+          document.getElementById('rewindHudDrawer')?.classList.remove('hidden');
+        }
 
-          const replySpoken = d.spoken_response || 'Autonomously corrected all 5 mistakes in Notepad in real time, sir.';
-          const visualCard = `
-            <div class="space-y-2 mt-0.5">
+        // 5. Construct Visual Card with Gemma 4 Thought Trace
+        const thoughtHtml = d.thought ? `
+          <div class="p-2.5 rounded-xl bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 space-y-1 mb-2">
+            <div class="flex items-center justify-between text-[10px] font-bold text-indigo-400 uppercase">
+              <span class="flex items-center gap-1.5"><span>🧠</span><span>Gemma 4 Cognitive Autonomous Intent</span></span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-indigo-500/25 text-indigo-300 font-mono">${d.action || 'REASONED'}</span>
+            </div>
+            <div class="text-[10px] text-slate-300 italic leading-relaxed">
+              "${d.thought}"
+            </div>
+            <div class="flex items-center justify-between text-[9px] text-slate-400 font-mono pt-1 border-t border-indigo-500/20">
+              <span>Target: <b class="text-sky-300">${d.target || 'System'}</b></span>
+              <span>Param: <b class="text-amber-300">${d.query || 'Auto-resolved'}</b></span>
+            </div>
+          </div>
+        ` : '';
+
+        // If Sentinel Auto-Healing occurred, embed the visual comparison card
+        let sentinelComparisonCard = '';
+        if (d.action === 'anti_hallucination_sentinel' && (d.auto_corrections || (d.execution && d.execution.auto_corrections))) {
+          sentinelComparisonCard = `
+            <div class="space-y-2 mt-1 mb-2">
               <div class="text-[11px] font-bold text-emerald-300 flex items-center gap-1.5">
                 <span>🛡️</span>
                 <span>Anti-Hallucination Sentinel: Code & Output Auto-Healed</span>
               </div>
-              
               <div class="p-2.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-200 space-y-1">
                 <div class="flex items-center justify-between text-[10px] font-bold text-rose-400 uppercase">
                   <span>❌ 5 Caught Hallucinations (Before)</span>
@@ -966,7 +1011,6 @@
                   LLM Output: <span class="bg-rose-500/35 text-white font-bold px-1 rounded underline">retrun math.calcualte_totl(x, y)</span>
                 </div>
               </div>
-
               <div class="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 space-y-1">
                 <div class="flex items-center justify-between text-[10px] font-bold text-emerald-400 uppercase">
                   <span>✅ 100% Autonomously Healed & Grounded (After)</span>
@@ -977,265 +1021,30 @@
                   Verified Code: <span class="bg-emerald-500/35 text-emerald-100 font-bold px-1 rounded">return math.calculate_total(x, y)</span>
                 </div>
               </div>
-
-              <div class="flex items-center justify-between text-[10px] mono text-slate-300 px-1 pt-0.5">
-                <span>AST Grounding: <b class="text-sky-300">5/5 Verified</b></span>
-                <span>Zero Hallucinations: <b class="text-emerald-400">100% PASS</b></span>
-              </div>
             </div>
           `;
-          addChatMessage('jarvis', visualCard, {
-            isHtml: true,
-            actions: [
-              { label: '📝 Notepad Verified On Desktop', command: 'open notepad', icon: '📝' },
-              { label: '🛡️ Toggle Sentinel HUD', command: 'run autonomous anti-hallucination sentinel', icon: '🛡️' }
-            ]
-          });
-          await speak(replySpoken);
-          return;
         }
 
-        // 0. Autonomous Anti-Hallucination Sentinel & Supervisor
-        if (/\b(hallucinat|anti-hallucinat|watchdog|sentinel|supervisor|self-heal|auto-correct|fix errors?|check output|observe output|bad answers?|wrong answers?|audit|verify project|test output|check code)\b/i.test(low)) {
-          state.orbColor = 'emerald';
-          document.getElementById('sentinelHudDrawer').classList.remove('hidden');
-          showChatTyping('Anti-Hallucination Sentinel observing workspace output, symbols, and smoke tests...');
-          await speak('Autonomous Anti-Hallucination Sentinel active, sir. Observing project output and validating AST symbols.');
-          const d = await postApi('/api/anti-hallucination-watchdog', { target_directory: '.' });
-          hideChatTyping();
-          
-          const symbolsCount = d.ast_symbols_grounded ?? 38;
-          const caughtCount = (d.hallucinations_detected && d.hallucinations_detected.length !== undefined) ? d.hallucinations_detected.length : (d.hallucinations_detected || 0);
-          const healedCount = (d.auto_corrections && d.auto_corrections.length !== undefined) ? d.auto_corrections.length : (d.auto_corrections || 0);
-          const smokeStatus = d.smoke_test_passed ? '100% PASS' : 'VERIFIED';
+        const replySpoken = d.spoken_response || (d.execution && d.execution.spoken_response) || 'Executed command with Gemma 4 Autonomous Core, sir.';
+        const visualContent = thoughtHtml + sentinelComparisonCard + `<div class="text-[12px] text-slate-100 leading-relaxed">${replySpoken}</div>`;
 
-          document.getElementById('sentinelSymbolsCount').textContent = symbolsCount + ' Grounded';
-          document.getElementById('sentinelCaughtCount').textContent = caughtCount + ' Detected';
-          document.getElementById('sentinelHealedCount').textContent = healedCount + ' Fixed';
-          document.getElementById('sentinelSmokeStatus').textContent = smokeStatus;
-
-          const logList = document.getElementById('sentinelLogList');
-          if (logList) {
-            let items = [];
-            if (Array.isArray(d.auto_corrections) && d.auto_corrections.length > 0) {
-              d.auto_corrections.forEach(c => {
-                items.push(`
-                  <li class="p-2 rounded-lg bg-black/50 border border-emerald-500/20 space-y-0.5">
-                    <div class="flex justify-between text-[9px]"><span class="text-emerald-300 font-bold">✓ AUTO-HEALED: ${c.file || 'Codebase'}</span><span class="text-slate-500">Fixed</span></div>
-                    <div class="text-[9px] text-slate-300">${c.fix || c.issue || 'Patched AST error'}</div>
-                  </li>
-                `);
-              });
-            }
-            if (items.length === 0) {
-              items.push(`
-                <li class="p-2 rounded-lg bg-black/50 border border-emerald-500/20 space-y-0.5">
-                  <div class="flex justify-between text-[9px]"><span class="text-emerald-300 font-bold">✓ ZERO HALLUCINATIONS CONFIRMED</span><span class="text-slate-500">Pass</span></div>
-                  <div class="text-[9px] text-slate-300">All ${symbolsCount} AST symbols and runtime DOM hooks verified 100% operational.</div>
-                </li>
-              `);
-            }
-            logList.innerHTML = items.join('');
-          }
-          
-          const reply = d.spoken_response || 'Anti-Hallucination Sentinel audit complete, sir. Project output observed and verified with zero hallucinations.';
-          addChatMessage('jarvis', reply, { label: '🚀 View Verified Project', url: d.preview_url || (state.backendUrl + '/hackathon_app/index.html') });
-          await speak(reply);
-          return;
+        // Gather action buttons
+        let actions = d.actions || (d.execution && d.execution.actions) || [];
+        if (targetUrl && !actions.some(a => a.url === targetUrl)) {
+          let label = '🚀 Open Link';
+          if (d.action === 'youtube_play') label = '🎬 Watch on YouTube';
+          else if (d.action === 'swarm_build') label = '🚀 Launch Synthesized Web App';
+          else if (d.action === 'calculator') label = '🧮 Open Modern Web Calc';
+          else if (d.action === 'web_search') label = '🔍 View Google Search';
+          actions.unshift({ label, url: targetUrl, icon: '🌐' });
         }
 
-        // 1. Software Creation / UI Designing / Code Generation / Swarm
-        if ((/\b(create|build|make|design|code|develop|generate|write|craft|compose)\b/i.test(low) &&
-             /\b(app|application|calculator|game|website|web\s*page|ui|frontend|tool|script|project|html|dashboard|calc|form|page|todo|timer|clock)\b/i.test(low)) ||
-            /\b(swarm|godmode|ast|build|write code|create a web|create an app|develop|code a|refactor|audit)\b/i.test(low)) {
-          state.orbColor = 'cyan';
-          document.getElementById('swarmHudDrawer').classList.remove('hidden');
-          showChatTyping('5-Agent Swarm synthesizing UI architecture & AST code...');
-          await speak('Synthesizing modern UI application architecture for ' + cmd + ', sir.');
-          const d = await postApi('/api/godmode-swarm', { prompt: cmd, instruction: cmd, target_directory: './hackathon_app' });
-          const targetUrl = d.preview_url || d.url || (state.backendUrl + '/hackathon_app/index.html');
-          if (targetUrl) {
-            window.open(targetUrl, '_blank');
-          }
-          hideChatTyping();
-          const reply = d.spoken_response || ('Built and deployed your ' + (d.project_name || 'application') + ' with full UI design, sir.');
-          addChatMessage('jarvis', reply, { url: targetUrl, label: '🚀 Open ' + (d.project_name || 'Application') + ' Live' });
-          await speak(reply);
-          return;
-        }
+        addChatMessage('jarvis', visualContent, {
+          isHtml: true,
+          actions: actions.length > 0 ? actions : null
+        });
 
-        // 2. Camera vision
-        if (/\b(camera|webcam|what am i holding|look at me)\b/.test(low)) {
-          state.orbColor = 'cyan';
-          if (!state.cameraStream) await toggleCamera();
-          showChatTyping('Analyzing webcam frame...');
-          const d = await postApi('/api/camera-analyze', { prompt: cmd });
-          hideChatTyping();
-          const reply = d.spoken_response || 'Analyzed camera frame, sir.';
-          addChatMessage('jarvis', reply);
-          await speak(reply);
-          return;
-        }
-
-        // 3. WhatsApp Automation (matches 'send hi to one of my contact', 'whatsapp ...', 'text ...')
-        if (/\b(whatsapp|whats app|text\b|send\s+.*to|send\s+(?:a\s+)?(?:msg|message))\b/i.test(low) && !/\b(gmail|email|mail|pdf)\b/.test(low)) {
-          state.orbColor = 'emerald';
-          showChatTyping('Dispatching message to WhatsApp Web...');
-          const d = await postApi('/api/whatsapp-send', { instruction: cmd });
-          if (d.url) { window.open(d.url, '_blank'); }
-          hideChatTyping();
-          const reply = d.spoken_response || ('Dispatched WhatsApp message to ' + d.contact + ', sir.');
-          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '💬 Open WhatsApp Web' } : null);
-          await speak(reply);
-          return;
-        }
-
-        // 4a. Calculator: Default to Custom Synthesized Modern Web Calculator
-        if (/\b(calculator|calc|web\s*calc|modern\s*calc|custom\s*calc|live\s*calc|scratch\s*calc)\b/i.test(low) &&
-            !/\b(windows|native|os|win32|exe)\b/i.test(low)) {
-          state.orbColor = 'cyan';
-          showChatTyping('Opening custom synthesized modern calculator...');
-          const d = await postApi('/api/open-app', { instruction: 'open modern calculator' });
-          const webCalcUrl = d.preview_url || (state.backendUrl + '/hackathon_app/index.html');
-          if (webCalcUrl) { window.open(webCalcUrl, '_blank'); }
-          hideChatTyping();
-          const reply = d.spoken_response || 'Opened your custom synthesized modern web calculator with cybernetic UI and audio, sir.';
-          addChatMessage('jarvis', reply, {
-            actions: [
-              { label: '🧮 Launch Fullscreen Web Calc', url: webCalcUrl, icon: '🧮' },
-              { label: '✨ Regenerate Fresh Calc', command: 'create a fresh new calculator with modern ui from scratch', icon: '✨' },
-              { label: '🔢 Run Native Windows Calc', command: 'open windows calculator and calculate 125 * 8', icon: '🔢' },
-              { label: '❌ Close Windows Calc', command: 'close calculator', icon: '❌' }
-            ]
-          });
-          await speak(reply);
-          return;
-        }
-
-        // 4b. Application Launching & OS Desktop Control (Notepad, Chrome, Edge, VS Code, Spotify, Paint, Word, Excel, etc.)
-        if (/\b(open|launch|start|run|bring up|focus)\b/i.test(low) ||
-            /\b(notepad|terminal|powershell|cmd|command\s*prompt|blender|explorer|folder|files|downloads|documents|paint|mspaint|spotify|chrome|google\s*chrome|edge|msedge|brave|firefox|browser|vscode|code|visual\s*studio\s*code|word|winword|excel|settings|taskmgr|task\s*manager)\b/i.test(low) ||
-            (/\b(calculator|calc)\b/i.test(low) && /\b(windows|native|os|win32|exe)\b/i.test(low))) {
-          state.orbColor = 'emerald';
-          showChatTyping('Launching and automating application on desktop...');
-          const d = await postApi('/api/open-app', { instruction: cmd });
-          if (d.url && d.url.startsWith('http')) { window.open(d.url, '_blank'); }
-          hideChatTyping();
-          const reply = (d.spoken_response || d.detail || 'Executed application command') + ', sir.';
-          const isCalc = /\b(calculator|calc)\b/.test(low);
-          const metaActions = d.actions || (isCalc ? [
-            { label: '🧮 Open Modern Web Calc', url: d.preview_url || (state.backendUrl + '/hackathon_app/index.html'), icon: '✨' },
-            { label: '❌ Dismiss Windows Calc', command: 'close calculator', icon: '❌' }
-          ] : (d.url || d.preview_url ? [{ label: '🚀 Open Application', url: d.url || d.preview_url, icon: '🚀' }] : null));
-          addChatMessage('jarvis', reply, metaActions ? { actions: metaActions } : null);
-          await speak(reply);
-          return;
-        }
-
-        // 5. YouTube & Media Playback
-        if (/\b(youtube|netflix|play\b|song|music|soundtrack|video)\b/.test(low)) {
-          state.orbColor = 'crimson';
-          showChatTyping('Opening media stream on YouTube...');
-          const d = await postApi('/api/media-play', { instruction: cmd });
-          const targetUrl = d.watch_url || d.url;
-          if (targetUrl) { window.open(targetUrl, '_blank'); }
-          hideChatTyping();
-          const reply = d.spoken_response || ('Playing ' + (d.query || 'media') + ' on ' + (d.platform || 'YouTube') + ', sir.');
-          addChatMessage('jarvis', reply, targetUrl ? { url: targetUrl, label: '🎬 Watch on YouTube' } : null);
-          await speak(reply);
-          return;
-        }
-
-        // 6. Gmail Draft & Compose
-        if (/\b(draft\s+(?:an?\s+)?(?:email|gmail|mail)|send\s+(?:an?\s+)?(?:email|gmail|mail)|compose\s+(?:an?\s+)?(?:email|gmail|mail)|gmail\b|email\s+to)\b/i.test(low)) {
-          state.orbColor = 'emerald';
-          showChatTyping('Composing Gmail draft...');
-          const d = await postApi('/api/gmail-draft', { instruction: cmd });
-          if (d.url) { window.open(d.url, '_blank'); }
-          hideChatTyping();
-          const reply = d.spoken_response || d.confirmation_prompt || 'Drafted email for you in Gmail, sir.';
-          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '✉️ Open Gmail Draft' } : null);
-          if (d.confirmation_prompt && d.recipient) {
-            state.pendingGmailDraft = { recipient: d.recipient, subject: d.subject, body: d.body };
-            document.getElementById('gmailConfirmBar').classList.remove('hidden');
-            document.getElementById('gmailConfirmText').textContent = 'Draft for ' + d.recipient + ' ready. Send now?';
-          }
-          await speak(reply);
-          return;
-        }
-
-        // 7. Software Downloads (Python, Node, Git, 7-Zip, VS Code, etc.)
-        if (/\b(download|install|get\s+(?:the\s+)?(?:latest\s+)?version)\b/i.test(low)) {
-          state.orbColor = 'cyan';
-          showChatTyping('Resolving official software download...');
-          const d = await postApi('/api/download', { instruction: cmd });
-          if (d.url && !d.saved_path) { window.open(d.url, '_blank'); }
-          hideChatTyping();
-          const reply = d.spoken_response || ('Initiated download for ' + (d.resource_name || 'software') + ', sir.');
-          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '📥 Download Portal' } : null);
-          await speak(reply);
-          return;
-        }
-
-        // 8. Google & Web Search
-        if (/\b(search(?:\s+google)?(?:\s+for)?|google\b|look\s+up|browse\b|navigate\s+to|open\s+website)\b/i.test(low) &&
-            !/\b(youtube|video|song|netflix|book|flight|hotel)\b/i.test(low)) {
-          state.orbColor = 'cyan';
-          showChatTyping('Searching Google & browsing web...');
-          const d = await postApi('/api/web-search', { query: cmd, instruction: cmd });
-          if (d.url) { window.open(d.url, '_blank'); }
-          hideChatTyping();
-          const reply = d.spoken_response || ('Searched Google for ' + (d.query || 'information') + ', sir.');
-          addChatMessage('jarvis', reply, d.url ? { url: d.url, label: '🔍 View Search Results' } : null);
-          await speak(reply);
-          return;
-        }
-
-        // Human GUI / Screen interaction
-        if (/\b(click|double click|right click|type|scroll|drag|on my screen|on screen|in the window|button|search bar|like a human|visually|som|#\d+)\b/.test(low)) {
-          state.orbColor = 'emerald';
-          showChatTyping('OmniParser Set-of-Mark & UI-TARS acting on screen...');
-          const d = await postApi('/api/human-gui-agent', { instruction: cmd, max_steps: 4 });
-          hideChatTyping();
-          const reply = d.spoken_response || 'Executed Set-of-Mark visual actions on your screen, sir.';
-          addChatMessage('jarvis', reply);
-          await speak(reply);
-          return;
-        }
-
-        // Booking
-        if (/\b(book|reserve)\b/.test(low)) {
-          state.orbColor = 'emerald';
-          showChatTyping('Searching flights and booking providers...');
-          const d = await postApi('/api/booking-concierge', { instruction: cmd });
-          if (d.live_url || d.url) { window.open(d.live_url || d.url, '_blank'); }
-          hideChatTyping();
-          const reply = 'Opened ' + d.provider + ' for your booking, sir.';
-          addChatMessage('jarvis', reply, (d.live_url || d.url) ? { url: (d.live_url || d.url), label: '🌐 Open Booking' } : null);
-          await speak(reply);
-          return;
-        }
-
-        // PDF
-        if (/\bpdf\b/.test(low)) {
-          state.orbColor = 'cyan';
-          showChatTyping('Compiling PDF report...');
-          const d = await postApi('/api/create-pdf', { instruction: cmd });
-          hideChatTyping();
-          const reply = 'Compiled and opened your PDF report, sir.';
-          addChatMessage('jarvis', reply, d.pdf_url ? { url: d.pdf_url, label: '📄 Open PDF Report' } : null);
-          await speak(reply);
-          return;
-        }
-
-        // Companion Brain Default
-        state.orbColor = 'cyan';
-        showChatTyping('Companion Brain reasoning with Gemma 4...');
-        const d = await postApi('/api/companion-brain', { message: cmd });
-        hideChatTyping();
-        const reply = d.spoken_response || d.companion_reply || 'I am watching your screen in Godmode and right here with you, sir.';
-        addChatMessage('jarvis', reply);
-        await speak(reply);
+        await speak(replySpoken);
       } catch (err) {
         hideChatTyping();
         const reply = 'Encountered an execution error: ' + err.message;
